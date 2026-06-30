@@ -1,3 +1,4 @@
+// Package tui implements the Bubble Tea cockpit model.
 package tui
 
 import (
@@ -13,6 +14,7 @@ import (
 	"github.com/hamardikan/lazyss/internal/domain"
 )
 
+// Runtime wires the TUI to app-layer services and clipboard support.
 type Runtime struct {
 	Inventory *app.InventoryService
 	Connect   *app.ConnectService
@@ -21,6 +23,7 @@ type Runtime struct {
 	Copy      func(string) error
 }
 
+// Model is the Bubble Tea state for the machine cockpit.
 type Model struct {
 	runtime    *Runtime
 	machines   []domain.Machine
@@ -41,12 +44,14 @@ type machinesMsg struct {
 	err      error
 }
 
+// NewModel creates a TUI model with an initial filtered view.
 func NewModel(runtime *Runtime) Model {
 	m := Model{runtime: runtime}
 	m.recompute()
 	return m
 }
 
+// Init starts initial inventory loading when services are available.
 func (m Model) Init() tea.Cmd {
 	if m.runtime == nil || m.runtime.Inventory == nil {
 		return nil
@@ -55,6 +60,7 @@ func (m Model) Init() tea.Cmd {
 	return m.fetchCmd(m.refreshSeq)
 }
 
+// Update applies one Bubble Tea message.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case machinesMsg:
@@ -69,6 +75,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// View renders the current cockpit state.
 func (m Model) View() tea.View {
 	return tea.NewView(m.render())
 }
@@ -82,12 +89,12 @@ func (m Model) render() string {
 	if len(m.statuses) > 0 {
 		for _, status := range m.statuses {
 			if status.Status == domain.ProviderDegraded {
-				b.WriteString(fmt.Sprintf("source %s degraded: %s\n", status.Name, status.Message))
+				fmt.Fprintf(&b, "source %s degraded: %s\n", status.Name, status.Message)
 			}
 		}
 	}
 	if m.inputMode != "" {
-		b.WriteString(fmt.Sprintf("%s: %s\n", m.inputMode, m.search))
+		fmt.Fprintf(&b, "%s: %s\n", m.inputMode, m.search)
 	}
 	if len(m.visible) == 0 {
 		b.WriteString("No machines\n")
@@ -103,17 +110,17 @@ func (m Model) render() string {
 			pin = "*"
 		}
 		method := machine.DefaultMethod()
-		b.WriteString(fmt.Sprintf("%s%s %-4s %-20s %-24s %-14s %-24s %-20s\n",
-			cursor, pin, machine.Provider, machine.Name, machine.Address, method, machine.Health.Label, rel(machine.LastConnectedAt)))
+		fmt.Fprintf(&b, "%s%s %-4s %-20s %-24s %-14s %-24s %-20s\n",
+			cursor, pin, machine.Provider, machine.Name, machine.Address, method, machine.Health.Label, rel(machine.LastConnectedAt))
 	}
 	if m.details && len(m.visible) > 0 {
 		machine := m.visible[m.cursor]
 		b.WriteString("\nDetails\n")
-		b.WriteString(fmt.Sprintf("ID: %s\nProvider: %s\nNative: %s\nNote: %s\nConnections: %d\n",
-			machine.ID, machine.Provider, machine.NativeID, machine.Note, machine.ConnectionCount))
+		fmt.Fprintf(&b, "ID: %s\nProvider: %s\nNative: %s\nNote: %s\nConnections: %d\n",
+			machine.ID, machine.Provider, machine.NativeID, machine.Note, machine.ConnectionCount)
 		b.WriteString("Health history:\n")
 		for _, obs := range lastHealth(machine.HealthHistory, 5) {
-			b.WriteString(fmt.Sprintf("  %s %s %s\n", obs.CheckedAt.Format("2006-01-02 15:04"), obs.Method, obs.Label))
+			fmt.Fprintf(&b, "  %s %s %s\n", obs.CheckedAt.Format("2006-01-02 15:04"), obs.Method, obs.Label)
 		}
 		b.WriteString("Session history:\n")
 		for _, event := range lastSessions(machine.SessionHistory, 5) {
@@ -121,7 +128,7 @@ func (m Model) render() string {
 			if event.Success {
 				outcome = "ok"
 			}
-			b.WriteString(fmt.Sprintf("  %s %s %s\n", event.EndedAt.Format("2006-01-02 15:04"), event.Method, outcome))
+			fmt.Fprintf(&b, "  %s %s %s\n", event.EndedAt.Format("2006-01-02 15:04"), event.Method, outcome)
 		}
 	}
 	return b.String()

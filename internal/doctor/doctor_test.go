@@ -8,7 +8,7 @@ import (
 
 func TestDoctorReportsMissingBinariesAndCredentials(t *testing.T) {
 	d := Doctor{
-		LookPath: func(name string) (string, error) { return "", errors.New("missing") },
+		LookPath: func(_ string) (string, error) { return "", errors.New("missing") },
 		Identity: func(context.Context) error { return errors.New("expired credentials") },
 		Region:   "",
 	}

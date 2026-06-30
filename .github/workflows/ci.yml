@@ -2,11 +2,14 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
-  verify:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -24,13 +27,37 @@ jobs:
       - name: Vet
         run: go vet ./...
       - name: Race tests
-        run: go test -race ./...
-      - name: Build
-        run: go build ./cmd/lazyss
-      - name: Govulncheck
-        uses: golang/govulncheck-action@v1
+        run: go test -race -coverprofile=coverage.out ./...
+      - name: Coverage summary
+        run: go tool cover -func=coverage.out | tail -1
+      - name: Upload coverage
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: coverage.out
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12.2
+
+  govulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: golang/govulncheck-action@v1
 
   build-matrix:
+    needs: [test, lint, govulncheck]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -46,3 +73,22 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run: go build ./cmd/lazyss
+
+  goreleaser-snapshot:
+    needs: [test, lint, govulncheck]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          version: "~> v2"
+          install-only: true
+      - name: GoReleaser check
+        run: goreleaser check
+      - name: GoReleaser snapshot
+        run: goreleaser release --clean --snapshot --skip=publish

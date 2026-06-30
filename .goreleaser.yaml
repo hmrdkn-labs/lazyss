@@ -1,0 +1,104 @@
+version: 2
+project_name: lazyss
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: lazyss
+    main: ./cmd/lazyss
+    binary: lazyss
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: lazyss
+    ids:
+      - lazyss
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: github
+  sort: asc
+
+homebrew_casks:
+  - name: lazyss
+    ids:
+      - lazyss
+    binaries:
+      - lazyss
+    homepage: "https://github.com/hamardikan/lazyss"
+    description: "Terminal machine cockpit for SSH and AWS SSM"
+    directory: Casks
+    skip_upload: true
+    repository:
+      owner: hamardikan
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    caveats: |
+      LazySS reads ~/.ssh/config and uses the AWS CLI plus the Session Manager plugin for AWS SSM sessions.
+      Private release installs require HOMEBREW_GITHUB_API_TOKEN in the operator shell.
+    custom_block: |
+      require "download_strategy"
+
+      class GitHubPrivateRepositoryReleaseDownloadStrategy < CurlDownloadStrategy
+        def initialize(url, name, version, **meta)
+          @url = url
+          parse_url_pattern
+          set_github_token
+          meta[:headers] ||= []
+          meta[:headers] << "Accept: application/octet-stream"
+          meta[:headers] << "Authorization: Bearer #{@github_token}"
+          ghurl = "https://api.github.com/repos/#{@owner}/#{@repo}/releases/assets/#{asset_id}"
+          super(ghurl, name, version, **meta)
+        end
+
+        def parse_url_pattern
+          url_pattern = %r{https://github.com/([^/]+)/([^/]+)/releases/download/([^/]+)/(\S+)}
+          raise CurlDownloadStrategyError, "Invalid url pattern" unless @url =~ url_pattern
+
+          _, @owner, @repo, @tag, @filename = *@url.match(url_pattern)
+        end
+
+        def download_url
+          "https://#{@github_token}@api.github.com/repos/#{@owner}/#{@repo}/releases/assets/#{asset_id}"
+        end
+
+        private
+
+        def set_github_token
+          @github_token = ENV["HOMEBREW_GITHUB_API_TOKEN"]
+          raise CurlDownloadStrategyError, "HOMEBREW_GITHUB_API_TOKEN is required." unless @github_token
+
+          GitHub.repository(@owner, @repo)
+        end
+
+        def asset_id
+          @asset_id ||= GitHub.get_release(@owner, @repo, @tag)["assets"]
+                              .find { |a| a["name"] == @filename }
+                              .fetch("id") { raise CurlDownloadStrategyError, "Asset not found" }
+        end
+      end
+    url:
+      template: "https://github.com/hamardikan/lazyss/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+      using: GitHubPrivateRepositoryReleaseDownloadStrategy
+      verified: github.com/hamardikan/lazyss/

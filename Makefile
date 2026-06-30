@@ -23,9 +23,23 @@ doctor:
 test:
 	go test -race ./...
 
+.PHONY: cover
+cover:
+	go test -race -coverprofile=coverage.out ./...
+	go tool cover -func=coverage.out | tail -1
+	go tool cover -html=coverage.out -o coverage.html
+
 .PHONY: vet
 vet:
 	go vet ./...
+
+.PHONY: lint
+lint:
+	@if ! command -v golangci-lint >/dev/null 2>&1; then \
+		echo "golangci-lint not installed locally; CI runs golangci-lint v2.12.2"; \
+		exit 0; \
+	fi
+	golangci-lint run ./...
 
 .PHONY: fmt
 fmt:

@@ -1,3 +1,4 @@
+// Package app orchestrates LazySS use cases over domain-owned ports.
 package app
 
 import (
@@ -11,22 +12,34 @@ import (
 	"github.com/hamardikan/lazyss/internal/ports"
 )
 
+// InventoryQuery filters inventory provider results.
 type InventoryQuery = ports.InventoryQuery
+
+// InventoryProvider lists provider-owned machines.
 type InventoryProvider = ports.InventoryProvider
+
+// ConnectOptions carries connection launch options.
 type ConnectOptions = ports.ConnectOptions
+
+// SessionResult reports an interactive session outcome.
 type SessionResult = ports.SessionResult
+
+// HealthChecker checks method-specific machine readiness.
 type HealthChecker = ports.HealthChecker
 
+// InventoryResult combines machine rows with provider statuses.
 type InventoryResult struct {
 	Machines []domain.Machine
 	Statuses []domain.ProviderStatus
 }
 
+// InventoryService aggregates inventory providers and local overlays.
 type InventoryService struct {
 	Providers []InventoryProvider
 	Store     ports.StateStore
 }
 
+// List returns merged inventory while preserving partial provider failures.
 func (s InventoryService) List(ctx context.Context, q InventoryQuery) (InventoryResult, error) {
 	var result InventoryResult
 	for _, provider := range s.Providers {
@@ -68,12 +81,14 @@ func (s InventoryService) List(ctx context.Context, q InventoryQuery) (Inventory
 	return result, nil
 }
 
+// ConnectService builds and runs interactive connection commands.
 type ConnectService struct {
 	Connectors []ports.Connector
 	Store      ports.StateStore
 	Clock      ports.Clock
 }
 
+// Connect runs a selected method and records the session attempt.
 func (s ConnectService) Connect(ctx context.Context, machine domain.Machine, method domain.AccessMethod, opts ConnectOptions) (SessionResult, error) {
 	connector := s.connectorFor(machine, method)
 	if connector == nil {
@@ -104,6 +119,7 @@ func (s ConnectService) Connect(ctx context.Context, machine domain.Machine, met
 	return result, runErr
 }
 
+// BuildCommand returns the command that would be used for a connection.
 func (s ConnectService) BuildCommand(machine domain.Machine, method domain.AccessMethod, opts ConnectOptions) (ports.CommandSpec, error) {
 	connector := s.connectorFor(machine, method)
 	if connector == nil {
@@ -121,12 +137,14 @@ func (s ConnectService) connectorFor(machine domain.Machine, method domain.Acces
 	return nil
 }
 
+// HealthService coordinates method-specific readiness checks.
 type HealthService struct {
 	Checkers      []HealthChecker
 	Store         ports.StateStore
 	MaxConcurrent int
 }
 
+// CheckSelected checks one machine with the selected method.
 func (s HealthService) CheckSelected(ctx context.Context, machine domain.Machine, method domain.AccessMethod) domain.HealthObservation {
 	checker := s.checkerFor(machine, method)
 	if checker == nil {
@@ -139,6 +157,7 @@ func (s HealthService) CheckSelected(ctx context.Context, machine domain.Machine
 	return obs
 }
 
+// CheckVisible checks visible machines with bounded concurrency.
 func (s HealthService) CheckVisible(ctx context.Context, machines []domain.Machine, method domain.AccessMethod) []domain.HealthObservation {
 	limit := s.MaxConcurrent
 	if limit <= 0 {
@@ -174,10 +193,6 @@ func (s HealthService) checkerFor(machine domain.Machine, method domain.AccessMe
 	}
 	return nil
 }
-
-type realClock struct{}
-
-func (realClock) Now() time.Time { return time.Now() }
 
 func now(clock ports.Clock) time.Time {
 	if clock == nil {

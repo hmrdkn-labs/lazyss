@@ -1,0 +1,52 @@
+name: Bug report
+description: Report a reproducible LazySS defect
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What failed?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction
+      description: Exact commands, keys, provider/source flags, and observed output. Do not paste secrets.
+      placeholder: |
+        1. Run `lazyss ...`
+        2. Press ...
+        3. See ...
+    validations:
+      required: true
+  - type: dropdown
+    id: boundary
+    attributes:
+      label: DDD boundary
+      options:
+        - domain
+        - app
+        - ports
+        - sshconfig adapter
+        - awsssm adapter
+        - statejson adapter
+        - tui
+        - doctor
+        - docs/release
+        - unknown
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, architecture, LazySS version, SSH/AWS CLI/plugin versions if relevant.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Secret safety
+      options:
+        - label: I did not paste private keys, AWS credentials, tokens, SSO cache data, or environment dumps.
+          required: true

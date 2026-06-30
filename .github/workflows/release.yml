@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   release:
@@ -12,22 +12,14 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-      - name: Build artifacts
-        run: |
-          mkdir -p dist
-          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
-            os=${target%/*}
-            arch=${target#*/}
-            ext=""
-            [ "$os" = "windows" ] && ext=".exe"
-            out="dist/lazyss_${os}_${arch}${ext}"
-            GOOS=$os GOARCH=$arch go build -o "$out" ./cmd/lazyss
-          done
-          (cd dist && shasum -a 256 * > checksums.txt)
-      - name: Publish release
-        uses: softprops/action-gh-release@v2
+      - uses: goreleaser/goreleaser-action@v7
         with:
-          files: dist/*
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

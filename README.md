@@ -22,6 +22,8 @@ monitoring daemon, store secrets, or implement non-AWS cloud adapters.
 
 ## Usage
 
+After installing `lazyss`:
+
 ```sh
 lazyss
 lazyss doctor
@@ -30,11 +32,52 @@ lazyss --source ssh --ssh-config ~/.ssh/config
 lazyss --source aws --aws-profile prod --aws-region ap-southeast-1
 ```
 
+## Install
+
+### From a Local Checkout
+
+```sh
+make build
+./bin/lazyss --version
+```
+
+### From GitHub Releases
+
+After `v0.1.0`, download the archive for your OS and architecture from the
+private GitHub release, verify it against `checksums.txt`, and put `lazyss` on
+your `PATH`.
+
+### Homebrew Cask
+
+After the private Homebrew tap is approved and published:
+
+```sh
+brew install --cask hamardikan/tap/lazyss
+```
+
+Private release assets require `HOMEBREW_GITHUB_API_TOKEN` in the operator
+shell. Do not print the token value.
+
+### Go Install
+
+While the repository is private, `go install` is a developer path only. It
+requires GitHub authentication and `GOPRIVATE` configuration:
+
+```sh
+GOPRIVATE=github.com/hamardikan/* go install github.com/hamardikan/lazyss/cmd/lazyss@latest
+```
+
 ## Verification
 
 ```sh
 gofmt -l .
 go vet ./...
-go test -race ./...
+go test -race -coverprofile=coverage.out ./...
+go tool cover -func=coverage.out | tail -1
 go build ./cmd/lazyss
 ```
+
+## Release Status
+
+`v0.1.0` must not be tagged until local gates, hosted CI, GoReleaser snapshot,
+Homebrew private cask proof, and real SSH/AWS SSM smoke tests pass.
