@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.42.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.26
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.304.2
-	github.com/aws/aws-sdk-go-v2/service/ssm v1.68.8
+	github.com/aws/aws-sdk-go-v2/service/ssm v1.69.4
 	github.com/aws/aws-sdk-go-v2/service/sts v1.43.4
 	github.com/sahilm/fuzzy v0.1.3
 )
