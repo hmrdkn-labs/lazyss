@@ -89,3 +89,11 @@ Use the read-only readiness audit before requesting release approval:
 ```sh
 make release-readiness
 ```
+
+Release readiness can also emit JSON and Markdown evidence for a release issue:
+
+```sh
+LAZYSS_RELEASE_READINESS_JSON=release-readiness.json \
+LAZYSS_RELEASE_READINESS_MARKDOWN=release-readiness.md \
+make release-readiness
+```

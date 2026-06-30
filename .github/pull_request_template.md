@@ -26,6 +26,8 @@ make smoke-local
 ```
 
 For release-affecting changes, also link the release-candidate workflow run.
+If the release-candidate workflow is not selected by changed files, apply the
+`release-candidate` label before merge.
 Before requesting release approval, include `make release-readiness` output.
 
 ## Secret/State Safety

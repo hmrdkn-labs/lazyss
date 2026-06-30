@@ -31,22 +31,34 @@ without explaining the reason in the PR.
 Fast CI runs on pull requests and pushes to `main`. Branch protection should use
 these checks as the required merge gate:
 
-- format check
-- vet
-- race tests with coverage artifact
-- coverage summary
-- linux `go build ./cmd/lazyss`
-- safe local binary/TUI smoke with `make smoke-local`
-- pinned `golangci-lint`
-- `govulncheck`
+- `format`: `gofmt -l .`
+- `vet`: `go vet ./...`
+- `test`: race tests, coverage profile, coverage summary, coverage artifact
+- `build`: linux `go build ./cmd/lazyss`
+- `smoke-local`: safe local binary/TUI smoke with `make smoke-local`
+- `lint`: pinned `golangci-lint`
+- `govulncheck`: Go vulnerability scan
 
-Fast CI cancels superseded runs for the same pull request or branch.
+Fast CI jobs run independently so format, vet, lint, vulnerability, build, test,
+and smoke failures are visible as separate required checks. Each job has a
+timeout and uses Go module caching through `actions/setup-go`.
+
+Fast CI cancels superseded runs for the same pull request or branch. For branch
+protection, require the named checks above instead of a broad workflow-level
+status.
 
 ## Release Candidate Workflow
 
-The release-candidate workflow runs on release-automation pull requests,
-relevant `main` pushes, and manual `workflow_dispatch`. It is the heavier
-release proof gate:
+The release-candidate workflow has a lightweight `classify` job. The heavy
+release proof jobs run when:
+
+- the event is a relevant `main` push
+- the workflow is started manually with `workflow_dispatch`
+- a pull request changes release-relevant files such as workflows, GoReleaser
+  config, `Makefile`, `cmd/`, `internal/`, Go modules, or `scripts/`
+- a pull request has the `release-candidate` or `release` label
+
+The release proof jobs are:
 
 - linux/darwin/windows amd64/arm64 build matrix
 - GoReleaser snapshot validation
@@ -55,6 +67,9 @@ release proof gate:
 The Homebrew readiness audit is allowed to report approval/external-state
 blockers before tap approval. Local configuration failures still fail the
 release-candidate workflow.
+
+Use the `release-candidate` label when a docs-only or policy-only PR still needs
+the heavier release proof before merge.
 
 ## Release Candidate Gates
 
@@ -70,3 +85,15 @@ Before tagging `v0.1.0`, verify:
 - AWS degraded setup does not hide SSH inventory
 - one AWS SSM-ready instance can be inventoried and launched
 - state permissions and failed connection history remain correct
+
+For release issues or audits that need machine-readable evidence, generate
+structured reports without changing release state:
+
+```sh
+LAZYSS_RELEASE_READINESS_JSON=release-readiness.json \
+LAZYSS_RELEASE_READINESS_MARKDOWN=release-readiness.md \
+make release-readiness
+```
+
+Do not commit those generated report files unless a release issue explicitly
+requires an attached artifact.
