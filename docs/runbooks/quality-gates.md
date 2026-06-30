@@ -10,6 +10,13 @@ go tool cover -func=coverage.out | tail -1
 go build ./cmd/lazyss
 ```
 
+Run the safe local binary/TUI smoke when the change affects runtime behavior,
+release packaging, or the release candidate checklist:
+
+```sh
+make smoke-local
+```
+
 Current report-only coverage baseline:
 
 ```txt
@@ -36,6 +43,7 @@ GitHub CI must pass:
 
 Before tagging `v0.1.0`, verify:
 
+- `make smoke-local` passes on the release candidate checkout
 - `lazyss --version` prints the intended release version
 - `lazyss doctor` runs without leaking credentials
 - SSH inventory reads config without mutating it
