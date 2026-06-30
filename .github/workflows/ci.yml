@@ -16,6 +16,10 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+      - name: Install smoke test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y expect
       - name: Format check
         run: |
           out=$(gofmt -l .)
@@ -30,6 +34,8 @@ jobs:
         run: go test -race -coverprofile=coverage.out ./...
       - name: Coverage summary
         run: go tool cover -func=coverage.out | tail -1
+      - name: Local binary and TUI smoke
+        run: make smoke-local
       - name: Upload coverage
         uses: actions/upload-artifact@v7
         with:

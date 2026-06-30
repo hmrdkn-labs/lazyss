@@ -130,6 +130,7 @@ CI should become at least as strong as `lazyssm`:
 - Race tests with coverage: `go test -race -coverprofile=coverage.out ./...`
 - Coverage summary: `go tool cover -func=coverage.out | tail -1`
 - Coverage artifact upload
+- Safe local binary/TUI smoke: `make smoke-local`
 - `golangci-lint` using `.golangci.yml`, with the action pinned to
   `version: v2.12.2` like `lazyssm`
 - `govulncheck`

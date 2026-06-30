@@ -34,6 +34,7 @@ GitHub CI must pass:
 - vet
 - race tests with coverage artifact
 - coverage summary
+- safe local binary/TUI smoke with `make smoke-local`
 - pinned `golangci-lint`
 - `govulncheck`
 - linux/darwin/windows amd64/arm64 build matrix

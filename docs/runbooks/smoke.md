@@ -15,8 +15,9 @@ Run the safe local smoke gate before opening a release PR:
 make smoke-local
 ```
 
-This gate requires `expect` because it starts the TUI in a pseudo-terminal. It
-does not use real SSH or AWS targets. It verifies:
+This gate requires `expect` because it starts the TUI in a pseudo-terminal. CI
+installs `expect` on the Ubuntu runner before running the hosted smoke step. The
+gate does not use real SSH or AWS targets. It verifies:
 
 - `make build` produces a runnable binary
 - `lazyss --version` returns a LazySS version string
