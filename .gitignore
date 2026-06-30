@@ -1,0 +1,8 @@
+/lazyssh/
+/lazyssm/
+/bin/
+/dist/
+/lazyss
+/coverage.out
+/coverage.html
+.DS_Store

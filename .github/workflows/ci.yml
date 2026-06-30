@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Format check
+        run: |
+          out=$(gofmt -l .)
+          if [ -n "$out" ]; then
+            echo "not formatted:"
+            echo "$out"
+            exit 1
+          fi
+      - name: Vet
+        run: go vet ./...
+      - name: Race tests
+        run: go test -race ./...
+      - name: Build
+        run: go build ./cmd/lazyss
+      - name: Govulncheck
+        uses: golang/govulncheck-action@v1
+
+  build-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: go build ./cmd/lazyss

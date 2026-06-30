@@ -1,0 +1,43 @@
+BINARY := lazyss
+PKG := ./cmd/lazyss
+BINDIR := bin
+VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+LDFLAGS := -s -w -X main.version=$(VERSION)
+
+.DEFAULT_GOAL := build
+
+.PHONY: build
+build:
+	@mkdir -p $(BINDIR)
+	go build -ldflags "$(LDFLAGS)" -o $(BINDIR)/$(BINARY) $(PKG)
+
+.PHONY: run
+run:
+	go run $(PKG)
+
+.PHONY: doctor
+doctor:
+	go run $(PKG) doctor
+
+.PHONY: test
+test:
+	go test -race ./...
+
+.PHONY: vet
+vet:
+	go vet ./...
+
+.PHONY: fmt
+fmt:
+	gofmt -w .
+
+.PHONY: fmt-check
+fmt-check:
+	@out=$$(gofmt -l .); if [ -n "$$out" ]; then echo "not formatted:"; echo "$$out"; exit 1; fi
+
+.PHONY: check
+check: fmt-check vet test build
+
+.PHONY: clean
+clean:
+	rm -rf $(BINDIR) coverage.out coverage.html
