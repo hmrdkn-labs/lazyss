@@ -13,7 +13,7 @@ go build ./cmd/lazyss
 Current report-only coverage baseline:
 
 ```txt
-total: (statements) 57.6%
+total: (statements) 57.7%
 ```
 
 Coverage is a signal for V1, not a hard percentage gate. Do not lower coverage
