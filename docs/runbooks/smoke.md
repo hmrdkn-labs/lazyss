@@ -53,3 +53,36 @@ output and does not leak credentials.
 3. Inspect state/log output and confirm no private keys, tokens, SSO cache data,
    or environment dumps are written.
 4. Confirm local state file permissions are `0600`.
+
+## Release Evidence File
+
+Before `v0.1.0`, record the live SSH and AWS SSM smoke result in a local JSON
+file that is not committed:
+
+```sh
+cp docs/runbooks/live-smoke-evidence.example.json live-smoke-evidence.json
+```
+
+Fill in only non-secret labels:
+
+- `target_version`: release version, for example `v0.1.0`
+- `commit`: full commit SHA that was smoked
+- `checked_at`: ISO-8601 timestamp
+- `ssh.host_label`: SSH config alias or redacted host label
+- `aws_ssm.profile_label`: non-secret profile label
+- `aws_ssm.region`: AWS region
+- `aws_ssm.target_label`: managed-node ID or redacted target label
+
+Do not include host passwords, private keys, AWS credentials, SSO cache data,
+GitHub tokens, environment dumps, private release asset URLs, or full terminal
+logs.
+
+Validate the evidence with the release readiness audit:
+
+```sh
+LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json ./scripts/release-readiness.sh
+```
+
+The readiness audit checks that the evidence matches the current commit and
+target release version, includes passed SSH and AWS SSM smoke fields, records
+the required safety checks, and does not contain obvious credential material.

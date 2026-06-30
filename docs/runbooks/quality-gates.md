@@ -75,7 +75,7 @@ the heavier release proof before merge.
 
 Before tagging `v0.1.0`, verify:
 
-- `make release-readiness` exits `0`
+- `LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json ./scripts/release-readiness.sh` exits `0`
 - `make smoke-local` passes on the release candidate checkout
 - release-candidate workflow has passed for the release candidate commit
 - `lazyss --version` prints the intended release version
@@ -90,10 +90,14 @@ For release issues or audits that need machine-readable evidence, generate
 structured reports without changing release state:
 
 ```sh
+LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json \
 LAZYSS_RELEASE_READINESS_JSON=release-readiness.json \
 LAZYSS_RELEASE_READINESS_MARKDOWN=release-readiness.md \
-make release-readiness
+./scripts/release-readiness.sh
 ```
 
-Do not commit those generated report files unless a release issue explicitly
-requires an attached artifact.
+Do not commit generated readiness reports or live smoke evidence files unless a
+release issue explicitly requires an attached artifact. The root-level
+`live-smoke-evidence.json`, `release-readiness.json`, and
+`release-readiness.md` filenames are ignored locally to reduce accidental
+commits.

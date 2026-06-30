@@ -87,13 +87,19 @@ smoke tests pass.
 Use the read-only readiness audit before requesting release approval:
 
 ```sh
-make release-readiness
+LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json ./scripts/release-readiness.sh
 ```
 
 Release readiness can also emit JSON and Markdown evidence for a release issue:
 
 ```sh
+LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json \
 LAZYSS_RELEASE_READINESS_JSON=release-readiness.json \
 LAZYSS_RELEASE_READINESS_MARKDOWN=release-readiness.md \
-make release-readiness
+./scripts/release-readiness.sh
 ```
+
+Create `live-smoke-evidence.json` from
+`docs/runbooks/live-smoke-evidence.example.json` after the real SSH and AWS SSM
+smoke checks pass. Do not put secrets, private keys, token values, SSO cache
+data, environment dumps, or full terminal logs in the evidence file.

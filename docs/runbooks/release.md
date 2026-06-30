@@ -16,7 +16,7 @@ Run the read-only Homebrew readiness audit before requesting tap or release
 approval:
 
 ```sh
-make homebrew-readiness
+./scripts/homebrew-readiness.sh
 ```
 
 `exit 2` means the local config is ready but approval or external state is still
@@ -26,15 +26,16 @@ Run the full read-only release readiness audit before requesting `v0.1.0`
 approval:
 
 ```sh
-make release-readiness
+LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json ./scripts/release-readiness.sh
 ```
 
 For a release issue, generate structured evidence:
 
 ```sh
+LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json \
 LAZYSS_RELEASE_READINESS_JSON=release-readiness.json \
 LAZYSS_RELEASE_READINESS_MARKDOWN=release-readiness.md \
-make release-readiness
+./scripts/release-readiness.sh
 ```
 
 This audit checks the current branch, clean worktree, repo privacy, latest fast
@@ -49,10 +50,19 @@ Exit codes:
 - `1`: local release configuration or tool setup has a fixable failure.
 - `2`: approval, external-state, or live-smoke blockers remain.
 
+The `make release-readiness` target is a convenience wrapper for local human
+use, but call the script directly when exact exit-code handling matters.
+
 The JSON and Markdown report environment variables are optional. They write the
 same check levels and messages that appear in the terminal output. Do not place
 token values, credential dumps, SSH keys, AWS SSO cache data, or private release
 asset URLs in these reports.
+
+Live smoke proof must be a local JSON file referenced by
+`LAZYSS_LIVE_SMOKE_EVIDENCE`. Use
+`docs/runbooks/live-smoke-evidence.example.json` as the starting schema. The
+readiness audit ignores legacy one-shot smoke environment flags for release
+approval because they are not auditable.
 
 ## Local Gates
 

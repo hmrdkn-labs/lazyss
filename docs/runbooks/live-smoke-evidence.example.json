@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "target_version": "v0.1.0",
+  "commit": "0000000000000000000000000000000000000000",
+  "checked_at": "2026-07-01T00:00:00Z",
+  "operator": "local-release-operator",
+  "ssh": {
+    "passed": true,
+    "host_label": "ssh-config-alias-or-redacted-label",
+    "config_mutated": false,
+    "health_checked": true,
+    "session_launch_passed": true
+  },
+  "aws_ssm": {
+    "passed": true,
+    "profile_label": "aws-profile-label",
+    "region": "ap-southeast-1",
+    "target_label": "ssm-managed-node-or-redacted-label",
+    "doctor_passed": true,
+    "inventory_passed": true,
+    "session_launch_passed": true,
+    "degraded_ssh_preserved": true
+  },
+  "safety": {
+    "no_secrets_observed": true,
+    "state_mode_0600": true,
+    "failed_connection_preserved_last_success": true
+  },
+  "notes": "Use non-secret labels only. Do not include host passwords, private keys, AWS credentials, SSO cache data, GitHub tokens, env dumps, or private release asset URLs."
+}
