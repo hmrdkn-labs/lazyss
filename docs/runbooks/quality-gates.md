@@ -60,6 +60,7 @@ release-candidate workflow.
 
 Before tagging `v0.1.0`, verify:
 
+- `make release-readiness` exits `0`
 - `make smoke-local` passes on the release candidate checkout
 - release-candidate workflow has passed for the release candidate commit
 - `lazyss --version` prints the intended release version

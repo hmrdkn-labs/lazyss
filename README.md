@@ -83,3 +83,9 @@ make smoke-local
 `v0.1.0` must not be tagged until local gates, fast hosted CI, the
 release-candidate workflow, Homebrew private cask proof, and real SSH/AWS SSM
 smoke tests pass.
+
+Use the read-only readiness audit before requesting release approval:
+
+```sh
+make release-readiness
+```
