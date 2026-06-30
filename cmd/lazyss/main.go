@@ -61,25 +61,40 @@ func parseArgs(args []string) (cliConfig, string, error) {
 	if err == nil {
 		cfg.SSHConfig = filepath.Join(home, ".ssh", "config")
 	}
-	fs := flag.NewFlagSet("lazyss", flag.ContinueOnError)
-	fs.StringVar(&cfg.Source, "source", "all", "inventory source: all, ssh, aws")
-	fs.StringVar(&cfg.SSHConfig, "ssh-config", cfg.SSHConfig, "SSH config path")
-	fs.StringVar(&cfg.AWSProfile, "aws-profile", "", "AWS profile")
-	fs.StringVar(&cfg.AWSRegion, "aws-region", "", "AWS region")
-	fs.BoolVar(&cfg.Version, "version", false, "print version")
-	if err := fs.Parse(args); err != nil {
+	remaining, err := parseFlagSegment(&cfg, args)
+	if err != nil {
 		return cfg, "", err
+	}
+	command := ""
+	if len(remaining) > 0 {
+		command = remaining[0]
+		trailing, err := parseFlagSegment(&cfg, remaining[1:])
+		if err != nil {
+			return cfg, "", err
+		}
+		if len(trailing) > 0 {
+			return cfg, "", fmt.Errorf("unexpected argument %q", trailing[0])
+		}
 	}
 	switch cfg.Source {
 	case "all", "ssh", "aws":
 	default:
 		return cfg, "", fmt.Errorf("invalid --source %q", cfg.Source)
 	}
-	command := ""
-	if fs.NArg() > 0 {
-		command = fs.Arg(0)
-	}
 	return cfg, command, nil
+}
+
+func parseFlagSegment(cfg *cliConfig, args []string) ([]string, error) {
+	fs := flag.NewFlagSet("lazyss", flag.ContinueOnError)
+	fs.StringVar(&cfg.Source, "source", cfg.Source, "inventory source: all, ssh, aws")
+	fs.StringVar(&cfg.SSHConfig, "ssh-config", cfg.SSHConfig, "SSH config path")
+	fs.StringVar(&cfg.AWSProfile, "aws-profile", cfg.AWSProfile, "AWS profile")
+	fs.StringVar(&cfg.AWSRegion, "aws-region", cfg.AWSRegion, "AWS region")
+	fs.BoolVar(&cfg.Version, "version", cfg.Version, "print version")
+	if err := fs.Parse(args); err != nil {
+		return nil, err
+	}
+	return fs.Args(), nil
 }
 
 func runTUI(cfg cliConfig) int {
