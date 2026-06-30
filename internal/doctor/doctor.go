@@ -1,3 +1,4 @@
+// Package doctor reports local tool and cloud credential readiness.
 package doctor
 
 import (
@@ -5,6 +6,7 @@ import (
 	"os/exec"
 )
 
+// Check is one doctor readiness result.
 type Check struct {
 	Name   string
 	OK     bool
@@ -12,12 +14,14 @@ type Check struct {
 	Fix    string
 }
 
+// Doctor runs local preflight checks.
 type Doctor struct {
 	LookPath func(string) (string, error)
 	Identity func(context.Context) error
 	Region   string
 }
 
+// Run executes doctor checks and returns all results.
 func (d Doctor) Run(ctx context.Context) []Check {
 	lookPath := d.LookPath
 	if lookPath == nil {

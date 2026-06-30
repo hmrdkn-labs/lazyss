@@ -1,3 +1,4 @@
+// Package main wires the LazySS command-line entrypoint.
 package main
 
 import (

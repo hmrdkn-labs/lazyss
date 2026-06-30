@@ -1,10 +1,11 @@
+// Package sshconfig adapts OpenSSH config, direct SSH launch, and TCP checks to
+// LazySS ports.
 package sshconfig
 
 import (
 	"bufio"
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"os"
 	"os/exec"
@@ -17,22 +18,26 @@ import (
 	"github.com/hamardikan/lazyss/internal/ports"
 )
 
+// Inventory reads machines from an OpenSSH config file without mutating it.
 type Inventory struct {
 	path string
 }
 
+// NewInventory creates an SSH config inventory adapter.
 func NewInventory(path string) Inventory {
 	return Inventory{path: path}
 }
 
+// ProviderName returns the app-level SSH provider key.
 func (i Inventory) ProviderName() string { return "ssh" }
 
+// ListMachines maps SSH host entries to provider-neutral machines.
 func (i Inventory) ListMachines(_ context.Context, _ app.InventoryQuery) ([]domain.Machine, domain.ProviderStatus, error) {
 	file, err := os.Open(i.path)
 	if err != nil {
 		return nil, domain.ProviderStatus{Name: "ssh", Status: domain.ProviderDegraded, Message: err.Error()}, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	hosts := parse(fileScanner{Scanner: bufio.NewScanner(file)})
 	machines := make([]domain.Machine, 0, len(hosts))
 	for _, h := range hosts {
@@ -118,15 +123,18 @@ func parse(sc scanner) []hostBlock {
 	return out
 }
 
+// Runner runs SSH commands for direct sessions and config resolution.
 type Runner interface {
 	RunInteractive(ctx context.Context, executable string, args []string) error
 	RunOutput(ctx context.Context, executable string, args []string) ([]byte, error)
 }
 
+// Connector builds and runs direct SSH sessions.
 type Connector struct {
 	runner Runner
 }
 
+// NewConnector creates a direct SSH connector.
 func NewConnector(runner Runner, _ any) Connector {
 	if runner == nil {
 		runner = osRunner{}
@@ -134,10 +142,12 @@ func NewConnector(runner Runner, _ any) Connector {
 	return Connector{runner: runner}
 }
 
+// Supports reports whether this connector can launch direct SSH.
 func (c Connector) Supports(machine domain.Machine, method domain.AccessMethod) bool {
 	return method == domain.AccessSSH && (machine.Provider == "" || machine.Provider == domain.ProviderSSH || hasMethod(machine, method))
 }
 
+// BuildCommand builds an `ssh <target>` argv.
 func (c Connector) BuildCommand(machine domain.Machine, method domain.AccessMethod, _ app.ConnectOptions) (ports.CommandSpec, error) {
 	if !c.Supports(machine, method) {
 		return ports.CommandSpec{}, errors.New("ssh connector does not support method")
@@ -149,20 +159,24 @@ func (c Connector) BuildCommand(machine domain.Machine, method domain.AccessMeth
 	return ports.CommandSpec{Executable: "ssh", Args: []string{target}}, nil
 }
 
+// RunInteractive runs the SSH command interactively.
 func (c Connector) RunInteractive(ctx context.Context, cmd ports.CommandSpec) (app.SessionResult, error) {
 	return app.SessionResult{}, c.runner.RunInteractive(ctx, cmd.Executable, cmd.Args)
 }
 
+// Dialer checks TCP readiness.
 type Dialer interface {
 	DialContext(ctx context.Context, network, address string) error
 }
 
+// Checker resolves SSH targets and checks TCP readiness.
 type Checker struct {
 	runner  Runner
 	dialer  Dialer
 	timeout time.Duration
 }
 
+// NewChecker creates an SSH health checker.
 func NewChecker(runner Runner, dialer Dialer, timeout time.Duration) Checker {
 	if runner == nil {
 		runner = osRunner{}
@@ -176,10 +190,12 @@ func NewChecker(runner Runner, dialer Dialer, timeout time.Duration) Checker {
 	return Checker{runner: runner, dialer: dialer, timeout: timeout}
 }
 
+// Supports reports whether this checker can evaluate direct SSH.
 func (c Checker) Supports(_ domain.Machine, method domain.AccessMethod) bool {
 	return method == domain.AccessSSH
 }
 
+// Check resolves an SSH target and checks its TCP port.
 func (c Checker) Check(ctx context.Context, machine domain.Machine, method domain.AccessMethod) domain.HealthObservation {
 	start := time.Now()
 	host, port := c.resolve(ctx, machine)
@@ -274,14 +290,4 @@ func hasMethod(machine domain.Machine, method domain.AccessMethod) bool {
 		}
 	}
 	return false
-}
-
-func targetLabel(user, host string, port int) string {
-	if user != "" {
-		host = user + "@" + host
-	}
-	if port > 0 && port != 22 {
-		host = fmt.Sprintf("%s:%d", host, port)
-	}
-	return host
 }

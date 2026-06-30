@@ -1,3 +1,5 @@
+// Package awsssm adapts AWS SSM and EC2 APIs to LazySS inventory, health, and
+// connection ports.
 package awsssm
 
 import (
@@ -19,14 +21,17 @@ import (
 	"github.com/hamardikan/lazyss/internal/ports"
 )
 
+// SSMAPI is the subset of AWS SSM used by the inventory adapter.
 type SSMAPI interface {
 	DescribeInstanceInformation(ctx context.Context, in *ssm.DescribeInstanceInformationInput, optFns ...func(*ssm.Options)) (*ssm.DescribeInstanceInformationOutput, error)
 }
 
+// EC2API is the subset of AWS EC2 used by the inventory adapter.
 type EC2API interface {
 	DescribeInstances(ctx context.Context, in *ec2.DescribeInstancesInput, optFns ...func(*ec2.Options)) (*ec2.DescribeInstancesOutput, error)
 }
 
+// Inventory lists AWS SSM managed nodes enriched with EC2 metadata.
 type Inventory struct {
 	account string
 	region  string
@@ -35,14 +40,17 @@ type Inventory struct {
 	ec2     EC2API
 }
 
+// NewInventory creates an AWS inventory from explicit clients.
 func NewInventory(account, region string, ssmClient SSMAPI, ec2Client EC2API) Inventory {
 	return Inventory{account: account, region: region, ssm: ssmClient, ec2: ec2Client}
 }
 
+// NewInventoryWithProfile creates an AWS inventory with profile metadata.
 func NewInventoryWithProfile(account, region, profile string, ssmClient SSMAPI, ec2Client EC2API) Inventory {
 	return Inventory{account: account, region: region, profile: profile, ssm: ssmClient, ec2: ec2Client}
 }
 
+// LoadInventory loads AWS config and creates an inventory adapter.
 func LoadInventory(ctx context.Context, profile, region string) (Inventory, error) {
 	var opts []func(*config.LoadOptions) error
 	if profile != "" {
@@ -63,8 +71,10 @@ func LoadInventory(ctx context.Context, profile, region string) (Inventory, erro
 	return NewInventoryWithProfile(account, cfg.Region, profile, ssm.NewFromConfig(cfg), ec2.NewFromConfig(cfg)), nil
 }
 
+// ProviderName returns the app-level AWS provider key.
 func (i Inventory) ProviderName() string { return "aws" }
 
+// ListMachines returns SSM managed nodes as provider-neutral machines.
 func (i Inventory) ListMachines(ctx context.Context, q app.InventoryQuery) ([]domain.Machine, domain.ProviderStatus, error) {
 	if i.ssm == nil || i.ec2 == nil {
 		return nil, domain.ProviderStatus{Name: "aws", Status: domain.ProviderDegraded, Message: "aws clients not configured"}, errors.New("aws clients not configured")
@@ -229,15 +239,18 @@ func nonempty(v, fallback string) string {
 
 func zeroTime() (t time.Time) { return t }
 
+// Runner runs AWS CLI commands for interactive SSM sessions.
 type Runner interface {
 	RunInteractive(ctx context.Context, executable string, args []string) error
 	RunOutput(ctx context.Context, executable string, args []string) ([]byte, error)
 }
 
+// Connector builds and runs AWS SSM shell sessions.
 type Connector struct {
 	runner Runner
 }
 
+// NewConnector creates an AWS SSM connector.
 func NewConnector(runner Runner) Connector {
 	if runner == nil {
 		runner = osRunner{}
@@ -245,10 +258,12 @@ func NewConnector(runner Runner) Connector {
 	return Connector{runner: runner}
 }
 
+// Supports reports whether this connector can launch the requested method.
 func (c Connector) Supports(machine domain.Machine, method domain.AccessMethod) bool {
 	return method == domain.AccessAWSSSMShell && (machine.Provider == domain.ProviderAWS || hasMethod(machine, method))
 }
 
+// BuildCommand builds an `aws ssm start-session` argv.
 func (c Connector) BuildCommand(machine domain.Machine, method domain.AccessMethod, _ app.ConnectOptions) (ports.CommandSpec, error) {
 	if !c.Supports(machine, method) {
 		return ports.CommandSpec{}, errors.New("aws ssm connector does not support method")
@@ -267,16 +282,20 @@ func (c Connector) BuildCommand(machine domain.Machine, method domain.AccessMeth
 	return ports.CommandSpec{Executable: "aws", Args: args}, nil
 }
 
+// RunInteractive runs the AWS SSM session command.
 func (c Connector) RunInteractive(ctx context.Context, cmd ports.CommandSpec) (app.SessionResult, error) {
 	return app.SessionResult{}, c.runner.RunInteractive(ctx, cmd.Executable, cmd.Args)
 }
 
+// Checker turns AWS inventory readiness into health observations.
 type Checker struct{}
 
+// Supports reports whether this checker can evaluate the requested method.
 func (Checker) Supports(machine domain.Machine, method domain.AccessMethod) bool {
 	return method == domain.AccessAWSSSMShell && machine.Provider == domain.ProviderAWS
 }
 
+// Check returns the latest AWS SSM health known from inventory.
 func (Checker) Check(_ context.Context, machine domain.Machine, method domain.AccessMethod) domain.HealthObservation {
 	obs := machine.Health
 	if obs.MachineID == "" {

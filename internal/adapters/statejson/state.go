@@ -1,3 +1,4 @@
+// Package statejson persists LazySS local operator memory as atomic JSON.
 package statejson
 
 import (
@@ -15,6 +16,7 @@ import (
 
 const defaultHistoryLimit = 20
 
+// Store reads and writes local machine overlays and history.
 type Store struct {
 	path         string
 	historyLimit int
@@ -25,6 +27,7 @@ type stateFile struct {
 	Overlays map[domain.MachineID]domain.MachineOverlay `json:"overlays"`
 }
 
+// New creates a JSON state store.
 func New(path string, historyLimit int) *Store {
 	if historyLimit <= 0 {
 		historyLimit = defaultHistoryLimit
@@ -32,6 +35,7 @@ func New(path string, historyLimit int) *Store {
 	return &Store{path: path, historyLimit: historyLimit}
 }
 
+// DefaultPath returns the default LazySS state path under the user config dir.
 func DefaultPath() (string, error) {
 	dir, err := os.UserConfigDir()
 	if err != nil {
@@ -40,6 +44,7 @@ func DefaultPath() (string, error) {
 	return filepath.Join(dir, "lazyss", "state.json"), nil
 }
 
+// LoadOverlay returns local memory for one machine.
 func (s *Store) LoadOverlay(_ context.Context, id domain.MachineID) (domain.MachineOverlay, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -54,6 +59,7 @@ func (s *Store) LoadOverlay(_ context.Context, id domain.MachineID) (domain.Mach
 	return overlay, nil
 }
 
+// SaveOverlay persists local memory for one machine.
 func (s *Store) SaveOverlay(_ context.Context, overlay domain.MachineOverlay) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -65,6 +71,7 @@ func (s *Store) SaveOverlay(_ context.Context, overlay domain.MachineOverlay) er
 	return s.save(st)
 }
 
+// RecordHealth records the latest health observation and capped history.
 func (s *Store) RecordHealth(_ context.Context, obs domain.HealthObservation) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -81,6 +88,7 @@ func (s *Store) RecordHealth(_ context.Context, obs domain.HealthObservation) er
 	return s.save(st)
 }
 
+// RecordSession records a connection attempt and capped history.
 func (s *Store) RecordSession(_ context.Context, event domain.SessionEvent) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

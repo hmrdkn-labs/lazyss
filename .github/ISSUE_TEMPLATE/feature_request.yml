@@ -1,0 +1,46 @@
+name: Feature request
+description: Propose a LazySS product or operator workflow improvement
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Operator problem
+      description: What daily workflow pain should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the desired behavior and user-facing flow.
+    validations:
+      required: true
+  - type: dropdown
+    id: boundary
+    attributes:
+      label: Likely DDD boundary
+      options:
+        - Machine Inventory
+        - Access
+        - Health
+        - Operator Memory
+        - Cockpit
+        - Preflight
+        - Release/SDLC
+        - Unknown
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Test ideas
+      description: What should prove this works?
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety
+      options:
+        - label: This request does not require storing private keys, AWS credentials, tokens, or environment dumps.
+          required: true
