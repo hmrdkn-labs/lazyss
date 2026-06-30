@@ -153,6 +153,13 @@ loop:
 - Local state is written under the user config directory with mode `0600`.
 - Failed connection attempts do not update last successful connection state.
 
+The safe automated subset is `make smoke-local`. It builds the binary, checks
+the version command, runs `lazyss doctor` with EC2 metadata disabled, starts the
+TUI in a pseudo-terminal with a temporary SSH config, verifies the temp SSH row
+renders, and confirms the temp SSH config was not mutated. Live direct SSH and
+AWS SSM session launch remain release-candidate gates because they need approved
+real targets and valid operator credentials.
+
 ### Release Gates
 
 Release should be tag-driven:

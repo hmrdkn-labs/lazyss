@@ -52,6 +52,13 @@ fmt-check:
 .PHONY: check
 check: fmt-check vet test build
 
+.PHONY: smoke-local
+smoke-local:
+	./scripts/smoke-local.sh
+
+.PHONY: smoke
+smoke: smoke-local
+
 .PHONY: clean
 clean:
 	rm -rf $(BINDIR) coverage.out coverage.html

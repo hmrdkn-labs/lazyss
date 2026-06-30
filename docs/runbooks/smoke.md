@@ -7,14 +7,37 @@ make build
 ./bin/lazyss --version
 ```
 
-## Direct SSH
+## Automated Local Smoke
+
+Run the safe local smoke gate before opening a release PR:
+
+```sh
+make smoke-local
+```
+
+This gate requires `expect` because it starts the TUI in a pseudo-terminal. It
+does not use real SSH or AWS targets. It verifies:
+
+- `make build` produces a runnable binary
+- `lazyss --version` returns a LazySS version string
+- `lazyss doctor` runs with EC2 metadata disabled and does not print credential
+  material
+- the TUI renders a temporary SSH inventory row
+- the temporary SSH config is not mutated
+
+`lazyss doctor` may exit non-zero during this smoke when AWS credentials,
+`session-manager-plugin`, or other local prerequisites are missing. That is
+acceptable for the local smoke as long as the command returns structured doctor
+output and does not leak credentials.
+
+## Release Candidate Direct SSH
 
 1. Add or use an existing host in `~/.ssh/config`.
 2. Run `./bin/lazyss --source ssh`.
 3. Select the host, press `g`, then press `Enter`.
 4. Confirm `~/.ssh/config` was not modified.
 
-## AWS SSM
+## Release Candidate AWS SSM
 
 1. Ensure AWS CLI and `session-manager-plugin` are installed.
 2. Run `./bin/lazyss doctor --aws-profile <profile> --aws-region <region>`.
