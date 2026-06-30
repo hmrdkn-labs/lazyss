@@ -58,6 +58,7 @@ go vet ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out | tail -1
 go build ./cmd/lazyss
+make smoke-local
 ```
 
 ## Release Safety

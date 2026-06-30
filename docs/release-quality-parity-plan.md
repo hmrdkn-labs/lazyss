@@ -11,8 +11,9 @@ Current evidence before this plan:
 
 - Private repo: `hamardikan/lazyss`.
 - Local binary build works: `make build` produces `bin/lazyss`.
-- GitHub CI on `main` is green, including format, vet, race tests, build,
-  govulncheck, and Linux/macOS/Windows amd64/arm64 build matrix.
+- GitHub fast CI on `main` is green, including format, vet, race tests, build,
+  safe local smoke, lint, and govulncheck. Release-candidate CI covers the
+  Linux/macOS/Windows amd64/arm64 build matrix and GoReleaser snapshot.
 - Current code already has the intended DDD package layout, app services,
   adapters, TUI model, doctor command, and focused tests. Release hardening must
   preserve those boundaries instead of replacing them with packaging-only work.
@@ -124,19 +125,31 @@ Recommended V1 release posture:
 
 ### CI Quality Gates
 
-CI should become at least as strong as `lazyssm`:
+CI should be split into fast PR feedback and heavier release-candidate proof.
+
+Fast CI runs on pull requests and pushes to `main`:
 
 - Format check: `gofmt -l .`
 - Vet: `go vet ./...`
 - Race tests with coverage: `go test -race -coverprofile=coverage.out ./...`
 - Coverage summary: `go tool cover -func=coverage.out | tail -1`
 - Coverage artifact upload
+- Linux build: `go build ./cmd/lazyss`
 - Safe local binary/TUI smoke: `make smoke-local`
 - `golangci-lint` using `.golangci.yml`, with the action pinned to
   `version: v2.12.2` like `lazyssm`
 - `govulncheck`
+
+Release-candidate CI runs on release-automation pull requests, relevant `main`
+pushes, and manual dispatch:
+
 - Cross-platform build matrix for linux/darwin/windows amd64/arm64
-- Optional but recommended: GoReleaser snapshot check on PRs
+- GoReleaser snapshot validation
+- Homebrew readiness audit, with approval/external-state blockers reported
+  without hiding local configuration failures
+
+Superseded workflow runs should be cancelled automatically per pull request or
+branch so CI does not waste time on stale commits.
 
 ### Runtime Quality Gates
 
