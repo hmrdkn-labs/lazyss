@@ -63,6 +63,10 @@ smoke: smoke-local
 homebrew-readiness:
 	./scripts/homebrew-readiness.sh
 
+.PHONY: branch-protection-readiness
+branch-protection-readiness:
+	./scripts/branch-protection-readiness.sh
+
 .PHONY: release-readiness
 release-readiness:
 	./scripts/release-readiness.sh

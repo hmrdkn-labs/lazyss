@@ -376,12 +376,24 @@ else
 fi
 rm -f /tmp/lazyss-repo.$$.out /tmp/lazyss-repo.$$.err
 
-if gh api "repos/$REPO/branches/main/protection" >/tmp/lazyss-protection.$$.out 2>/tmp/lazyss-protection.$$.err; then
-	ok "main branch protection is enabled"
-else
-	blocker "main branch protection is not enabled or not visible; owner approval is required before enabling it"
-fi
-rm -f /tmp/lazyss-protection.$$.out /tmp/lazyss-protection.$$.err
+set +e
+"$ROOT/scripts/branch-protection-readiness.sh" >/tmp/lazyss-branch-protection.$$.out 2>&1
+branch_protection_rc=$?
+set -e
+case "$branch_protection_rc" in
+	0)
+		ok "branch protection readiness passed"
+		;;
+	2)
+		blocker "branch protection readiness has approval/external-state blockers"
+		sed 's/^/  /' /tmp/lazyss-branch-protection.$$.out
+		;;
+	*)
+		fail "branch protection readiness failed with exit $branch_protection_rc"
+		sed 's/^/  /' /tmp/lazyss-branch-protection.$$.out
+		;;
+esac
+rm -f /tmp/lazyss-branch-protection.$$.out
 
 if gh pr list --repo "$REPO" --state open --json number --jq 'length' >/tmp/lazyss-open-prs.$$ 2>/tmp/lazyss-open-prs-err.$$; then
 	open_prs="$(cat /tmp/lazyss-open-prs.$$)"

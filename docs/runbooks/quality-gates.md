@@ -47,6 +47,13 @@ Fast CI cancels superseded runs for the same pull request or branch. For branch
 protection, require the named checks above instead of a broad workflow-level
 status.
 
+Validate the read-only branch protection state before requesting release
+approval:
+
+```sh
+./scripts/branch-protection-readiness.sh
+```
+
 ## Release Candidate Workflow
 
 The release-candidate workflow has a lightweight `classify` job. The heavy
