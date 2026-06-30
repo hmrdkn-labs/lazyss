@@ -30,7 +30,7 @@ Ask for explicit owner approval before any of these actions:
 Run the Homebrew readiness audit before requesting owner approval:
 
 ```sh
-make homebrew-readiness
+./scripts/homebrew-readiness.sh
 ```
 
 The audit is read-only. It checks local tools, `.goreleaser.yaml`, private repo
@@ -47,6 +47,8 @@ Exit codes:
 
 Before approval, `exit 2` is expected when `hamardikan/homebrew-tap`,
 `HOMEBREW_TAP_GITHUB_TOKEN`, or the local `hamardikan/tap` tap are missing.
+The `make homebrew-readiness` target is a convenience wrapper for local human
+use, but call the script directly when exact exit-code handling matters.
 
 ## Tap Setup
 

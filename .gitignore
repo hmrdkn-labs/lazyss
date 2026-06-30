@@ -5,4 +5,7 @@
 /lazyss
 /coverage.out
 /coverage.html
+/release-readiness.json
+/release-readiness.md
+/live-smoke-evidence.json
 .DS_Store

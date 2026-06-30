@@ -120,7 +120,7 @@ jobs:
       - name: Homebrew readiness audit
         run: |
           set +e
-          make homebrew-readiness
+          ./scripts/homebrew-readiness.sh
           rc=$?
           set -e
           echo "homebrew-readiness exit: $rc" >> "$GITHUB_STEP_SUMMARY"

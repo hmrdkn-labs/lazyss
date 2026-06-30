@@ -91,7 +91,7 @@ For private releases, the plan must support token-backed Homebrew download.
 Recommended V1 release posture:
 
 1. Keep `hamardikan/lazyss` private.
-2. Run `make homebrew-readiness` as a read-only Milestone 0 audit.
+2. Run `./scripts/homebrew-readiness.sh` as a read-only Milestone 0 audit.
 3. Create `hamardikan/homebrew-tap` private unless a public install path is
    desired.
 4. Add `HOMEBREW_TAP_GITHUB_TOKEN` or `GH_PAT` to `hamardikan/lazyss` secrets
