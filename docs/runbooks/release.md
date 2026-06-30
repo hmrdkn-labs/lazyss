@@ -4,7 +4,8 @@ Do not tag `v0.1.0` until every prerequisite below is verified.
 
 ## Prerequisites
 
-- `main` is green in GitHub CI.
+- `main` is green in fast GitHub CI.
+- The release-candidate workflow has passed for the release candidate commit.
 - GoReleaser snapshot has passed.
 - Homebrew private cask proof has passed or an approved fallback ADR exists.
 - Real smoke tests have passed for one SSH host and one AWS SSM-ready instance.
@@ -43,7 +44,8 @@ goreleaser release --clean --snapshot --skip=publish
 ```
 
 If `goreleaser` is not installed locally, use the GitHub Actions snapshot job
-and record the run URL in the release issue or PR.
+from the release-candidate workflow and record the run URL in the release issue
+or PR.
 
 ## Tag
 

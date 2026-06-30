@@ -75,9 +75,11 @@ go vet ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out | tail -1
 go build ./cmd/lazyss
+make smoke-local
 ```
 
 ## Release Status
 
-`v0.1.0` must not be tagged until local gates, hosted CI, GoReleaser snapshot,
-Homebrew private cask proof, and real SSH/AWS SSM smoke tests pass.
+`v0.1.0` must not be tagged until local gates, fast hosted CI, the
+release-candidate workflow, Homebrew private cask proof, and real SSH/AWS SSM
+smoke tests pass.

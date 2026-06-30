@@ -2,11 +2,15 @@ name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches: ["main"]
   pull_request:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -34,6 +38,8 @@ jobs:
         run: go test -race -coverprofile=coverage.out ./...
       - name: Coverage summary
         run: go tool cover -func=coverage.out | tail -1
+      - name: Build
+        run: go build ./cmd/lazyss
       - name: Local binary and TUI smoke
         run: make smoke-local
       - name: Upload coverage
@@ -63,40 +69,3 @@ jobs:
       - uses: golang/govulncheck-action@v1
         with:
           repo-checkout: false
-
-  build-matrix:
-    needs: [test, lint, govulncheck]
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        goos: [linux, darwin, windows]
-        goarch: [amd64, arm64]
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-      - name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-        run: go build ./cmd/lazyss
-
-  goreleaser-snapshot:
-    needs: [test, lint, govulncheck]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-      - uses: goreleaser/goreleaser-action@v7
-        with:
-          version: "~> v2"
-          install-only: true
-      - name: GoReleaser check
-        run: goreleaser check
-      - name: GoReleaser snapshot
-        run: goreleaser release --clean --snapshot --skip=publish
