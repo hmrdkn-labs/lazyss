@@ -1,0 +1,56 @@
+# LazySS Branch Protection Runbook
+
+Branch protection is an owner-approved release gate. Do not enable or modify
+GitHub branch protection without explicit approval.
+
+## Target State
+
+Protect `main` with:
+
+- pull requests required before merge
+- at least one pull request review required
+- branch must be up to date before merge
+- required fast CI checks:
+  - `format`
+  - `vet`
+  - `test`
+  - `build`
+  - `smoke-local`
+  - `lint`
+  - `govulncheck`
+- force pushes disabled
+- branch deletion disabled
+
+Warnings, not hard release blockers for V1:
+
+- administrators are not included in enforcement
+- linear history is not required
+
+## Read-Only Audit
+
+Run:
+
+```sh
+./scripts/branch-protection-readiness.sh
+```
+
+Exit codes:
+
+- `0`: branch protection matches the required LazySS release policy.
+- `1`: local tooling or API parsing failed.
+- `2`: branch protection is missing or incomplete and owner approval is needed.
+
+The script does not enable, modify, or delete branch protection. It only reads
+GitHub API state through `gh`.
+
+## Owner-Approved Setup
+
+After explicit owner approval, configure the policy in GitHub settings or with
+`gh api`. Do not include token values in commands, docs, PRs, or logs.
+
+After changing settings, rerun:
+
+```sh
+./scripts/branch-protection-readiness.sh
+LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json ./scripts/release-readiness.sh
+```

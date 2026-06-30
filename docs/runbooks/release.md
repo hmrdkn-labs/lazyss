@@ -8,6 +8,7 @@ Do not tag `v0.1.0` until every prerequisite below is verified.
 - The release-candidate workflow has passed for the release candidate commit.
 - GoReleaser snapshot has passed.
 - Homebrew private cask proof has passed or an approved fallback ADR exists.
+- Branch protection readiness has passed.
 - Real smoke tests have passed for one SSH host and one AWS SSM-ready instance.
 - No private keys, AWS credentials, GitHub tokens, SSO cache data, or
   environment dumps appear in docs, generated casks, state files, or logs.
@@ -43,6 +44,10 @@ CI, latest release-candidate workflow, branch protection, tag/release absence,
 Homebrew readiness, local AWS SSM prerequisite tooling, and live smoke evidence.
 It does not create repositories, secrets, branch protection, tags, releases, or
 public assets.
+
+Branch protection is validated by `./scripts/branch-protection-readiness.sh`.
+That audit requires protected fast CI checks, pull request reviews, up-to-date
+branches, and disabled force pushes/deletions.
 
 Exit codes:
 

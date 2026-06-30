@@ -513,12 +513,19 @@ Tasks:
    - require CI
    - require branch up to date
    - disallow force-push
-2. Add release checklist to `docs/runbooks/release.md`.
-3. Add issue labels and milestone `v0.2.0`.
+2. Validate the read-only target state with:
+
+   ```sh
+   ./scripts/branch-protection-readiness.sh
+   ```
+
+3. Add release checklist to `docs/runbooks/release.md`.
+4. Add issue labels and milestone `v0.2.0`.
 
 Acceptance:
 
 - `main` cannot be pushed directly.
+- `./scripts/branch-protection-readiness.sh` exits `0`.
 - Dependabot opens update PRs when dependencies drift.
 - Release checklist is actionable from a clean checkout.
 
