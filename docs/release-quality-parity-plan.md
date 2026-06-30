@@ -90,13 +90,14 @@ For private releases, the plan must support token-backed Homebrew download.
 Recommended V1 release posture:
 
 1. Keep `hamardikan/lazyss` private.
-2. Create `hamardikan/homebrew-tap` private unless a public install path is
+2. Run `make homebrew-readiness` as a read-only Milestone 0 audit.
+3. Create `hamardikan/homebrew-tap` private unless a public install path is
    desired.
-3. Add `HOMEBREW_TAP_GITHUB_TOKEN` or `GH_PAT` to `hamardikan/lazyss` secrets
+4. Add `HOMEBREW_TAP_GITHUB_TOKEN` or `GH_PAT` to `hamardikan/lazyss` secrets
    with access to both repos.
-4. Document `HOMEBREW_GITHUB_API_TOKEN` for local Homebrew installs from the
+5. Document `HOMEBREW_GITHUB_API_TOKEN` for local Homebrew installs from the
    private release.
-5. If private cask installation cannot be made reliable, keep the source repo
+6. If private cask installation cannot be made reliable, keep the source repo
    private but publish release assets publicly as an explicit release decision.
 
 ## Target State

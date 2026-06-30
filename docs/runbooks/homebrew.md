@@ -25,6 +25,29 @@ Ask for explicit owner approval before any of these actions:
 - making release assets public
 - enabling branch protection
 
+## Read-Only Readiness Audit
+
+Run the Homebrew readiness audit before requesting owner approval:
+
+```sh
+make homebrew-readiness
+```
+
+The audit is read-only. It checks local tools, `.goreleaser.yaml`, private repo
+visibility, tap repository visibility, tap publishing secret name presence, and
+local tap state. It does not create repositories, add secrets, cut tags, publish
+releases, or print token values.
+
+Exit codes:
+
+- `0`: Homebrew readiness prerequisites are satisfied.
+- `1`: local release config or tool setup has a failure that can be fixed before
+  approval.
+- `2`: only approval or external-state blockers remain.
+
+Before approval, `exit 2` is expected when `hamardikan/homebrew-tap`,
+`HOMEBREW_TAP_GITHUB_TOKEN`, or the local `hamardikan/tap` tap are missing.
+
 ## Tap Setup
 
 Check whether the tap exists:
