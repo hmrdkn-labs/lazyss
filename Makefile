@@ -59,6 +59,10 @@ smoke-local:
 .PHONY: smoke
 smoke: smoke-local
 
+.PHONY: homebrew-readiness
+homebrew-readiness:
+	./scripts/homebrew-readiness.sh
+
 .PHONY: clean
 clean:
 	rm -rf $(BINDIR) coverage.out coverage.html

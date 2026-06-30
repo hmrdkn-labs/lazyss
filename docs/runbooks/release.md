@@ -11,6 +11,16 @@ Do not tag `v0.1.0` until every prerequisite below is verified.
 - No private keys, AWS credentials, GitHub tokens, SSO cache data, or
   environment dumps appear in docs, generated casks, state files, or logs.
 
+Run the read-only Homebrew readiness audit before requesting tap or release
+approval:
+
+```sh
+make homebrew-readiness
+```
+
+`exit 2` means the local config is ready but approval or external state is still
+missing. Do not tag while this command reports blockers.
+
 ## Local Gates
 
 Run:
