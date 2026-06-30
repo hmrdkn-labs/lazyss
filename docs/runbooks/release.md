@@ -29,6 +29,14 @@ approval:
 make release-readiness
 ```
 
+For a release issue, generate structured evidence:
+
+```sh
+LAZYSS_RELEASE_READINESS_JSON=release-readiness.json \
+LAZYSS_RELEASE_READINESS_MARKDOWN=release-readiness.md \
+make release-readiness
+```
+
 This audit checks the current branch, clean worktree, repo privacy, latest fast
 CI, latest release-candidate workflow, branch protection, tag/release absence,
 Homebrew readiness, local AWS SSM prerequisite tooling, and live smoke evidence.
@@ -40,6 +48,11 @@ Exit codes:
 - `0`: release readiness prerequisites are satisfied.
 - `1`: local release configuration or tool setup has a fixable failure.
 - `2`: approval, external-state, or live-smoke blockers remain.
+
+The JSON and Markdown report environment variables are optional. They write the
+same check levels and messages that appear in the terminal output. Do not place
+token values, credential dumps, SSH keys, AWS SSO cache data, or private release
+asset URLs in these reports.
 
 ## Local Gates
 
@@ -65,6 +78,11 @@ goreleaser release --clean --snapshot --skip=publish
 If `goreleaser` is not installed locally, use the GitHub Actions snapshot job
 from the release-candidate workflow and record the run URL in the release issue
 or PR.
+
+The release-candidate workflow can be forced before merge by applying the
+`release-candidate` label to a pull request. Use this for release policy,
+runbook, or packaging changes that do not otherwise touch release-relevant code
+paths.
 
 ## Tag
 

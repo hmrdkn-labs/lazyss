@@ -38,7 +38,7 @@ lint:
 	@if ! command -v golangci-lint >/dev/null 2>&1; then \
 		echo "golangci-lint not installed locally; CI runs golangci-lint v2.12.2"; \
 		exit 0; \
-	fi
+	fi; \
 	golangci-lint run ./...
 
 .PHONY: fmt

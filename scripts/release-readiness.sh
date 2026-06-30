@@ -6,28 +6,122 @@ REPO="${LAZYSS_GITHUB_REPO:-hamardikan/lazyss}"
 RELEASE_VERSION="${LAZYSS_RELEASE_VERSION:-v0.1.0}"
 RELEASE_CANDIDATE_WORKFLOW="${LAZYSS_RELEASE_CANDIDATE_WORKFLOW:-Release Candidate}"
 FAST_CI_WORKFLOW="${LAZYSS_FAST_CI_WORKFLOW:-CI}"
+REPORT_JSON="${LAZYSS_RELEASE_READINESS_JSON:-}"
+REPORT_MARKDOWN="${LAZYSS_RELEASE_READINESS_MARKDOWN:-}"
 
 failures=0
 blockers=0
 warnings=0
+branch=""
+head=""
+short_head=""
+checks_file="$(mktemp "${TMPDIR:-/tmp}/lazyss-readiness-checks.XXXXXX")"
+
+cleanup() {
+	rm -f "$checks_file"
+}
+trap cleanup EXIT
+
+record_check() {
+	local level="$1"
+	shift
+	printf '%s\t%s\n' "$level" "$*" >>"$checks_file"
+}
 
 ok() {
+	record_check ok "$*"
 	printf '[ok] %s\n' "$*"
 }
 
 warn() {
 	warnings=$((warnings + 1))
+	record_check warn "$*"
 	printf '[warn] %s\n' "$*"
 }
 
 fail() {
 	failures=$((failures + 1))
+	record_check fail "$*"
 	printf '[fail] %s\n' "$*"
 }
 
 blocker() {
 	blockers=$((blockers + 1))
+	record_check blocker "$*"
 	printf '[blocker] %s\n' "$*"
+}
+
+write_reports() {
+	local status="$1"
+	if [ -z "$REPORT_JSON" ] && [ -z "$REPORT_MARKDOWN" ]; then
+		return
+	fi
+	if ! command -v python3 >/dev/null 2>&1; then
+		printf '[warn] python3 unavailable; skipping structured readiness reports\n' >&2
+		return
+	fi
+
+	python3 - "$checks_file" "$REPORT_JSON" "$REPORT_MARKDOWN" "$status" "$REPO" "$RELEASE_VERSION" "$branch" "$head" "$failures" "$blockers" "$warnings" <<'PY'
+import datetime
+import json
+import pathlib
+import sys
+
+checks_path, json_path, markdown_path, status, repo, release_version, branch, head, failures, blockers, warnings = sys.argv[1:]
+checks = []
+with open(checks_path, encoding="utf-8") as handle:
+    for raw in handle:
+        raw = raw.rstrip("\n")
+        if not raw:
+            continue
+        level, message = raw.split("\t", 1)
+        checks.append({"level": level, "message": message})
+
+payload = {
+    "repo": repo,
+    "target_version": release_version,
+    "status": status,
+    "branch": branch,
+    "head": head,
+    "failures": int(failures),
+    "blockers": int(blockers),
+    "warnings": int(warnings),
+    "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    "checks": checks,
+}
+
+if json_path:
+    pathlib.Path(json_path).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+if markdown_path:
+    def escape_cell(value: str) -> str:
+        return value.replace("|", "\\|").replace("\n", " ")
+
+    lines = [
+        "# LazySS Release Readiness",
+        "",
+        f"- Repo: `{repo}`",
+        f"- Target version: `{release_version}`",
+        f"- Status: `{status}`",
+        f"- Branch: `{branch or 'unknown'}`",
+        f"- Head: `{head or 'unknown'}`",
+        f"- Failures: `{failures}`",
+        f"- Blockers: `{blockers}`",
+        f"- Warnings: `{warnings}`",
+        "",
+        "| Level | Check |",
+        "| --- | --- |",
+    ]
+    lines.extend(f"| {escape_cell(item['level'])} | {escape_cell(item['message'])} |" for item in checks)
+    pathlib.Path(markdown_path).write_text("\n".join(lines) + "\n", encoding="utf-8")
+PY
+}
+
+finish() {
+	local exit_code="$1"
+	local status="$2"
+	write_reports "$status"
+	exit "$exit_code"
 }
 
 need_command() {
@@ -208,15 +302,16 @@ fi
 printf '\nSummary\n'
 if [ "$failures" -gt 0 ]; then
 	printf '[fail] %s release readiness failure(s)\n' "$failures" >&2
-	exit 1
+	finish 1 failed
 fi
 if [ "$blockers" -gt 0 ]; then
 	printf '[blocker] %s release readiness blocker(s)\n' "$blockers" >&2
-	exit 2
+	finish 2 blocked
 fi
 
 if [ "$warnings" -gt 0 ]; then
-	warn "$warnings warning(s) reported"
+	printf '[warn] %s warning(s) reported\n' "$warnings"
 fi
 
 ok "release readiness audit passed"
+write_reports ready

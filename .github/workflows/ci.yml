@@ -13,17 +13,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  format:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-      - name: Install smoke test dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y expect
+          cache: true
       - name: Format check
         run: |
           out=$(gofmt -l .)
@@ -32,40 +30,88 @@ jobs:
             echo "$out"
             exit 1
           fi
+
+  vet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
       - name: Vet
         run: go vet ./...
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
       - name: Race tests
         run: go test -race -coverprofile=coverage.out ./...
       - name: Coverage summary
         run: go tool cover -func=coverage.out | tail -1
-      - name: Build
-        run: go build ./cmd/lazyss
-      - name: Local binary and TUI smoke
-        run: make smoke-local
       - name: Upload coverage
         uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage.out
 
-  lint:
+  build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+          cache: true
+      - name: Build
+        run: go build ./cmd/lazyss
+
+  smoke-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install smoke test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y expect
+      - name: Local binary and TUI smoke
+        run: make smoke-local
+
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
       - uses: golangci/golangci-lint-action@v9
         with:
           version: v2.12.2
 
   govulncheck:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+          cache: true
       - uses: golang/govulncheck-action@v1
         with:
           repo-checkout: false

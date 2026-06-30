@@ -2,11 +2,7 @@ name: Release Candidate
 
 on:
   pull_request:
-    paths:
-      - ".github/workflows/release-candidate.yml"
-      - ".github/workflows/release.yml"
-      - ".goreleaser.yaml"
-      - "scripts/homebrew-readiness.sh"
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches: ["main"]
     paths:
@@ -23,14 +19,57 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-matrix:
+  classify:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      should_run: ${{ steps.decide.outputs.should_run }}
+      reason: ${{ steps.decide.outputs.reason }}
+    steps:
+      - name: Decide whether release-candidate gates are required
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          LABELS_JSON: ${{ github.event_name == 'pull_request' && toJson(github.event.pull_request.labels.*.name) || '[]' }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "reason=$EVENT_NAME event" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if printf '%s\n' "$LABELS_JSON" | python3 -c 'import json,sys; labels=json.load(sys.stdin); sys.exit(0 if any(label in {"release-candidate","release"} for label in labels) else 1)'; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "reason=release label" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          changed_files="$(gh pr view "$PR_NUMBER" --repo "$REPO" --json files --jq '.files[].path')"
+          if printf '%s\n' "$changed_files" | grep -Eq '^(\.github/workflows/(release-candidate|release)\.yml|\.goreleaser\.yaml|Makefile|cmd/|internal/|go\.(mod|sum)|scripts/)'; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "reason=release-relevant files" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "reason=not release-relevant; add release-candidate label to force" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-matrix:
+    needs: classify
+    if: needs.classify.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       matrix:
         goos: [linux, darwin, windows]
@@ -40,6 +79,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+          cache: true
       - name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
         env:
           GOOS: ${{ matrix.goos }}
@@ -47,7 +87,10 @@ jobs:
         run: go build ./cmd/lazyss
 
   goreleaser-snapshot:
+    needs: classify
+    if: needs.classify.outputs.should_run == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
         with:
@@ -55,6 +98,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+          cache: true
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: "~> v2"
@@ -65,7 +109,10 @@ jobs:
         run: goreleaser release --clean --snapshot --skip=publish
 
   homebrew-readiness:
+    needs: classify
+    if: needs.classify.outputs.should_run == 'true'
     runs-on: macos-latest
+    timeout-minutes: 10
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
