@@ -22,6 +22,25 @@ make homebrew-readiness
 `exit 2` means the local config is ready but approval or external state is still
 missing. Do not tag while this command reports blockers.
 
+Run the full read-only release readiness audit before requesting `v0.1.0`
+approval:
+
+```sh
+make release-readiness
+```
+
+This audit checks the current branch, clean worktree, repo privacy, latest fast
+CI, latest release-candidate workflow, branch protection, tag/release absence,
+Homebrew readiness, local AWS SSM prerequisite tooling, and live smoke evidence.
+It does not create repositories, secrets, branch protection, tags, releases, or
+public assets.
+
+Exit codes:
+
+- `0`: release readiness prerequisites are satisfied.
+- `1`: local release configuration or tool setup has a fixable failure.
+- `2`: approval, external-state, or live-smoke blockers remain.
+
 ## Local Gates
 
 Run:

@@ -26,6 +26,7 @@ make smoke-local
 ```
 
 For release-affecting changes, also link the release-candidate workflow run.
+Before requesting release approval, include `make release-readiness` output.
 
 ## Secret/State Safety
 
