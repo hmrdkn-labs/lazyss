@@ -45,16 +45,45 @@ class BranchProtectionPlanTest(unittest.TestCase):
             self.assertEqual(payload["required_linear_history"], True)
             self.assertEqual(payload["allow_force_pushes"], False)
             self.assertEqual(payload["allow_deletions"], False)
-            self.assertEqual(payload["required_pull_request_reviews"]["required_approving_review_count"], 1)
+            self.assertEqual(payload["required_pull_request_reviews"]["required_approving_review_count"], 0)
             self.assertEqual(payload["required_conversation_resolution"], True)
 
             markdown = (out / "branch-protection.md").read_text(encoding="utf-8")
             self.assertIn("hamardikan/lazyss", markdown)
             self.assertIn("main", markdown)
             self.assertIn("ci-required", markdown)
+            self.assertIn("Approving reviews: `0`", markdown)
+            self.assertIn("solo-maintainer mode", markdown)
             self.assertIn("gh api --method PUT repos/hamardikan/lazyss/branches/main/protection", markdown)
             self.assertIn("./scripts/branch-protection-readiness.sh", markdown)
             self.assertIn("requires explicit owner approval", markdown)
+
+    def test_allows_review_count_for_multi_maintainer_repos(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = pathlib.Path(tmp)
+            result = subprocess.run(
+                [
+                    "python3",
+                    str(SCRIPT),
+                    "--approving-review-count",
+                    "1",
+                    "--json-output",
+                    str(out / "branch-protection.json"),
+                    "--markdown-output",
+                    str(out / "branch-protection.md"),
+                ],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads((out / "branch-protection.json").read_text(encoding="utf-8"))
+            self.assertEqual(payload["required_pull_request_reviews"]["required_approving_review_count"], 1)
+            markdown = (out / "branch-protection.md").read_text(encoding="utf-8")
+            self.assertIn("Require 1 approving review(s).", markdown)
 
     def test_rejects_secret_like_values_in_inputs(self):
         with tempfile.TemporaryDirectory() as tmp:

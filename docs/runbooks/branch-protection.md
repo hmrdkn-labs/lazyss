@@ -8,7 +8,8 @@ GitHub branch protection without explicit approval.
 Protect `main` with:
 
 - pull requests required before merge
-- at least one pull request review required
+- approving reviews are optional in solo-maintainer mode because GitHub does
+  not count the pull request author as the required approving reviewer
 - branch must be up to date before merge
 - required fast CI check:
   - `ci-required`
@@ -25,6 +26,10 @@ Warnings, not hard release blockers for V1:
 
 - administrators are not included in enforcement
 - linear history is not required
+
+Set `LAZYSS_REQUIRED_APPROVING_REVIEWS=1` only after a second trusted
+collaborator exists. Until then, requiring one review deadlocks the protected
+branch because the only maintainer cannot approve their own pull request.
 
 ## Read-Only Audit
 

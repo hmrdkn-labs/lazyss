@@ -588,6 +588,7 @@ Tasks:
    - require PRs
    - require `ci-required`
    - require branch up to date
+   - keep approving reviews at `0` while LazySS has only one maintainer
    - disallow force-push
 3. Validate the read-only target state with:
 
