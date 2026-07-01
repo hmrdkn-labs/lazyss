@@ -65,7 +65,9 @@ asset URLs in these reports.
 
 Live smoke proof must be a local JSON file referenced by
 `LAZYSS_LIVE_SMOKE_EVIDENCE`. Use
-`docs/runbooks/live-smoke-evidence.example.json` as the starting schema. The
+`make live-smoke-evidence-template` to create an ignored `0600` draft for the
+current commit. Edit that file after live SSH and AWS SSM smoke checks pass,
+then validate it with `python3 scripts/live_smoke_evidence.py validate`. The
 readiness audit ignores legacy one-shot smoke environment flags for release
 approval because they are not auditable.
 

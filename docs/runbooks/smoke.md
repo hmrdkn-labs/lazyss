@@ -60,10 +60,12 @@ Before `v0.1.0`, record the live SSH and AWS SSM smoke result in a local JSON
 file that is not committed:
 
 ```sh
-cp docs/runbooks/live-smoke-evidence.example.json live-smoke-evidence.json
+make live-smoke-evidence-template
 ```
 
-Fill in only non-secret labels:
+The helper writes `live-smoke-evidence.json` with file mode `0600`, the current
+commit, the target release version, and deliberately failing boolean fields.
+Edit it only after the real smoke checks pass. Fill in only non-secret labels:
 
 - `target_version`: release version, for example `v0.1.0`
 - `commit`: full commit SHA that was smoked
@@ -77,7 +79,16 @@ Do not include host passwords, private keys, AWS credentials, SSO cache data,
 GitHub tokens, environment dumps, private release asset URLs, or full terminal
 logs.
 
-Validate the evidence with the release readiness audit:
+Validate the evidence directly:
+
+```sh
+python3 scripts/live_smoke_evidence.py validate \
+  --file live-smoke-evidence.json \
+  --target-version v0.1.0 \
+  --commit "$(git rev-parse HEAD)"
+```
+
+Then validate it with the full release readiness audit:
 
 ```sh
 LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json ./scripts/release-readiness.sh

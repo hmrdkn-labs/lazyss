@@ -196,120 +196,9 @@ check_live_smoke_evidence() {
 
 	local output rc
 	set +e
-	output="$(python3 - "$LIVE_SMOKE_EVIDENCE" "$RELEASE_VERSION" "$head" <<'PY'
-import datetime
-import json
-import pathlib
-import re
-import sys
-
-path, release_version, head = sys.argv[1:]
-
-def emit(level, message):
-    print(f"{level}\t{message}")
-
-try:
-    raw = pathlib.Path(path).read_text(encoding="utf-8")
-except OSError as exc:
-    emit("blocker", f"could not read live smoke evidence: {exc}")
-    sys.exit(0)
-
-secret_patterns = [
-    ("AWS access key id", r"\b(AKIA|ASIA)[0-9A-Z]{16}\b"),
-    ("AWS secret/session token field", r"(?i)\b(aws_secret_access_key|aws_session_token|AWS_SECRET_ACCESS_KEY|AWS_SESSION_TOKEN)\b"),
-    ("GitHub token", r"\b(ghp_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]+)\b"),
-    ("private key", r"BEGIN (OPENSSH|RSA|EC|DSA) PRIVATE KEY"),
-]
-for label, pattern in secret_patterns:
-    if re.search(pattern, raw):
-        emit("fail", f"live smoke evidence appears to contain credential material: {label}")
-        sys.exit(0)
-
-try:
-    data = json.loads(raw)
-except json.JSONDecodeError as exc:
-    emit("fail", f"live smoke evidence is not valid JSON: {exc.msg}")
-    sys.exit(0)
-
-if not isinstance(data, dict):
-    emit("fail", "live smoke evidence must be a JSON object")
-    sys.exit(0)
-
-blockers = []
-
-def require(path_parts, expected=True):
-    cursor = data
-    for part in path_parts:
-        if not isinstance(cursor, dict) or part not in cursor:
-            blockers.append(f"{'.'.join(path_parts)} is missing")
-            return None
-        cursor = cursor[part]
-    if expected is not None and cursor != expected:
-        blockers.append(f"{'.'.join(path_parts)} must be {expected!r}")
-    return cursor
-
-if data.get("version") != 1:
-    blockers.append("version must be 1")
-if data.get("target_version") != release_version:
-    blockers.append(f"target_version must be {release_version}")
-if data.get("commit") != head:
-    blockers.append("commit must match current HEAD")
-
-checked_at = data.get("checked_at")
-if not isinstance(checked_at, str) or not checked_at:
-    blockers.append("checked_at is missing")
-else:
-    try:
-        datetime.datetime.fromisoformat(checked_at.replace("Z", "+00:00"))
-    except ValueError:
-        blockers.append("checked_at must be ISO-8601")
-
-ssh = data.get("ssh")
-if not isinstance(ssh, dict):
-    blockers.append("ssh evidence must be an object")
-else:
-    require(["ssh", "passed"], True)
-    require(["ssh", "config_mutated"], False)
-    if not ssh.get("host_label"):
-        blockers.append("ssh.host_label is missing")
-
-aws_ssm = data.get("aws_ssm")
-if not isinstance(aws_ssm, dict):
-    blockers.append("aws_ssm evidence must be an object")
-else:
-    for field in ("passed", "doctor_passed", "inventory_passed", "session_launch_passed", "degraded_ssh_preserved"):
-        require(["aws_ssm", field], True)
-    if not aws_ssm.get("region"):
-        blockers.append("aws_ssm.region is missing")
-    if not aws_ssm.get("target_label"):
-        blockers.append("aws_ssm.target_label is missing")
-
-safety = data.get("safety")
-if not isinstance(safety, dict):
-    blockers.append("safety evidence must be an object")
-else:
-    for field in ("no_secrets_observed", "state_mode_0600", "failed_connection_preserved_last_success"):
-        require(["safety", field], True)
-
-if blockers:
-    for message in blockers:
-        emit("blocker", f"live smoke evidence invalid: {message}")
-    sys.exit(0)
-
-emit("ok", f"live smoke evidence validated for {release_version} at {head[:12]}")
-emit("ok", f"live SSH smoke passed for label {ssh.get('host_label')}")
-emit("ok", f"live AWS SSM smoke passed for label {aws_ssm.get('target_label')} in {aws_ssm.get('region')}")
-emit("ok", "live smoke safety checks passed without recorded secrets")
-PY
-)"
+	output="$(python3 "$ROOT/scripts/live_smoke_evidence.py" validate --file "$LIVE_SMOKE_EVIDENCE" --target-version "$RELEASE_VERSION" --commit "$head")"
 	rc=$?
 	set -e
-
-	if [ "$rc" -ne 0 ]; then
-		fail "live smoke evidence validator failed"
-		printf '%s\n' "$output" | sed 's/^/  /'
-		return
-	fi
 
 	while IFS=$'\t' read -r level message; do
 		[ -n "$level" ] || continue
@@ -323,6 +212,10 @@ PY
 	done <<EOF
 $output
 EOF
+
+	if [ "$rc" -ne 0 ] && [ "$rc" -ne 1 ] && [ "$rc" -ne 2 ]; then
+		fail "live smoke evidence validator failed with exit $rc"
+	fi
 }
 
 printf 'LazySS release readiness audit\n'

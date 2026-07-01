@@ -35,6 +35,7 @@ The aggregate fails when any of these jobs fail:
 - `format`
 - `vet`
 - `test`
+- `script-test`
 - `build`
 - `smoke-local`
 - `lint`

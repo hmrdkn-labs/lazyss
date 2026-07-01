@@ -62,6 +62,14 @@ jobs:
           name: coverage
           path: coverage.out
 
+  script-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Python script tests
+        run: python3 -m unittest discover -s scripts -p '*_test.py'
+
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -122,6 +130,7 @@ jobs:
       - format
       - vet
       - test
+      - script-test
       - build
       - smoke-local
       - lint

@@ -13,11 +13,12 @@ go build ./cmd/lazyss
 The Make targets mirror the hosted pipeline stages:
 
 ```sh
-make check             # local core gate: fmt, vet, race tests, build
+make check             # local core gate: fmt, vet, race tests, script tests, build
 make fast-pr           # local mirror of fast CI, including smoke/lint/vuln when tools exist
 make heavy-quality     # coverage, lint, and vulnerability scan
 make release-snapshot  # goreleaser check plus snapshot artifact generation
 make release-preflight # read-only release readiness audit
+make live-smoke-evidence-template # create ignored 0600 live smoke evidence draft
 ```
 
 Run the safe local binary/TUI smoke when the change affects runtime behavior,
@@ -48,15 +49,17 @@ The component jobs remain separate for fast diagnosis:
 - `format`: `gofmt -l .`
 - `vet`: `go vet ./...`
 - `test`: race tests, coverage profile, coverage summary, coverage artifact
+- `script-test`: Python tests for release helper scripts
 - `build`: linux `go build ./cmd/lazyss`
 - `smoke-local`: safe local binary/TUI smoke with `make smoke-local`
 - `lint`: pinned `golangci-lint`
 - `govulncheck`: Go vulnerability scan
 
 Fast CI jobs run independently so format, vet, lint, vulnerability, build, test,
-and smoke failures are visible separately. The `ci-required` job depends on all
-component jobs and is the only check branch protection should require. Each job
-has a timeout and uses Go module caching through `actions/setup-go`.
+script-test, and smoke failures are visible separately. The `ci-required` job
+depends on all component jobs and is the only check branch protection should
+require. Each Go job has a timeout and uses Go module caching through
+`actions/setup-go`.
 
 Fast CI cancels superseded runs for the same pull request or branch. For branch
 protection, require `ci-required` instead of a broad workflow-level status or
