@@ -107,6 +107,12 @@ homebrew-readiness:
 branch-protection-readiness:
 	./scripts/branch-protection-readiness.sh
 
+.PHONY: branch-protection-plan
+branch-protection-plan:
+	python3 scripts/branch_protection_plan.py \
+		--json-output branch-protection.json \
+		--markdown-output branch-protection.md
+
 .PHONY: release-readiness
 release-readiness:
 	./scripts/release-readiness.sh

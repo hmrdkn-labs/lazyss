@@ -48,6 +48,19 @@ Validate the target state with:
 ./scripts/branch-protection-readiness.sh
 ```
 
+Before requesting owner approval, generate the read-only branch-protection
+handoff:
+
+```sh
+make branch-protection-plan
+```
+
+This writes ignored local files `branch-protection.json` and
+`branch-protection.md`. The JSON is the proposed GitHub branch protection API
+payload, and the Markdown file includes the exact `gh api --method PUT ...`
+command to run only after approval. The generator does not call GitHub APIs or
+mutate repository settings.
+
 ## Release Candidate Policy
 
 The release-candidate workflow is heavier than fast CI. It should run for:

@@ -8,6 +8,8 @@
 /coverage.txt
 /release-readiness.json
 /release-readiness.md
+/branch-protection.json
+/branch-protection.md
 /live-smoke-evidence.json
 __pycache__/
 .DS_Store

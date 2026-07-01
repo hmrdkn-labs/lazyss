@@ -49,6 +49,17 @@ Branch protection is validated by `./scripts/branch-protection-readiness.sh`.
 That audit requires protected fast CI checks, pull request reviews, up-to-date
 branches, and disabled force pushes/deletions.
 
+If branch protection is not configured yet, generate the local read-only handoff
+before requesting owner approval:
+
+```sh
+make branch-protection-plan
+```
+
+This writes ignored `branch-protection.json` and `branch-protection.md` files.
+Review them before applying the Markdown command. Do not enable branch
+protection without explicit owner approval.
+
 Exit codes:
 
 - `0`: release readiness prerequisites are satisfied.
