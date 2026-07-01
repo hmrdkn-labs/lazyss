@@ -69,7 +69,9 @@ so path-policy changes can be tested before they affect hosted CI.
 
 The GoReleaser snapshot job uploads the generated `dist/` directory as
 `goreleaser-snapshot-<sha>` with short retention. Use it to inspect archive
-names, checksums, and generated cask output before approving a tag.
+names, checksums, and generated cask output before approving a tag. The
+snapshot gate also verifies that the generated private cask uses the expected
+download strategy and archive checksums.
 
 ## Release Policy
 

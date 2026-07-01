@@ -428,8 +428,10 @@ Tasks:
    goreleaser release --clean --snapshot --skip=publish
    ```
 
-4. Ensure dist output includes darwin/linux/windows amd64/arm64 archives and
-   checksums.
+4. Ensure dist output includes darwin/linux/windows amd64/arm64 archives,
+   checksums, and `homebrew/Casks/lazyss.rb`.
+5. Verify the generated cask uses the private GitHub download strategy and that
+   cask checksums match the generated darwin/linux archives.
 
 Acceptance:
 
@@ -485,6 +487,8 @@ Acceptance:
 
 - Tap repo receives `Casks/lazyss.rb`.
 - The generated cask references the correct release asset names and checksums.
+- `DIST=/path/to/downloaded/dist make release-artifacts-verify` proves the
+  generated cask uses the private download strategy without token-bearing URLs.
 - Private install docs are clear about `HOMEBREW_GITHUB_API_TOKEN`.
 
 ### Milestone 5: v0.1.0 Release
@@ -516,7 +520,8 @@ Acceptance:
 - GitHub Release `v0.1.0` exists.
 - Release contains archives for linux/darwin/windows amd64/arm64 plus
   `checksums.txt`.
-- `DIST=/path/to/release-artifacts make release-artifacts-verify` passes.
+- `DIST=/path/to/release-artifacts make release-artifacts-verify` passes,
+  including generated private-cask verification.
 - Homebrew tap is updated.
 - Install works:
 
