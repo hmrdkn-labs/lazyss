@@ -33,6 +33,7 @@ needing branch-protection edits.
 The aggregate fails when any of these jobs fail:
 
 - `format`
+- `mod-tidy`
 - `vet`
 - `test`
 - `script-test`
@@ -51,8 +52,10 @@ Validate the target state with:
 
 The release-candidate workflow is heavier than fast CI. It should run for:
 
-- pushes to `main` that change release-relevant files
-- pull requests that change release-relevant files
+- pushes to `main` that change release-relevant files, including policy and
+  quality-gate files
+- pull requests that change release-relevant files, including policy and
+  quality-gate files
 - pull requests labeled `release-candidate` or `release`
 - manual dispatch
 
@@ -60,6 +63,9 @@ The `release-candidate-required` aggregate passes only when the release-candidat
 classifier decided proof is required and all release proof jobs passed. If the
 classifier decides a PR is not release-relevant, the aggregate passes with an
 explicit skip message.
+
+The classifier implementation is covered by `scripts/release_candidate_classify_test.py`
+so path-policy changes can be tested before they affect hosted CI.
 
 The GoReleaser snapshot job uploads the generated `dist/` directory as
 `goreleaser-snapshot-<sha>` with short retention. Use it to inspect archive

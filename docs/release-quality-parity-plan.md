@@ -130,9 +130,10 @@ CI should be split into fast PR feedback and heavier release-candidate proof.
 Fast CI runs on pull requests and pushes to `main`:
 
 - Format check: `gofmt -l .`
+- Module drift check: `go mod tidy` followed by a clean `go.mod`/`go.sum` diff
 - Vet: `go vet ./...`
 - Race tests with coverage: `go test -race -coverprofile=coverage.out ./...`
-- Coverage summary: `go tool cover -func=coverage.out | tail -1`
+- Coverage baseline check using `coverage.baseline`
 - Coverage artifact upload
 - Script tests for release helper scripts
 - Linux build: `go build ./cmd/lazyss`
@@ -310,9 +311,10 @@ need.
 
 The strongest existing quality asset is the focused test suite. Do not replace
 it with packaging-only confidence. Extend it only where release hardening changes
-behavior, and record the current coverage total as a baseline in
-`docs/runbooks/quality-gates.md`. The first release should use coverage as a
-reported quality signal, not a brittle percentage gate.
+behavior, and keep `coverage.baseline` plus `docs/runbooks/quality-gates.md` in
+sync. The first release uses a conservative total-coverage baseline gate: lower
+only with an explicit PR rationale, and ratchet upward when meaningful coverage
+is added.
 
 ## Implementation Plan
 
@@ -390,8 +392,9 @@ Tasks:
    - `govulncheck`
    - `build`
 3. Pin `golangci-lint-action` to `version: v2.12.2`.
-4. Add coverage profile generation and upload.
-5. Capture the current coverage total in `docs/runbooks/quality-gates.md`.
+4. Add coverage profile generation, baseline verification, and upload.
+5. Capture the current coverage total in `coverage.baseline` and
+   `docs/runbooks/quality-gates.md`.
 6. Add local `make cover`.
 7. Add local `make lint` if a local `golangci-lint` binary is available, but do
    not require local installs to run normal `make check`.
@@ -625,7 +628,8 @@ Milestones:
    - split CI jobs for test/lint/govulncheck/build
    - pin `golangci-lint-action` to `version: v2.12.2`
    - race coverage profile and upload
-   - capture coverage baseline in `docs/runbooks/quality-gates.md`
+   - capture coverage baseline in `coverage.baseline` and
+     `docs/runbooks/quality-gates.md`
    - `make cover`
 3. Add GoReleaser:
    - `.goreleaser.yaml`

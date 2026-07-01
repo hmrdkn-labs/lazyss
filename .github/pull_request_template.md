@@ -18,6 +18,7 @@
 
 ```sh
 gofmt -l .
+make mod-tidy-check
 go vet ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out | tail -1

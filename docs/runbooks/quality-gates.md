@@ -13,7 +13,7 @@ go build ./cmd/lazyss
 The Make targets mirror the hosted pipeline stages:
 
 ```sh
-make check             # local core gate: fmt, vet, race tests, script tests, build
+make check             # local core gate: fmt, go mod tidy, vet, race tests, script tests, build
 make fast-pr           # local mirror of fast CI, including smoke/lint/vuln when tools exist
 make heavy-quality     # coverage, lint, and vulnerability scan
 make release-snapshot  # goreleaser check plus snapshot artifact generation
@@ -29,14 +29,16 @@ release packaging, or the release candidate checklist:
 make smoke-local
 ```
 
-Current report-only coverage baseline:
+Current enforced coverage baseline:
 
 ```txt
-total: (statements) 57.7%
+coverage.baseline: 57.7%
 ```
 
-Coverage is a signal for V1, not a hard percentage gate. Do not lower coverage
-without explaining the reason in the PR.
+`make test` and hosted fast CI compare `go tool cover -func` total coverage
+against `coverage.baseline`. Do not lower the baseline without explaining the
+reason in the PR. When coverage improves intentionally, raise the baseline in
+the same PR.
 
 ## Hosted Fast CI
 
@@ -48,19 +50,20 @@ one stable aggregate check as the required merge gate:
 The component jobs remain separate for fast diagnosis:
 
 - `format`: `gofmt -l .`
+- `mod-tidy`: `go mod tidy` followed by a clean `go.mod`/`go.sum` diff check
 - `vet`: `go vet ./...`
-- `test`: race tests, coverage profile, coverage summary, coverage artifact
+- `test`: race tests, coverage profile, coverage baseline check, coverage artifact
 - `script-test`: Python tests for release helper scripts
 - `build`: linux `go build ./cmd/lazyss`
 - `smoke-local`: safe local binary/TUI smoke with `make smoke-local`
 - `lint`: pinned `golangci-lint`
 - `govulncheck`: Go vulnerability scan
 
-Fast CI jobs run independently so format, vet, lint, vulnerability, build, test,
-script-test, and smoke failures are visible separately. The `ci-required` job
-depends on all component jobs and is the only check branch protection should
-require. Each Go job has a timeout and uses Go module caching through
-`actions/setup-go`.
+Fast CI jobs run independently so format, module tidy, vet, lint,
+vulnerability, build, test, script-test, and smoke failures are visible
+separately. The `ci-required` job depends on all component jobs and is the only
+check branch protection should require. Each Go job has a timeout and uses Go
+module caching through `actions/setup-go`.
 
 Fast CI cancels superseded runs for the same pull request or branch. For branch
 protection, require `ci-required` instead of a broad workflow-level status or
@@ -81,7 +84,8 @@ release proof jobs run when:
 - the event is a relevant `main` push
 - the workflow is started manually with `workflow_dispatch`
 - a pull request changes release-relevant files such as workflows, GoReleaser
-  config, `Makefile`, `cmd/`, `internal/`, Go modules, or `scripts/`
+  config, lint config, coverage baseline, policy templates, release runbooks,
+  `Makefile`, `cmd/`, `internal/`, Go modules, or `scripts/`
 - a pull request has the `release-candidate` or `release` label
 
 The release proof jobs are:

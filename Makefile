@@ -1,6 +1,9 @@
 BINARY := lazyss
 PKG := ./cmd/lazyss
 BINDIR := bin
+COVERAGE := coverage.out
+COVERAGE_SUMMARY := coverage.txt
+COVERAGE_BASELINE := coverage.baseline
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
@@ -21,21 +24,26 @@ doctor:
 
 .PHONY: test
 test:
-	go test -race ./...
+	go test -race -coverprofile=$(COVERAGE) ./...
+	go tool cover -func=$(COVERAGE) | tee $(COVERAGE_SUMMARY) | tail -1
+	python3 scripts/coverage_baseline.py verify --summary $(COVERAGE_SUMMARY) --baseline $(COVERAGE_BASELINE)
 
 .PHONY: script-test
 script-test:
 	python3 -m unittest discover -s scripts -p '*_test.py'
 
 .PHONY: cover
-cover:
-	go test -race -coverprofile=coverage.out ./...
-	go tool cover -func=coverage.out | tail -1
-	go tool cover -html=coverage.out -o coverage.html
+cover: test
+	go tool cover -html=$(COVERAGE) -o coverage.html
 
 .PHONY: vet
 vet:
 	go vet ./...
+
+.PHONY: mod-tidy-check
+mod-tidy-check:
+	go mod tidy
+	git diff --exit-code -- go.mod go.sum
 
 .PHONY: lint
 lint:
@@ -62,10 +70,10 @@ fmt-check:
 	@out=$$(gofmt -l .); if [ -n "$$out" ]; then echo "not formatted:"; echo "$$out"; exit 1; fi
 
 .PHONY: check
-check: fmt-check vet test script-test build
+check: fmt-check mod-tidy-check vet test script-test build
 
 .PHONY: fast-pr
-fast-pr: fmt-check vet test script-test build smoke-local lint vuln
+fast-pr: fmt-check mod-tidy-check vet test script-test build smoke-local lint vuln
 
 .PHONY: heavy-quality
 heavy-quality: cover lint vuln
@@ -115,4 +123,4 @@ live-smoke-evidence-template:
 
 .PHONY: clean
 clean:
-	rm -rf $(BINDIR) coverage.out coverage.html
+	rm -rf $(BINDIR) coverage.out coverage.html coverage.txt
