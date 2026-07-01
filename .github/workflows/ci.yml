@@ -138,9 +138,8 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - uses: golang/govulncheck-action@v1
-        with:
-          repo-checkout: false
+      - name: Govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.5.0 ./...
 
   ci-required:
     name: ci-required

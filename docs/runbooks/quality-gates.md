@@ -14,8 +14,11 @@ The Make targets mirror the hosted pipeline stages:
 
 ```sh
 make check             # local core gate: fmt, go mod tidy, vet, race tests, script tests, build
-make fast-pr           # local mirror of fast CI, including smoke/lint/vuln when tools exist
-make heavy-quality     # coverage, lint, and vulnerability scan
+make fast-pr           # local mirror of fast CI, including smoke, lint, and pinned govulncheck
+make heavy-quality     # coverage, lint, and pinned govulncheck
+make workflow-policy   # static policy checks for GitHub Actions workflow shape
+make build-matrix      # local cross-platform compile matrix
+make release-candidate-local # local release-candidate mirror for matrix, snapshot, and Homebrew readiness
 make release-snapshot  # goreleaser check plus snapshot artifact generation
 make release-artifacts-verify # verify archives, binaries, checksums, and generated cask under DIST=dist
 make release-preflight # read-only release readiness audit
@@ -35,6 +38,17 @@ Current enforced coverage baseline:
 ```txt
 coverage.baseline: 57.7%
 ```
+
+Current Go toolchain baseline:
+
+```txt
+go.mod: go 1.25.11
+```
+
+Keep the patch-level Go version current when `govulncheck` reports standard
+library vulnerabilities. Hosted workflows use `actions/setup-go` with
+`go-version-file: go.mod`, so this value controls both local and hosted
+standard-library vulnerability posture.
 
 `make test` and hosted fast CI compare `go tool cover -func` total coverage
 against `coverage.baseline`. Do not lower the baseline without explaining the
@@ -58,13 +72,15 @@ The component jobs remain separate for fast diagnosis:
 - `build`: linux `go build ./cmd/lazyss`
 - `smoke-local`: safe local binary/TUI smoke with `make smoke-local`
 - `lint`: pinned `golangci-lint`
-- `govulncheck`: Go vulnerability scan
+- `govulncheck`: pinned direct `go run golang.org/x/vuln/cmd/govulncheck@v1.5.0 ./...`
 
 Fast CI jobs run independently so format, module tidy, vet, lint,
 vulnerability, build, test, script-test, and smoke failures are visible
 separately. The `ci-required` job depends on all component jobs and is the only
 check branch protection should require. Each Go job has a timeout and uses Go
-module caching through `actions/setup-go`.
+module caching through `actions/setup-go`. The vulnerability scan intentionally
+uses the Go tool directly instead of the `golang/govulncheck-action` wrapper so
+the PR workflow has one fewer transitive action dependency.
 
 Fast CI cancels superseded runs for the same pull request or branch. For branch
 protection, require `ci-required` instead of a broad workflow-level status or
@@ -107,9 +123,26 @@ The release proof jobs are:
 - Homebrew readiness audit on macOS
 - `release-candidate-required` aggregate status
 
+The classifier writes `should_run` and `reason` to the GitHub job summary so a
+reviewer can tell why the heavier proof did or did not execute without opening
+raw logs. Local workflow policy tests cover the classifier summary, job
+timeouts, release tag-only behavior, read-only PR workflow permissions, and the
+absence of publish secrets from PR workflows.
+
 The Homebrew readiness audit is allowed to report approval/external-state
 blockers before tap approval. Local configuration failures still fail the
 release-candidate workflow.
+
+Use the local mirror before requesting a release-candidate review when
+GoReleaser is installed:
+
+```sh
+make release-candidate-local
+```
+
+This target runs the local cross-platform compile matrix, GoReleaser snapshot
+validation, archive/cask verification, and Homebrew readiness with the same
+approval/external-state blocker semantics used by hosted release-candidate CI.
 
 Download the `goreleaser-snapshot-<sha>` artifact from the release-candidate run
 when reviewing archive names, checksums, or generated cask output before a real

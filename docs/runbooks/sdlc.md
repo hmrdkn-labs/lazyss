@@ -20,6 +20,9 @@ Local stage helpers:
 make check
 make fast-pr
 make heavy-quality
+make workflow-policy
+make build-matrix
+make release-candidate-local
 make release-snapshot
 make release-preflight
 ```
@@ -41,6 +44,11 @@ The aggregate fails when any of these jobs fail:
 - `smoke-local`
 - `lint`
 - `govulncheck`
+
+The hosted `govulncheck` job runs
+`go run golang.org/x/vuln/cmd/govulncheck@v1.5.0 ./...` directly instead of
+delegating to the `golang/govulncheck-action` wrapper. That keeps the scan
+pinned and removes one extra transitive GitHub Action from the PR path.
 
 Validate the target state with:
 
@@ -79,6 +87,10 @@ explicit skip message.
 
 The classifier implementation is covered by `scripts/release_candidate_classify_test.py`
 so path-policy changes can be tested before they affect hosted CI.
+The workflow shape is also covered by `scripts/workflow_policy_test.py`, which
+checks job timeouts, read-only PR workflow permissions, tag-only release
+publishing, readiness-before-GoReleaser ordering, classifier summaries, and the
+local release-candidate mirror target.
 
 The GoReleaser snapshot job uploads the generated `dist/` directory as
 `goreleaser-snapshot-<sha>` with short retention. Use it to inspect archive
@@ -87,6 +99,12 @@ snapshot gate also verifies that the generated private cask uses the expected
 download strategy and archive checksums, and that archives contain the expected
 installable binaries. On the hosted release-candidate runner, the gate also
 extracts the host-matching archive and runs `lazyss --version`.
+
+When GoReleaser is installed locally, `make release-candidate-local` mirrors the
+hosted release-candidate proof by running the cross-platform build matrix,
+snapshot verification, and Homebrew readiness while treating approval/external
+state blockers as reviewable release blockers instead of local configuration
+failures.
 
 ## Release Policy
 

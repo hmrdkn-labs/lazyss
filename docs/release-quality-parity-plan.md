@@ -122,6 +122,8 @@ Recommended V1 release posture:
 - `docs/runbooks/release.md`
 - `docs/runbooks/smoke.md`
 - `docs/runbooks/quality-gates.md`
+- `scripts/workflow_policy.py`
+- `scripts/workflow_policy_test.py`
 
 ### CI Quality Gates
 
@@ -129,6 +131,8 @@ CI should be split into fast PR feedback and heavier release-candidate proof.
 
 Fast CI runs on pull requests and pushes to `main`:
 
+- Go toolchain from `go.mod`, pinned to the latest non-vulnerable patch level
+  when `govulncheck` reports standard-library findings
 - Format check: `gofmt -l .`
 - Module drift check: `go mod tidy` followed by a clean `go.mod`/`go.sum` diff
 - Vet: `go vet ./...`
@@ -140,7 +144,11 @@ Fast CI runs on pull requests and pushes to `main`:
 - Safe local binary/TUI smoke: `make smoke-local`
 - `golangci-lint` using `.golangci.yml`, with the action pinned to
   `version: v2.12.2` like `lazyssm`
-- `govulncheck`
+- pinned direct `govulncheck` through
+  `go run golang.org/x/vuln/cmd/govulncheck@v1.5.0 ./...`
+- workflow policy tests for timeouts, read-only PR permissions, no PR secrets,
+  tag-only release publishing, release readiness ordering, classifier summaries,
+  and local release-candidate parity
 - `ci-required` aggregate status for branch protection
 
 Release-candidate CI runs on release-automation pull requests, relevant `main`
@@ -154,6 +162,8 @@ pushes, and manual dispatch:
 - Homebrew readiness audit, with approval/external-state blockers reported
   without hiding local configuration failures
 - `release-candidate-required` aggregate status
+- classifier summary output showing whether the heavier release-candidate proof
+  ran and why
 
 Superseded workflow runs should be cancelled automatically per pull request or
 branch so CI does not waste time on stale commits.
@@ -395,12 +405,15 @@ Tasks:
    - `govulncheck`
    - `build`
 3. Pin `golangci-lint-action` to `version: v2.12.2`.
-4. Add coverage profile generation, baseline verification, and upload.
-5. Capture the current coverage total in `coverage.baseline` and
+4. Run govulncheck directly with a pinned `golang.org/x/vuln` module version
+   instead of the action wrapper.
+5. Add coverage profile generation, baseline verification, and upload.
+6. Capture the current coverage total in `coverage.baseline` and
    `docs/runbooks/quality-gates.md`.
-6. Add local `make cover`.
-7. Add local `make lint` if a local `golangci-lint` binary is available, but do
+7. Add local `make cover`.
+8. Add local `make lint` if a local `golangci-lint` binary is available, but do
    not require local installs to run normal `make check`.
+9. Add `make workflow-policy` and tests that prevent CI/CD policy drift.
 
 Acceptance:
 
