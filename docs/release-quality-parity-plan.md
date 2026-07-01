@@ -543,19 +543,28 @@ Goal: keep release quality stable after v0.1.0.
 
 Tasks:
 
-1. Protect `main`:
+1. Generate a read-only branch protection handoff before requesting approval:
+
+   ```sh
+   make branch-protection-plan
+   ```
+
+   Review `branch-protection.json` and `branch-protection.md`; do not run the
+   generated apply command without explicit owner approval.
+
+2. Protect `main`:
    - require PRs
    - require `ci-required`
    - require branch up to date
    - disallow force-push
-2. Validate the read-only target state with:
+3. Validate the read-only target state with:
 
    ```sh
    ./scripts/branch-protection-readiness.sh
    ```
 
-3. Add release checklist to `docs/runbooks/release.md`.
-4. Add issue labels and milestone `v0.2.0`.
+4. Add release checklist to `docs/runbooks/release.md`.
+5. Add issue labels and milestone `v0.2.0`.
 
 Acceptance:
 
