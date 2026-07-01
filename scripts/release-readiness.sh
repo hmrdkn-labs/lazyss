@@ -12,6 +12,7 @@ REPORT_JSON="${LAZYSS_RELEASE_READINESS_JSON:-}"
 REPORT_MARKDOWN="${LAZYSS_RELEASE_READINESS_MARKDOWN:-}"
 LIVE_SMOKE_EVIDENCE="${LAZYSS_LIVE_SMOKE_EVIDENCE:-}"
 HOMEBREW_PRIVATE_EVIDENCE="${LAZYSS_HOMEBREW_PRIVATE_EVIDENCE:-}"
+REQUIRE_HOMEBREW_PRIVATE_EVIDENCE="${LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE:-0}"
 
 failures=0
 blockers=0
@@ -221,7 +222,11 @@ EOF
 
 check_homebrew_private_evidence() {
 	if [ -z "$HOMEBREW_PRIVATE_EVIDENCE" ]; then
-		blocker "private Homebrew install evidence file is not provided; set LAZYSS_HOMEBREW_PRIVATE_EVIDENCE after token-backed brew install smoke"
+		if [ "$REQUIRE_HOMEBREW_PRIVATE_EVIDENCE" = "1" ]; then
+			blocker "private Homebrew install evidence file is not provided; set LAZYSS_HOMEBREW_PRIVATE_EVIDENCE after token-backed brew install smoke"
+		else
+			warn "private Homebrew install evidence is not required for pre-publish readiness; capture post-publish evidence after the first token-backed cask install"
+		fi
 		return
 	fi
 
@@ -265,6 +270,14 @@ case "$READINESS_MODE" in
 		;;
 	*)
 		fail "LAZYSS_RELEASE_READINESS_MODE must be main or tag, got: $READINESS_MODE"
+		;;
+esac
+
+case "$REQUIRE_HOMEBREW_PRIVATE_EVIDENCE" in
+	0 | 1)
+		;;
+	*)
+		fail "LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE must be 0 or 1, got: $REQUIRE_HOMEBREW_PRIVATE_EVIDENCE"
 		;;
 esac
 

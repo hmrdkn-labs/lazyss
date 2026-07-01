@@ -54,8 +54,9 @@ class ReleaseApprovalPlanTest(unittest.TestCase):
             self.assertIn("LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON", markdown)
             self.assertIn("make live-smoke-evidence-template", markdown)
             self.assertIn("make homebrew-private-evidence-template", markdown)
+            self.assertIn("after post-publish private cask", markdown)
+            self.assertIn("LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE=1", markdown)
             self.assertIn("LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json", markdown)
-            self.assertIn("LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json", markdown)
             self.assertIn("./scripts/release-readiness.sh", markdown)
             self.assertIn("git tag v0.1.0", markdown)
 

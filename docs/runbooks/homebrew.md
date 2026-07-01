@@ -105,6 +105,10 @@ homebrew_casks:
 
 After tap approval, remove `skip_upload: true` and configure the tap repository
 with a token that has content write access to `hamardikan/homebrew-tap`.
+Once this is done, `./scripts/homebrew-readiness.sh` should report that tap
+publishing is enabled for the approved tap.
+The tag workflow sets `LAZYSS_REQUIRE_HOMEBREW_TAP_UPLOAD=1` so release
+readiness fails if `skip_upload: true` is accidentally reintroduced.
 
 The release workflow references `HOMEBREW_TAP_GITHUB_TOKEN` by secret name only.
 It must not print token values.
@@ -137,7 +141,8 @@ Expected result:
 - `lazyss --version` prints the release version.
 - `lazyss doctor` reports local readiness without leaking credentials.
 
-Before requesting release approval, create the ignored local evidence file:
+After the first private release has published the cask and private release
+assets, create the ignored local evidence file:
 
 ```sh
 make homebrew-private-evidence-template
@@ -158,9 +163,10 @@ must not contain token values, authorization headers, private release asset API
 URLs, Homebrew debug logs with token material, AWS credentials, SSH keys, or
 environment dumps.
 
-Release readiness requires this proof through:
+Post-publish release readiness requires this proof through:
 
 ```sh
+LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE=1 \
 LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json \
 ./scripts/release-readiness.sh
 ```

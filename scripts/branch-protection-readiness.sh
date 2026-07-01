@@ -4,6 +4,7 @@ set -euo pipefail
 REPO="${LAZYSS_GITHUB_REPO:-hamardikan/lazyss}"
 BRANCH="${LAZYSS_BRANCH_PROTECTION_BRANCH:-main}"
 REQUIRED_CHECKS="${LAZYSS_REQUIRED_BRANCH_CHECKS:-ci-required}"
+REQUIRED_APPROVING_REVIEWS="${LAZYSS_REQUIRED_APPROVING_REVIEWS:-0}"
 
 failures=0
 blockers=0
@@ -64,12 +65,13 @@ fi
 rm -f /tmp/lazyss-branch-protection.$$.err
 
 set +e
-validation_output="$(python3 - /tmp/lazyss-branch-protection.$$.json "$REQUIRED_CHECKS" <<'PY'
+validation_output="$(python3 - /tmp/lazyss-branch-protection.$$.json "$REQUIRED_CHECKS" "$REQUIRED_APPROVING_REVIEWS" <<'PY'
 import json
 import sys
 
-path, required_checks_raw = sys.argv[1:]
+path, required_checks_raw, required_approving_reviews_raw = sys.argv[1:]
 required_checks = required_checks_raw.split()
+required_approving_reviews = int(required_approving_reviews_raw)
 
 with open(path, encoding="utf-8") as handle:
     data = json.load(handle)
@@ -107,10 +109,21 @@ if isinstance(required_status_checks, dict):
 else:
     emit("blocker", "required status checks are not enabled")
 
-if isinstance(data.get("required_pull_request_reviews"), dict):
-    emit("ok", "pull request review requirement is enabled")
+pull_request_reviews = data.get("required_pull_request_reviews")
+if isinstance(pull_request_reviews, dict):
+    configured_count = pull_request_reviews.get("required_approving_review_count")
+    if isinstance(configured_count, int) and configured_count >= required_approving_reviews:
+        if required_approving_reviews == 0:
+            emit("ok", "pull request merge gate is enabled for solo-maintainer mode")
+        else:
+            emit("ok", f"pull request review requirement is enabled: {configured_count} approval(s)")
+    else:
+        emit(
+            "blocker",
+            f"pull request review requirement needs at least {required_approving_reviews} approval(s)",
+        )
 else:
-    emit("blocker", "pull request review requirement is not enabled")
+    emit("blocker", "pull request merge gate is not enabled")
 
 if enabled_flag("allow_force_pushes"):
     emit("blocker", "force pushes are allowed")

@@ -98,8 +98,10 @@ Recommended V1 release posture:
    with access to both repos.
 5. Document `HOMEBREW_GITHUB_API_TOKEN` for local Homebrew installs from the
    private release.
-6. Capture redacted private install proof in `homebrew-private-evidence.json`
-   using `make homebrew-private-evidence-template` and validate it with
+6. Before the first tag, verify the generated cask strategy from the
+   release-candidate snapshot. After the first publish, capture redacted private
+   install proof in `homebrew-private-evidence.json` using
+   `make homebrew-private-evidence-template` and validate it with
    `scripts/homebrew_private_evidence.py`.
 7. If private cask installation cannot be made reliable, keep the source repo
    private but publish release assets publicly as an explicit release decision.
@@ -232,9 +234,11 @@ Release workflow should:
 
 Hosted release readiness requires approved secret names only:
 `LAZYSS_LIVE_SMOKE_EVIDENCE_JSON` for live smoke evidence and
-`LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON` for private Homebrew install proof, plus
 `LAZYSS_RELEASE_READINESS_GITHUB_TOKEN` for read-only GitHub readiness checks.
-Do not store or print token values in docs, logs, state, or generated artifacts.
+`LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON` is optional for the first publish and
+becomes required only when a post-publish audit explicitly sets
+`LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE=1`. Do not store or print token values
+in docs, logs, state, or generated artifacts.
 
 ### GoReleaser Shape
 
@@ -518,9 +522,10 @@ Acceptance:
   archives contain installable binaries and the generated cask uses the private
   download strategy without token-bearing URLs.
 - Private install docs are clear about `HOMEBREW_GITHUB_API_TOKEN`.
-- `LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json ./scripts/release-readiness.sh`
-  validates redacted private Homebrew install proof once the tap and token-backed
-  install path exist.
+- After the first publish,
+  `LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE=1 LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json ./scripts/release-readiness.sh`
+  validates redacted private Homebrew install proof once the tap, release asset,
+  and token-backed install path exist.
 
 ### Milestone 5: v0.1.0 Release
 
@@ -561,6 +566,8 @@ Acceptance:
   lazyss --version
   lazyss doctor
   ```
+- `homebrew-private-evidence.json` is filled with redacted post-publish proof
+  and validates with `LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE=1`.
 
 ### Milestone 6: Branch Protection and Maintenance
 
@@ -581,6 +588,7 @@ Tasks:
    - require PRs
    - require `ci-required`
    - require branch up to date
+   - keep approving reviews at `0` while LazySS has only one maintainer
    - disallow force-push
 3. Validate the read-only target state with:
 
