@@ -34,22 +34,23 @@ The generated cask must use a private GitHub download strategy that reads
 `HOMEBREW_GITHUB_API_TOKEN` at download time. LazySS must not embed tokens in
 cask URLs, headers, docs, CI logs, local state, or release metadata.
 
-Until the owner approves the tap repository, tap token, and first release tag,
-GoReleaser must keep Homebrew publishing in dry-run mode with `skip_upload:
-true`. This allows snapshot validation and generated cask review without
-mutating a tap repository.
+Until the owner approves the tap repository and tap token, GoReleaser must keep
+Homebrew publishing in dry-run mode with `skip_upload: true`. After that
+approval, remove `skip_upload: true` so the tag workflow can publish
+`Casks/lazyss.rb` to the private tap.
 
 ## Proof Protocol
 
 The private cask download cannot be fully proven without approved external
-state: a release asset, a tap repository, and an operator token. The proof must
-be run before `v0.1.0` is tagged:
+state: a release asset, a tap repository, and an operator token. For the first
+release, the install proof is a post-publish gate because `v0.1.0` assets and
+the tap cask do not exist until GoReleaser publishes them:
 
-1. Build a release candidate with GoReleaser snapshot or a temporary approved
-   tag.
+1. Build a release candidate with GoReleaser snapshot and verify the generated
+   cask strategy before the real tag.
 2. Generate `Casks/lazyss.rb` with the private download strategy.
 3. Export `HOMEBREW_GITHUB_API_TOKEN` in the operator shell without printing it.
-4. Install from a clean Homebrew environment:
+4. After the real release publishes, install from a clean Homebrew environment:
 
    ```sh
    brew install --cask hamardikan/tap/lazyss
@@ -62,9 +63,9 @@ be run before `v0.1.0` is tagged:
 
 ## Consequences
 
-- Release automation can be validated now with `skip_upload: true`.
+- Release automation can be validated before approval with `skip_upload: true`.
 - Homebrew publishing remains gated on explicit approval for the tap repository
-  and token.
+  and token, then runs as part of the tag workflow.
 - If private asset installation fails during the proof protocol, the fallback is
   a new ADR deciding whether release assets may be public while the source repo
   remains private.

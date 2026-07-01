@@ -173,6 +173,9 @@ Before tagging `v0.1.0`, verify:
 - AWS degraded setup does not hide SSH inventory
 - one AWS SSM-ready instance can be inventoried and launched
 - state permissions and failed connection history remain correct
+- private Homebrew install evidence is planned as a post-publish gate for the
+  first release because the private cask cannot install until release assets and
+  the tap cask exist
 
 For release issues or audits that need machine-readable evidence, generate
 structured reports without changing release state:

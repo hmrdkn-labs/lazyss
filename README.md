@@ -81,14 +81,15 @@ make smoke-local
 ## Release Status
 
 `v0.1.0` must not be tagged until local gates, fast hosted CI, the
-release-candidate workflow, Homebrew private cask proof, and real SSH/AWS SSM
-smoke tests pass.
+release-candidate workflow, Homebrew readiness, and real SSH/AWS SSM smoke
+tests pass. For the first release, token-backed Homebrew install proof is a
+post-publish gate because the private cask and release assets do not exist
+before GoReleaser publishes them.
 
 Use the read-only readiness audit before requesting release approval:
 
 ```sh
 LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json \
-LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json \
 ./scripts/release-readiness.sh
 ```
 
@@ -96,7 +97,6 @@ Release readiness can also emit JSON and Markdown evidence for a release issue:
 
 ```sh
 LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json \
-LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json \
 LAZYSS_RELEASE_READINESS_JSON=release-readiness.json \
 LAZYSS_RELEASE_READINESS_MARKDOWN=release-readiness.md \
 ./scripts/release-readiness.sh

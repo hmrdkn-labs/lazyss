@@ -48,7 +48,6 @@ homebrew_casks:
     homepage: "https://github.com/hamardikan/lazyss"
     description: "Terminal machine cockpit for SSH and AWS SSM"
     directory: Casks
-    skip_upload: true
     repository:
       owner: hamardikan
       name: homebrew-tap

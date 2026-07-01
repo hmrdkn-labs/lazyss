@@ -7,6 +7,7 @@ REPO="${LAZYSS_GITHUB_REPO:-hamardikan/lazyss}"
 TAP_REPO="${LAZYSS_HOMEBREW_TAP_REPO:-hamardikan/homebrew-tap}"
 TAP_SHORT="${LAZYSS_HOMEBREW_TAP_SHORT:-hamardikan/tap}"
 READINESS_MODE="${LAZYSS_HOMEBREW_READINESS_MODE:-local}"
+REQUIRE_TAP_UPLOAD="${LAZYSS_REQUIRE_HOMEBREW_TAP_UPLOAD:-0}"
 
 failures=0
 blockers=0
@@ -62,6 +63,14 @@ case "$READINESS_MODE" in
 		;;
 esac
 
+case "$REQUIRE_TAP_UPLOAD" in
+	0 | 1)
+		;;
+	*)
+		fail "LAZYSS_REQUIRE_HOMEBREW_TAP_UPLOAD must be 0 or 1, got: $REQUIRE_TAP_UPLOAD"
+		;;
+esac
+
 if [ "$failures" -gt 0 ]; then
 	printf '[fail] %s local readiness failure(s)\n' "$failures" >&2
 	exit 1
@@ -92,7 +101,15 @@ fi
 require_config_text '^homebrew_casks:' "uses GoReleaser homebrew_casks"
 require_config_text 'name: lazyss' "cask name is lazyss"
 require_config_text 'directory: Casks' "cask output directory is Casks"
-require_config_text 'skip_upload: true' "tap publishing remains disabled before approval"
+if grep -q 'skip_upload: true' "$CONFIG"; then
+	if [ "$REQUIRE_TAP_UPLOAD" = "1" ]; then
+		fail "tap publishing is required but .goreleaser.yaml still has skip_upload: true"
+	else
+		warn "tap publishing remains disabled with skip_upload: true"
+	fi
+else
+	ok "tap publishing is enabled for the approved tap"
+fi
 require_config_text 'owner: hamardikan' "tap owner is hamardikan"
 require_config_text 'name: homebrew-tap' "tap repository name is homebrew-tap"
 require_config_text 'HOMEBREW_TAP_GITHUB_TOKEN' "tap publishing secret is referenced by name only"

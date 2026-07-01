@@ -78,11 +78,12 @@ does not create repositories, secrets, branch protection, tags, releases, or pub
    - `HOMEBREW_TAP_GITHUB_TOKEN`
    - `LAZYSS_RELEASE_READINESS_GITHUB_TOKEN`
    - `LAZYSS_LIVE_SMOKE_EVIDENCE_JSON`
-   - `LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON`
+   - `LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON` after post-publish private cask
+     install proof exists
 
    Store only the approved values in GitHub Secrets. Do not record secret values
-   in this plan. The two evidence JSON secrets must contain redacted evidence
-   objects only, not token material.
+   in this plan. Evidence JSON secrets must contain redacted evidence objects
+   only, not token material.
 
 5. Tap the private Homebrew repository locally after it exists.
 
@@ -106,15 +107,15 @@ does not create repositories, secrets, branch protection, tags, releases, or pub
      --commit "$(git rev-parse HEAD)"
    ```
 
-7. Capture private Homebrew install proof.
+7. Capture private Homebrew install proof after the first publish.
 
    ```sh
    make homebrew-private-evidence-template
    ```
 
-   Fill `homebrew-private-evidence.json` only after a token-backed private cask
-   install succeeds. Keep the token in the operator environment and out of
-   evidence:
+   Fill `homebrew-private-evidence.json` only after the release workflow
+   publishes the private cask and a token-backed private cask install succeeds.
+   Keep the token in the operator environment and out of evidence:
 
    ```sh
    brew install --cask {tap}/lazyss
@@ -122,6 +123,9 @@ does not create repositories, secrets, branch protection, tags, releases, or pub
      --file homebrew-private-evidence.json \\
      --target-version {target_version} \\
      --commit "$(git rev-parse HEAD)"
+   LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE=1 \\
+   LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json \\
+   ./scripts/release-readiness.sh
    ```
 
 ## Final Readiness Command
@@ -130,13 +134,14 @@ Run the full release readiness audit from `main` with a clean worktree:
 
 ```sh
 LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json \\
-LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json \\
 LAZYSS_RELEASE_READINESS_JSON=release-readiness.json \\
 LAZYSS_RELEASE_READINESS_MARKDOWN=release-readiness.md \\
 ./scripts/release-readiness.sh
 ```
 
-Expected result before tagging: exit `0`.
+Expected result before tagging: exit `0`. For the first release, private
+Homebrew install evidence is validated after GoReleaser publishes the private
+release assets and tap cask.
 
 ## Tag After Green Readiness
 
