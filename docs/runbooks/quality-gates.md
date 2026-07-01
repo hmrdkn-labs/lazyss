@@ -17,6 +17,7 @@ make check             # local core gate: fmt, vet, race tests, script tests, bu
 make fast-pr           # local mirror of fast CI, including smoke/lint/vuln when tools exist
 make heavy-quality     # coverage, lint, and vulnerability scan
 make release-snapshot  # goreleaser check plus snapshot artifact generation
+make release-artifacts-verify # verify archives and checksums under DIST=dist
 make release-preflight # read-only release readiness audit
 make live-smoke-evidence-template # create ignored 0600 live smoke evidence draft
 ```
@@ -87,6 +88,7 @@ The release proof jobs are:
 
 - linux/darwin/windows amd64/arm64 build matrix
 - GoReleaser snapshot validation
+- archive and checksum verification for the snapshot `dist/` directory
 - short-retention upload of the `dist/` snapshot artifacts
 - Homebrew readiness audit on macOS
 - `release-candidate-required` aggregate status

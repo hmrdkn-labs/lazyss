@@ -14,6 +14,8 @@
 - Live smoke evidence may contain host labels, region labels, and boolean proof
   fields. It must not contain private keys, AWS access keys, session tokens,
   command environment dumps, or full credential-provider output.
+- Release artifact checks verify that the six expected platform archives exist
+  and match `checksums.txt` before a tag is approved or installed.
 - GitHub workflow secrets are referenced by name only:
   `LAZYSS_LIVE_SMOKE_EVIDENCE_JSON` for release proof and
   `LAZYSS_RELEASE_READINESS_GITHUB_TOKEN` for hosted readiness reads and

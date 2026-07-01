@@ -107,6 +107,8 @@ jobs:
         run: goreleaser check
       - name: GoReleaser snapshot
         run: goreleaser release --clean --snapshot --skip=publish
+      - name: Verify snapshot artifacts
+        run: python3 scripts/release_artifacts.py verify --dist dist
       - name: Upload GoReleaser snapshot artifacts
         uses: actions/upload-artifact@v7
         with:

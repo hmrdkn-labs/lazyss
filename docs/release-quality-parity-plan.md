@@ -147,6 +147,7 @@ pushes, and manual dispatch:
 
 - Cross-platform build matrix for linux/darwin/windows amd64/arm64
 - GoReleaser snapshot validation
+- Archive and checksum verification for the snapshot `dist/` directory
 - Short-retention upload of snapshot `dist/` artifacts for review
 - Homebrew readiness audit, with approval/external-state blockers reported
   without hiding local configuration failures
@@ -512,6 +513,7 @@ Acceptance:
 - GitHub Release `v0.1.0` exists.
 - Release contains archives for linux/darwin/windows amd64/arm64 plus
   `checksums.txt`.
+- `DIST=/path/to/release-artifacts make release-artifacts-verify` passes.
 - Homebrew tap is updated.
 - Install works:
 
