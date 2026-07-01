@@ -134,6 +134,7 @@ Fast CI runs on pull requests and pushes to `main`:
 - Race tests with coverage: `go test -race -coverprofile=coverage.out ./...`
 - Coverage summary: `go tool cover -func=coverage.out | tail -1`
 - Coverage artifact upload
+- Script tests for release helper scripts
 - Linux build: `go build ./cmd/lazyss`
 - Safe local binary/TUI smoke: `make smoke-local`
 - `golangci-lint` using `.golangci.yml`, with the action pinned to
@@ -174,6 +175,11 @@ loop:
 - AWS SSM inventory and shell launch work for one known SSM-ready instance.
 - Local state is written under the user config directory with mode `0600`.
 - Failed connection attempts do not update last successful connection state.
+
+Use `make live-smoke-evidence-template` to create the ignored local evidence
+file for these checks. The helper writes the current commit and target version,
+uses `0600` permissions, and leaves pass/fail fields false until the operator
+has completed the real SSH and AWS SSM smoke checks.
 
 The safe automated subset is `make smoke-local`. It builds the binary, checks
 the version command, runs `lazyss doctor` with EC2 metadata disabled, starts the

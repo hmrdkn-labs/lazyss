@@ -8,4 +8,5 @@
 /release-readiness.json
 /release-readiness.md
 /live-smoke-evidence.json
+__pycache__/
 .DS_Store

@@ -16,10 +16,10 @@ Protect `main` with:
 - branch deletion disabled
 
 `ci-required` is a stable aggregate gate in the `CI` workflow. It fails if any
-of the component jobs fail: `format`, `vet`, `test`, `build`, `smoke-local`,
-`lint`, or `govulncheck`. Require the aggregate check in branch protection so
-workflow internals can change without editing GitHub branch protection every
-time a job is renamed or split.
+of the component jobs fail: `format`, `vet`, `test`, `script-test`, `build`,
+`smoke-local`, `lint`, or `govulncheck`. Require the aggregate check in branch
+protection so workflow internals can change without editing GitHub branch
+protection every time a job is renamed or split.
 
 Warnings, not hard release blockers for V1:
 

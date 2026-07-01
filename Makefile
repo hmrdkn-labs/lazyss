@@ -23,6 +23,10 @@ doctor:
 test:
 	go test -race ./...
 
+.PHONY: script-test
+script-test:
+	python3 -m unittest discover -s scripts -p '*_test.py'
+
 .PHONY: cover
 cover:
 	go test -race -coverprofile=coverage.out ./...
@@ -58,10 +62,10 @@ fmt-check:
 	@out=$$(gofmt -l .); if [ -n "$$out" ]; then echo "not formatted:"; echo "$$out"; exit 1; fi
 
 .PHONY: check
-check: fmt-check vet test build
+check: fmt-check vet test script-test build
 
 .PHONY: fast-pr
-fast-pr: fmt-check vet test build smoke-local lint vuln
+fast-pr: fmt-check vet test script-test build smoke-local lint vuln
 
 .PHONY: heavy-quality
 heavy-quality: cover lint vuln
@@ -96,6 +100,13 @@ release-readiness:
 
 .PHONY: release-preflight
 release-preflight: release-readiness
+
+.PHONY: live-smoke-evidence-template
+live-smoke-evidence-template:
+	python3 scripts/live_smoke_evidence.py template \
+		--output live-smoke-evidence.json \
+		--target-version "$${LAZYSS_RELEASE_VERSION:-v0.1.0}" \
+		--commit "$$(git rev-parse HEAD)"
 
 .PHONY: clean
 clean:
