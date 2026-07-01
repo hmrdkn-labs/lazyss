@@ -1,8 +1,11 @@
 import hashlib
+import io
 import importlib.util
 import pathlib
+import tarfile
 import tempfile
 import unittest
+import zipfile
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -31,14 +34,29 @@ class ReleaseArtifactsTest(unittest.TestCase):
                 lines.append(f"{hashlib.sha256(content).hexdigest()}  {name}")
         (path / "checksums.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
+    def tar_archive(self, name="lazyss", mode=0o755, content=b"binary"):
+        buffer = io.BytesIO()
+        with tarfile.open(fileobj=buffer, mode="w:gz") as archive:
+            info = tarfile.TarInfo(name)
+            info.mode = mode
+            info.size = len(content)
+            archive.addfile(info, io.BytesIO(content))
+        return buffer.getvalue()
+
+    def zip_archive(self, name="lazyss.exe", content=b"windows-binary"):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, mode="w") as archive:
+            archive.writestr(name, content)
+        return buffer.getvalue()
+
     def complete_files(self):
         return {
-            "lazyss_0.1.0_darwin_amd64.tar.gz": b"darwin-amd64",
-            "lazyss_0.1.0_darwin_arm64.tar.gz": b"darwin-arm64",
-            "lazyss_0.1.0_linux_amd64.tar.gz": b"linux-amd64",
-            "lazyss_0.1.0_linux_arm64.tar.gz": b"linux-arm64",
-            "lazyss_0.1.0_windows_amd64.zip": b"windows-amd64",
-            "lazyss_0.1.0_windows_arm64.zip": b"windows-arm64",
+            "lazyss_0.1.0_darwin_amd64.tar.gz": self.tar_archive(content=b"darwin-amd64"),
+            "lazyss_0.1.0_darwin_arm64.tar.gz": self.tar_archive(content=b"darwin-arm64"),
+            "lazyss_0.1.0_linux_amd64.tar.gz": self.tar_archive(content=b"linux-amd64"),
+            "lazyss_0.1.0_linux_arm64.tar.gz": self.tar_archive(content=b"linux-arm64"),
+            "lazyss_0.1.0_windows_amd64.zip": self.zip_archive(content=b"windows-amd64"),
+            "lazyss_0.1.0_windows_arm64.zip": self.zip_archive(content=b"windows-arm64"),
         }
 
     def complete_files_with_cask(self):
@@ -117,7 +135,7 @@ end
 
             events = self.module.verify_dist(dist)
 
-            self.assertEqual([event.level for event in events], ["ok", "ok", "ok", "ok"])
+            self.assertEqual([event.level for event in events], ["ok", "ok", "ok", "ok", "ok"])
             self.assertIn("all required archives are present", events[0].message)
 
     def test_rejects_missing_platform_archive(self):
@@ -180,6 +198,48 @@ end
 
             self.assertEqual(events[0].level, "fail")
             self.assertIn("missing cask checksum", events[0].message)
+
+    def test_rejects_tar_archive_without_lazyss_binary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dist = pathlib.Path(tmp) / "dist"
+            files = self.complete_files()
+            files["lazyss_0.1.0_linux_amd64.tar.gz"] = self.tar_archive(name="not-lazyss")
+            files["homebrew/Casks/lazyss.rb"] = self.generated_cask(files).encode("utf-8")
+            self.write_dist(dist, files)
+
+            events = self.module.verify_dist(dist)
+
+            self.assertEqual(events[0].level, "fail")
+            self.assertIn("missing lazyss binary", events[0].message)
+            self.assertIn("linux/amd64", events[0].message)
+
+    def test_rejects_tar_archive_with_non_executable_lazyss_binary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dist = pathlib.Path(tmp) / "dist"
+            files = self.complete_files()
+            files["lazyss_0.1.0_darwin_arm64.tar.gz"] = self.tar_archive(mode=0o644)
+            files["homebrew/Casks/lazyss.rb"] = self.generated_cask(files).encode("utf-8")
+            self.write_dist(dist, files)
+
+            events = self.module.verify_dist(dist)
+
+            self.assertEqual(events[0].level, "fail")
+            self.assertIn("not executable", events[0].message)
+            self.assertIn("darwin/arm64", events[0].message)
+
+    def test_rejects_windows_archive_without_exe_binary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dist = pathlib.Path(tmp) / "dist"
+            files = self.complete_files()
+            files["lazyss_0.1.0_windows_arm64.zip"] = self.zip_archive(name="lazyss")
+            files["homebrew/Casks/lazyss.rb"] = self.generated_cask(files).encode("utf-8")
+            self.write_dist(dist, files)
+
+            events = self.module.verify_dist(dist)
+
+            self.assertEqual(events[0].level, "fail")
+            self.assertIn("missing lazyss.exe binary", events[0].message)
+            self.assertIn("windows/arm64", events[0].message)
 
 
 if __name__ == "__main__":

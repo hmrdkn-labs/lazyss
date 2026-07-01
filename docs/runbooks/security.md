@@ -15,9 +15,10 @@
   fields. It must not contain private keys, AWS access keys, session tokens,
   command environment dumps, or full credential-provider output.
 - Release artifact checks verify that the six expected platform archives exist,
-  match `checksums.txt`, and generate a Homebrew cask that uses the private
-  GitHub download strategy without token-bearing URLs before a tag is approved
-  or installed.
+  contain non-empty binaries, preserve executable mode for tar archives, match
+  `checksums.txt`, and generate a Homebrew cask that uses the private GitHub
+  download strategy without token-bearing URLs before a tag is approved or
+  installed.
 - GitHub workflow secrets are referenced by name only:
   `LAZYSS_LIVE_SMOKE_EVIDENCE_JSON` for release proof and
   `LAZYSS_RELEASE_READINESS_GITHUB_TOKEN` for hosted readiness reads and
