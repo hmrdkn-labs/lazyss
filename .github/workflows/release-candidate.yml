@@ -8,13 +8,26 @@ on:
     paths:
       - ".github/workflows/release-candidate.yml"
       - ".github/workflows/release.yml"
+      - ".github/workflows/ci.yml"
       - ".goreleaser.yaml"
+      - ".golangci.yml"
+      - "coverage.baseline"
+      - ".github/dependabot.yml"
+      - ".github/CODEOWNERS"
+      - ".github/pull_request_template.md"
+      - ".github/ISSUE_TEMPLATE/**"
       - "Makefile"
       - "cmd/**"
       - "internal/**"
       - "go.mod"
       - "go.sum"
       - "scripts/**"
+      - "docs/runbooks/quality-gates.md"
+      - "docs/runbooks/release.md"
+      - "docs/runbooks/sdlc.md"
+      - "docs/runbooks/homebrew.md"
+      - "docs/runbooks/smoke.md"
+      - "docs/runbooks/security.md"
   workflow_dispatch:
 
 permissions:
@@ -33,6 +46,7 @@ jobs:
       should_run: ${{ steps.decide.outputs.should_run }}
       reason: ${{ steps.decide.outputs.reason }}
     steps:
+      - uses: actions/checkout@v7
       - name: Decide whether release-candidate gates are required
         id: decide
         env:
@@ -44,26 +58,17 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ "$EVENT_NAME" != "pull_request" ]; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-            echo "reason=$EVENT_NAME event" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if printf '%s\n' "$LABELS_JSON" | python3 -c 'import json,sys; labels=json.load(sys.stdin); sys.exit(0 if any(label in {"release-candidate","release"} for label in labels) else 1)'; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-            echo "reason=release label" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          changed_files="$(gh pr view "$PR_NUMBER" --repo "$REPO" --json files --jq '.files[].path')"
-          if printf '%s\n' "$changed_files" | grep -Eq '^(\.github/workflows/(release-candidate|release)\.yml|\.goreleaser\.yaml|Makefile|cmd/|internal/|go\.(mod|sum)|scripts/)'; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-            echo "reason=release-relevant files" >> "$GITHUB_OUTPUT"
+          changed_files_file="$(mktemp)"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            gh pr view "$PR_NUMBER" --repo "$REPO" --json files --jq '.files[].path' > "$changed_files_file"
           else
-            echo "should_run=false" >> "$GITHUB_OUTPUT"
-            echo "reason=not release-relevant; add release-candidate label to force" >> "$GITHUB_OUTPUT"
+            : > "$changed_files_file"
           fi
+
+          python3 scripts/release_candidate_classify.py \
+            --event-name "$EVENT_NAME" \
+            --labels-json "$LABELS_JSON" \
+            --changed-files "$changed_files_file" >> "$GITHUB_OUTPUT"
 
   build-matrix:
     needs: classify
