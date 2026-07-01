@@ -121,6 +121,11 @@ or PR.
 The release-candidate workflow uploads `dist/` as
 `goreleaser-snapshot-<sha>` with short retention. Use that artifact to review
 archive names, checksums, and generated cask content before approving a tag.
+After downloading it, verify the expected platform archives and checksums:
+
+```sh
+DIST=/path/to/downloaded/dist make release-artifacts-verify
+```
 
 The release-candidate workflow can be forced before merge by applying the
 `release-candidate` label to a pull request. Use this for release policy,
@@ -147,6 +152,7 @@ Confirm:
 - GitHub Release `v0.1.0` exists.
 - Archives exist for linux/darwin/windows amd64/arm64.
 - `checksums.txt` exists.
+- `DIST=/path/to/release-artifacts make release-artifacts-verify` passes.
 - Homebrew cask is generated or published according to ADR 0002.
 - `lazyss --version` prints `v0.1.0`.
 

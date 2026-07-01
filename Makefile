@@ -77,7 +77,12 @@ release-snapshot:
 		exit 1; \
 	fi; \
 	goreleaser check; \
-	goreleaser release --clean --snapshot --skip=publish
+	goreleaser release --clean --snapshot --skip=publish; \
+	python3 scripts/release_artifacts.py verify --dist dist
+
+.PHONY: release-artifacts-verify
+release-artifacts-verify:
+	python3 scripts/release_artifacts.py verify --dist "$${DIST:-dist}"
 
 .PHONY: smoke-local
 smoke-local:

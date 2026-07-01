@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+import argparse
+import hashlib
+import pathlib
+import re
+import sys
+from collections import namedtuple
+
+
+Event = namedtuple("Event", ["level", "message"])
+
+REQUIRED_TARGETS = (
+    ("darwin", "amd64", ".tar.gz"),
+    ("darwin", "arm64", ".tar.gz"),
+    ("linux", "amd64", ".tar.gz"),
+    ("linux", "arm64", ".tar.gz"),
+    ("windows", "amd64", ".zip"),
+    ("windows", "arm64", ".zip"),
+)
+
+ARCHIVE_RE = re.compile(r"^lazyss_.+_(?P<goos>darwin|linux|windows)_(?P<goarch>amd64|arm64)(?P<ext>\.tar\.gz|\.zip)$")
+
+
+def read_checksums(path):
+    checksums = {}
+    try:
+        lines = pathlib.Path(path).read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        return None, [Event("fail", f"could not read checksums.txt: {exc}")]
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split()
+        if len(parts) != 2:
+            return None, [Event("fail", f"invalid checksums.txt line: {line}")]
+        digest, filename = parts
+        if not re.fullmatch(r"[0-9a-fA-F]{64}", digest):
+            return None, [Event("fail", f"invalid sha256 digest for {filename}")]
+        checksums[filename] = digest.lower()
+    return checksums, []
+
+
+def sha256(path):
+    digest = hashlib.sha256()
+    with pathlib.Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def archive_targets(dist):
+    found = {}
+    for path in pathlib.Path(dist).iterdir():
+        if not path.is_file():
+            continue
+        match = ARCHIVE_RE.match(path.name)
+        if not match:
+            continue
+        target = (match.group("goos"), match.group("goarch"), match.group("ext"))
+        found[target] = path
+    return found
+
+
+def verify_dist(dist):
+    dist = pathlib.Path(dist)
+    if not dist.is_dir():
+        return [Event("fail", f"dist directory does not exist: {dist}")]
+
+    checksums, errors = read_checksums(dist / "checksums.txt")
+    if errors:
+        return errors
+
+    found = archive_targets(dist)
+    for target in REQUIRED_TARGETS:
+        if target not in found:
+            goos, goarch, _ = target
+            return [Event("fail", f"missing required archive for {goos}/{goarch}")]
+
+    for target in REQUIRED_TARGETS:
+        path = found[target]
+        expected = checksums.get(path.name)
+        if expected is None:
+            return [Event("fail", f"missing checksum for {path.name}")]
+        actual = sha256(path)
+        if actual != expected:
+            return [Event("fail", f"checksum mismatch for {path.name}")]
+
+    return [
+        Event("ok", "all required archives are present"),
+        Event("ok", "checksums.txt includes every required archive"),
+        Event("ok", "archive checksums match checksums.txt"),
+    ]
+
+
+def print_events(events):
+    for event in events:
+        print(f"{event.level}\t{event.message}")
+
+
+def exit_code(events):
+    return 1 if any(event.level == "fail" for event in events) else 0
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Verify LazySS release artifact archives and checksums.")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    verify = subparsers.add_parser("verify", help="verify a GoReleaser dist directory")
+    verify.add_argument("--dist", default="dist")
+
+    args = parser.parse_args(argv)
+    events = verify_dist(args.dist)
+    print_events(events)
+    return exit_code(events)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
