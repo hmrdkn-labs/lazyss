@@ -20,6 +20,15 @@ class ReleaseReadinessTest(unittest.TestCase):
         self.assertIn(".PHONY: homebrew-private-evidence-template", text)
         self.assertIn("scripts/homebrew_private_evidence.py template", text)
 
+    def test_readme_release_commands_include_all_evidence_inputs(self):
+        text = (ROOT / "README.md").read_text(encoding="utf-8")
+
+        self.assertIn("LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json", text)
+        self.assertIn("LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json", text)
+        self.assertIn("make live-smoke-evidence-template", text)
+        self.assertIn("make homebrew-private-evidence-template", text)
+        self.assertIn("make release-approval-plan", text)
+
 
 if __name__ == "__main__":
     unittest.main()
