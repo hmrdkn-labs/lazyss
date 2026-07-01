@@ -154,6 +154,13 @@ live-smoke-evidence-template:
 		--target-version "$${LAZYSS_RELEASE_VERSION:-v0.1.0}" \
 		--commit "$$(git rev-parse HEAD)"
 
+.PHONY: homebrew-private-evidence-template
+homebrew-private-evidence-template:
+	python3 scripts/homebrew_private_evidence.py template \
+		--output homebrew-private-evidence.json \
+		--target-version "$${LAZYSS_RELEASE_VERSION:-v0.1.0}" \
+		--commit "$$(git rev-parse HEAD)"
+
 .PHONY: clean
 clean:
 	rm -rf $(BINDIR) coverage.out coverage.html coverage.txt lazyss lazyss.exe

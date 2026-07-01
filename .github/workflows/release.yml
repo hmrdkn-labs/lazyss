@@ -37,6 +37,16 @@ jobs:
           fi
           umask 077
           printf '%s' "$LAZYSS_LIVE_SMOKE_EVIDENCE_JSON" > live-smoke-evidence.json
+      - name: Write private Homebrew evidence
+        env:
+          LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON: ${{ secrets.LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON }}
+        run: |
+          if [ -z "${LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON:-}" ]; then
+            echo "::error ::LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON is required for release readiness."
+            exit 2
+          fi
+          umask 077
+          printf '%s' "$LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON" > homebrew-private-evidence.json
       - name: Release readiness audit
         env:
           GH_TOKEN: ${{ secrets.LAZYSS_RELEASE_READINESS_GITHUB_TOKEN }}
@@ -45,6 +55,7 @@ jobs:
           LAZYSS_SKIP_OPERATOR_RUNTIME_TOOL_CHECKS: "1"
           LAZYSS_HOMEBREW_READINESS_MODE: hosted
           LAZYSS_LIVE_SMOKE_EVIDENCE: live-smoke-evidence.json
+          LAZYSS_HOMEBREW_PRIVATE_EVIDENCE: homebrew-private-evidence.json
           LAZYSS_RELEASE_READINESS_JSON: release-readiness.json
           LAZYSS_RELEASE_READINESS_MARKDOWN: release-readiness.md
         run: |

@@ -18,6 +18,14 @@ class ReleaseWorkflowTest(unittest.TestCase):
         self.assertIn("release-readiness.json", text)
         self.assertIn("release-readiness.md", text)
 
+    def test_release_workflow_writes_private_homebrew_evidence_before_readiness(self):
+        text = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON", text)
+        self.assertIn("homebrew-private-evidence.json", text)
+        self.assertLess(text.index("Write private Homebrew evidence"), text.index("Release readiness audit"))
+        self.assertIn("LAZYSS_HOMEBREW_PRIVATE_EVIDENCE: homebrew-private-evidence.json", text)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -98,7 +98,10 @@ Recommended V1 release posture:
    with access to both repos.
 5. Document `HOMEBREW_GITHUB_API_TOKEN` for local Homebrew installs from the
    private release.
-6. If private cask installation cannot be made reliable, keep the source repo
+6. Capture redacted private install proof in `homebrew-private-evidence.json`
+   using `make homebrew-private-evidence-template` and validate it with
+   `scripts/homebrew_private_evidence.py`.
+7. If private cask installation cannot be made reliable, keep the source repo
    private but publish release assets publicly as an explicit release decision.
 
 ## Target State
@@ -124,6 +127,8 @@ Recommended V1 release posture:
 - `docs/runbooks/quality-gates.md`
 - `scripts/workflow_policy.py`
 - `scripts/workflow_policy_test.py`
+- `scripts/homebrew_private_evidence.py`
+- `scripts/homebrew_private_evidence_test.py`
 
 ### CI Quality Gates
 
@@ -224,6 +229,7 @@ Release workflow should:
 
 Hosted release readiness requires approved secret names only:
 `LAZYSS_LIVE_SMOKE_EVIDENCE_JSON` for live smoke evidence and
+`LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON` for private Homebrew install proof, plus
 `LAZYSS_RELEASE_READINESS_GITHUB_TOKEN` for read-only GitHub readiness checks.
 Do not store or print token values in docs, logs, state, or generated artifacts.
 
@@ -509,6 +515,9 @@ Acceptance:
   archives contain installable binaries and the generated cask uses the private
   download strategy without token-bearing URLs.
 - Private install docs are clear about `HOMEBREW_GITHUB_API_TOKEN`.
+- `LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json ./scripts/release-readiness.sh`
+  validates redacted private Homebrew install proof once the tap and token-backed
+  install path exist.
 
 ### Milestone 5: v0.1.0 Release
 
