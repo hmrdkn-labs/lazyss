@@ -46,6 +46,7 @@ jobs:
       should_run: ${{ steps.decide.outputs.should_run }}
       reason: ${{ steps.decide.outputs.reason }}
     steps:
+      - uses: actions/checkout@v7
       - name: Decide whether release-candidate gates are required
         id: decide
         env:
