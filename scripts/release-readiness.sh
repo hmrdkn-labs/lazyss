@@ -11,6 +11,7 @@ SKIP_OPERATOR_RUNTIME_TOOLS="${LAZYSS_SKIP_OPERATOR_RUNTIME_TOOL_CHECKS:-0}"
 REPORT_JSON="${LAZYSS_RELEASE_READINESS_JSON:-}"
 REPORT_MARKDOWN="${LAZYSS_RELEASE_READINESS_MARKDOWN:-}"
 LIVE_SMOKE_EVIDENCE="${LAZYSS_LIVE_SMOKE_EVIDENCE:-}"
+HOMEBREW_PRIVATE_EVIDENCE="${LAZYSS_HOMEBREW_PRIVATE_EVIDENCE:-}"
 
 failures=0
 blockers=0
@@ -218,6 +219,41 @@ EOF
 	fi
 }
 
+check_homebrew_private_evidence() {
+	if [ -z "$HOMEBREW_PRIVATE_EVIDENCE" ]; then
+		blocker "private Homebrew install evidence file is not provided; set LAZYSS_HOMEBREW_PRIVATE_EVIDENCE after token-backed brew install smoke"
+		return
+	fi
+
+	if [ ! -f "$HOMEBREW_PRIVATE_EVIDENCE" ]; then
+		blocker "private Homebrew install evidence file does not exist: $HOMEBREW_PRIVATE_EVIDENCE"
+		return
+	fi
+
+	local output rc
+	set +e
+	output="$(python3 "$ROOT/scripts/homebrew_private_evidence.py" validate --file "$HOMEBREW_PRIVATE_EVIDENCE" --target-version "$RELEASE_VERSION" --commit "$head")"
+	rc=$?
+	set -e
+
+	while IFS=$'\t' read -r level message; do
+		[ -n "$level" ] || continue
+		case "$level" in
+			ok) ok "$message" ;;
+			warn) warn "$message" ;;
+			blocker) blocker "$message" ;;
+			fail) fail "$message" ;;
+			*) fail "private Homebrew evidence validator returned unknown level: $level" ;;
+		esac
+	done <<EOF
+$output
+EOF
+
+	if [ "$rc" -ne 0 ] && [ "$rc" -ne 1 ] && [ "$rc" -ne 2 ]; then
+		fail "private Homebrew evidence validator failed with exit $rc"
+	fi
+}
+
 printf 'LazySS release readiness audit\n'
 printf 'repo: %s\n' "$REPO"
 printf 'target version: %s\n' "$RELEASE_VERSION"
@@ -392,6 +428,9 @@ case "$homebrew_rc" in
 		;;
 esac
 rm -f /tmp/lazyss-homebrew-readiness.$$.out
+
+printf '\nPrivate Homebrew install evidence\n'
+check_homebrew_private_evidence
 
 printf '\nLive smoke evidence\n'
 check_live_smoke_evidence

@@ -27,13 +27,16 @@ Run the full read-only release readiness audit before requesting `v0.1.0`
 approval:
 
 ```sh
-LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json ./scripts/release-readiness.sh
+LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json \
+LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json \
+./scripts/release-readiness.sh
 ```
 
 For a release issue, generate structured evidence:
 
 ```sh
 LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json \
+LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json \
 LAZYSS_RELEASE_READINESS_JSON=release-readiness.json \
 LAZYSS_RELEASE_READINESS_MARKDOWN=release-readiness.md \
 ./scripts/release-readiness.sh
@@ -41,9 +44,9 @@ LAZYSS_RELEASE_READINESS_MARKDOWN=release-readiness.md \
 
 This audit checks the current branch, clean worktree, repo privacy, latest fast
 CI, latest release-candidate workflow, branch protection, tag/release absence,
-Homebrew readiness, local AWS SSM prerequisite tooling, and live smoke evidence.
-It does not create repositories, secrets, branch protection, tags, releases, or
-public assets.
+Homebrew readiness, private Homebrew install proof, local AWS SSM prerequisite
+tooling, and live smoke evidence. It does not create repositories, secrets,
+branch protection, tags, releases, or public assets.
 
 Branch protection is validated by `./scripts/branch-protection-readiness.sh`.
 That audit requires protected fast CI checks, pull request reviews, up-to-date
@@ -88,6 +91,16 @@ then validate it with `python3 scripts/live_smoke_evidence.py validate`. The
 readiness audit ignores legacy one-shot smoke environment flags for release
 approval because they are not auditable.
 
+Private Homebrew proof must be a local JSON file referenced by
+`LAZYSS_HOMEBREW_PRIVATE_EVIDENCE`. Use
+`make homebrew-private-evidence-template` to create an ignored `0600` draft for
+the current commit. Edit that file after a token-backed `brew install --cask
+hamardikan/tap/lazyss` works from the private release assets, then validate it
+with `python3 scripts/homebrew_private_evidence.py validate`. Store only
+redacted pass/fail evidence; do not include GitHub token values, authorization
+headers, private release asset API URLs, Homebrew debug logs with token
+material, AWS credentials, SSH keys, or environment dumps.
+
 The tag-driven GitHub release workflow runs the same readiness audit before
 GoReleaser publishes artifacts. In hosted release mode it sets
 `LAZYSS_RELEASE_READINESS_MODE=tag`, verifies the tag points at `origin/main`,
@@ -95,6 +108,12 @@ and reads live smoke proof from the repository secret
 `LAZYSS_LIVE_SMOKE_EVIDENCE_JSON`. That secret must contain the JSON evidence
 object, not token material. The workflow writes it to a `0600` temporary file
 inside the runner and does not echo the value.
+
+Hosted release readiness also requires
+`LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON` once the private Homebrew install proof
+has been gathered. That secret must contain only the redacted
+`homebrew-private-evidence.json` object. Do not add it until the owner approves
+the tap, private install proof, and release secret setup.
 
 Hosted release readiness uses `LAZYSS_RELEASE_READINESS_GITHUB_TOKEN`, not the
 default workflow `GITHUB_TOKEN`, because it must read branch protection,

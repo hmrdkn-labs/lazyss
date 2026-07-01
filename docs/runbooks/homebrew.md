@@ -137,6 +137,34 @@ Expected result:
 - `lazyss --version` prints the release version.
 - `lazyss doctor` reports local readiness without leaking credentials.
 
+Before requesting release approval, create the ignored local evidence file:
+
+```sh
+make homebrew-private-evidence-template
+```
+
+After the private install test passes, edit only the non-secret booleans and
+labels in `homebrew-private-evidence.json`, then validate it:
+
+```sh
+python3 scripts/homebrew_private_evidence.py validate \
+  --file homebrew-private-evidence.json \
+  --target-version v0.1.0 \
+  --commit "$(git rev-parse HEAD)"
+```
+
+The file must remain local or be attached only as a private release artifact. It
+must not contain token values, authorization headers, private release asset API
+URLs, Homebrew debug logs with token material, AWS credentials, SSH keys, or
+environment dumps.
+
+Release readiness requires this proof through:
+
+```sh
+LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json \
+./scripts/release-readiness.sh
+```
+
 ## Fallback Decision
 
 If private cask installation cannot be made reliable, stop and write a follow-up

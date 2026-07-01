@@ -11,5 +11,6 @@
 /branch-protection.json
 /branch-protection.md
 /live-smoke-evidence.json
+/homebrew-private-evidence.json
 __pycache__/
 .DS_Store
