@@ -8,6 +8,7 @@
 /coverage.txt
 /release-readiness.json
 /release-readiness.md
+/release-approval.md
 /branch-protection.json
 /branch-protection.md
 /live-smoke-evidence.json
