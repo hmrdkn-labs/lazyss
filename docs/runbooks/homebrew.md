@@ -19,6 +19,12 @@ The private download strategy must keep authentication in runtime strategy state
 and request headers only. It must not return or print a URL containing
 `HOMEBREW_GITHUB_API_TOKEN`.
 
+The release-candidate snapshot gate verifies the generated
+`homebrew/Casks/lazyss.rb` file, not only `.goreleaser.yaml`. It checks that the
+cask uses `GitHubPrivateRepositoryReleaseDownloadStrategy`, reads
+`HOMEBREW_GITHUB_API_TOKEN` at download time, avoids token-bearing URLs, and
+keeps its darwin/linux archive checksums aligned with `checksums.txt`.
+
 ## Approval Gates
 
 Ask for explicit owner approval before any of these actions:
@@ -102,6 +108,16 @@ with a token that has content write access to `hamardikan/homebrew-tap`.
 
 The release workflow references `HOMEBREW_TAP_GITHUB_TOKEN` by secret name only.
 It must not print token values.
+
+Before approving a tag, download the `goreleaser-snapshot-<sha>` artifact from
+the release-candidate workflow and run:
+
+```sh
+DIST=/path/to/downloaded/dist make release-artifacts-verify
+```
+
+This validates the generated private cask shape without creating the tap,
+adding secrets, publishing a release, or requiring a real Homebrew install.
 
 ## Private Install Test
 
