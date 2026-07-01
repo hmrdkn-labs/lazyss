@@ -10,6 +10,16 @@ go tool cover -func=coverage.out | tail -1
 go build ./cmd/lazyss
 ```
 
+The Make targets mirror the hosted pipeline stages:
+
+```sh
+make check             # local core gate: fmt, vet, race tests, build
+make fast-pr           # local mirror of fast CI, including smoke/lint/vuln when tools exist
+make heavy-quality     # coverage, lint, and vulnerability scan
+make release-snapshot  # goreleaser check plus snapshot artifact generation
+make release-preflight # read-only release readiness audit
+```
+
 Run the safe local binary/TUI smoke when the change affects runtime behavior,
 release packaging, or the release candidate checklist:
 
@@ -29,7 +39,11 @@ without explaining the reason in the PR.
 ## Hosted Fast CI
 
 Fast CI runs on pull requests and pushes to `main`. Branch protection should use
-these checks as the required merge gate:
+one stable aggregate check as the required merge gate:
+
+- `ci-required`: fails when any component fast CI job fails
+
+The component jobs remain separate for fast diagnosis:
 
 - `format`: `gofmt -l .`
 - `vet`: `go vet ./...`
@@ -40,12 +54,13 @@ these checks as the required merge gate:
 - `govulncheck`: Go vulnerability scan
 
 Fast CI jobs run independently so format, vet, lint, vulnerability, build, test,
-and smoke failures are visible as separate required checks. Each job has a
-timeout and uses Go module caching through `actions/setup-go`.
+and smoke failures are visible separately. The `ci-required` job depends on all
+component jobs and is the only check branch protection should require. Each job
+has a timeout and uses Go module caching through `actions/setup-go`.
 
 Fast CI cancels superseded runs for the same pull request or branch. For branch
-protection, require the named checks above instead of a broad workflow-level
-status.
+protection, require `ci-required` instead of a broad workflow-level status or
+implementation-detail component job names.
 
 Validate the read-only branch protection state before requesting release
 approval:
@@ -69,11 +84,17 @@ The release proof jobs are:
 
 - linux/darwin/windows amd64/arm64 build matrix
 - GoReleaser snapshot validation
+- short-retention upload of the `dist/` snapshot artifacts
 - Homebrew readiness audit on macOS
+- `release-candidate-required` aggregate status
 
 The Homebrew readiness audit is allowed to report approval/external-state
 blockers before tap approval. Local configuration failures still fail the
 release-candidate workflow.
+
+Download the `goreleaser-snapshot-<sha>` artifact from the release-candidate run
+when reviewing archive names, checksums, or generated cask output before a real
+tag.
 
 Use the `release-candidate` label when a docs-only or policy-only PR still needs
 the heavier release proof before merge.

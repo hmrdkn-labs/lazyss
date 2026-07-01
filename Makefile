@@ -41,6 +41,14 @@ lint:
 	fi; \
 	golangci-lint run ./...
 
+.PHONY: vuln
+vuln:
+	@if ! command -v govulncheck >/dev/null 2>&1; then \
+		echo "govulncheck not installed locally; CI runs govulncheck"; \
+		exit 0; \
+	fi; \
+	govulncheck ./...
+
 .PHONY: fmt
 fmt:
 	gofmt -w .
@@ -51,6 +59,21 @@ fmt-check:
 
 .PHONY: check
 check: fmt-check vet test build
+
+.PHONY: fast-pr
+fast-pr: fmt-check vet test build smoke-local lint vuln
+
+.PHONY: heavy-quality
+heavy-quality: cover lint vuln
+
+.PHONY: release-snapshot
+release-snapshot:
+	@if ! command -v goreleaser >/dev/null 2>&1; then \
+		echo "goreleaser is required for local release snapshot; hosted Release Candidate runs the same gate"; \
+		exit 1; \
+	fi; \
+	goreleaser check; \
+	goreleaser release --clean --snapshot --skip=publish
 
 .PHONY: smoke-local
 smoke-local:
@@ -70,6 +93,9 @@ branch-protection-readiness:
 .PHONY: release-readiness
 release-readiness:
 	./scripts/release-readiness.sh
+
+.PHONY: release-preflight
+release-preflight: release-readiness
 
 .PHONY: clean
 clean:

@@ -5,12 +5,18 @@ on:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
+      actions: read
       contents: write
+      pull-requests: read
     steps:
       - uses: actions/checkout@v7
         with:
@@ -19,9 +25,36 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Fetch main for release readiness
+        run: git fetch --force origin main:refs/remotes/origin/main
+      - name: Write live smoke evidence
+        env:
+          LAZYSS_LIVE_SMOKE_EVIDENCE_JSON: ${{ secrets.LAZYSS_LIVE_SMOKE_EVIDENCE_JSON }}
+        run: |
+          if [ -z "${LAZYSS_LIVE_SMOKE_EVIDENCE_JSON:-}" ]; then
+            echo "::error ::LAZYSS_LIVE_SMOKE_EVIDENCE_JSON is required for release readiness."
+            exit 2
+          fi
+          umask 077
+          printf '%s' "$LAZYSS_LIVE_SMOKE_EVIDENCE_JSON" > live-smoke-evidence.json
+      - name: Release readiness audit
+        env:
+          GH_TOKEN: ${{ secrets.LAZYSS_RELEASE_READINESS_GITHUB_TOKEN }}
+          LAZYSS_RELEASE_VERSION: ${{ github.ref_name }}
+          LAZYSS_RELEASE_READINESS_MODE: tag
+          LAZYSS_SKIP_OPERATOR_RUNTIME_TOOL_CHECKS: "1"
+          LAZYSS_HOMEBREW_READINESS_MODE: hosted
+          LAZYSS_LIVE_SMOKE_EVIDENCE: live-smoke-evidence.json
+        run: |
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error ::LAZYSS_RELEASE_READINESS_GITHUB_TOKEN is required for release readiness."
+            exit 2
+          fi
+          ./scripts/release-readiness.sh
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: "~> v2"
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}

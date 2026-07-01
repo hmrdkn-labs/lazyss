@@ -6,6 +6,8 @@ REPO="${LAZYSS_GITHUB_REPO:-hamardikan/lazyss}"
 RELEASE_VERSION="${LAZYSS_RELEASE_VERSION:-v0.1.0}"
 RELEASE_CANDIDATE_WORKFLOW="${LAZYSS_RELEASE_CANDIDATE_WORKFLOW:-Release Candidate}"
 FAST_CI_WORKFLOW="${LAZYSS_FAST_CI_WORKFLOW:-CI}"
+READINESS_MODE="${LAZYSS_RELEASE_READINESS_MODE:-main}"
+SKIP_OPERATOR_RUNTIME_TOOLS="${LAZYSS_SKIP_OPERATOR_RUNTIME_TOOL_CHECKS:-0}"
 REPORT_JSON="${LAZYSS_RELEASE_READINESS_JSON:-}"
 REPORT_MARKDOWN="${LAZYSS_RELEASE_READINESS_MARKDOWN:-}"
 LIVE_SMOKE_EVIDENCE="${LAZYSS_LIVE_SMOKE_EVIDENCE:-}"
@@ -148,9 +150,14 @@ latest_run_json() {
 check_latest_workflow() {
 	local workflow="$1"
 	local head="$2"
-	local json
+	local json message
 	if ! json="$(latest_run_json "$workflow" 2>/tmp/lazyss-run-err.$$)" || [ -z "$json" ]; then
-		warn "could not query latest $workflow run: $(tr '\n' ' ' </tmp/lazyss-run-err.$$)"
+		message="could not query latest $workflow run: $(tr '\n' ' ' </tmp/lazyss-run-err.$$)"
+		if [ "$READINESS_MODE" = "tag" ]; then
+			blocker "$message"
+		else
+			warn "$message"
+		fi
 		rm -f /tmp/lazyss-run-err.$$
 		return
 	fi
@@ -321,7 +328,21 @@ EOF
 printf 'LazySS release readiness audit\n'
 printf 'repo: %s\n' "$REPO"
 printf 'target version: %s\n' "$RELEASE_VERSION"
-printf 'mode: read-only; this script does not create repos, secrets, branch protection, tags, or releases\n\n'
+printf 'mode: %s\n' "$READINESS_MODE"
+printf 'mutation: read-only; this script does not create repos, secrets, branch protection, tags, or releases\n\n'
+
+case "$READINESS_MODE" in
+	main | tag)
+		;;
+	*)
+		fail "LAZYSS_RELEASE_READINESS_MODE must be main or tag, got: $READINESS_MODE"
+		;;
+esac
+
+if [ "$failures" -gt 0 ]; then
+	printf '[fail] %s release readiness failure(s)\n' "$failures" >&2
+	finish 1 failed
+fi
 
 cd "$ROOT"
 
@@ -329,22 +350,51 @@ printf 'Tools\n'
 need_command git
 need_command gh
 need_command python3
-need_command ssh
-need_command aws
-if command -v session-manager-plugin >/dev/null 2>&1; then
-	ok "session-manager-plugin available: $(command -v session-manager-plugin)"
+if [ "$SKIP_OPERATOR_RUNTIME_TOOLS" = "1" ]; then
+	warn "operator runtime tool checks skipped; live smoke evidence remains required"
 else
-	blocker "session-manager-plugin is missing; AWS SSM live smoke cannot pass"
+	need_command ssh
+	need_command aws
+	if command -v session-manager-plugin >/dev/null 2>&1; then
+		ok "session-manager-plugin available: $(command -v session-manager-plugin)"
+	else
+		blocker "session-manager-plugin is missing; AWS SSM live smoke cannot pass"
+	fi
 fi
 
 printf '\nGit workspace\n'
 branch="$(git branch --show-current)"
 head="$(git rev-parse HEAD)"
 short_head="$(git rev-parse --short HEAD)"
-if [ "$branch" = "main" ]; then
-	ok "on main at $short_head"
+if [ "$READINESS_MODE" = "tag" ]; then
+	if git rev-parse -q --verify "refs/tags/$RELEASE_VERSION" >/tmp/lazyss-release-tag.$$.out; then
+		tag_head="$(git rev-list -n 1 "$RELEASE_VERSION")"
+		if [ "$tag_head" = "$head" ]; then
+			ok "release tag $RELEASE_VERSION points at current checkout $short_head"
+		else
+			blocker "release tag $RELEASE_VERSION points at $tag_head, not current checkout $head"
+		fi
+	else
+		blocker "release tag $RELEASE_VERSION is not available locally"
+	fi
+	rm -f /tmp/lazyss-release-tag.$$.out
+
+	if git rev-parse --verify origin/main >/dev/null 2>&1; then
+		origin_head="$(git rev-parse origin/main)"
+		if [ "$origin_head" = "$head" ]; then
+			ok "release tag commit matches origin/main"
+		else
+			blocker "release tag commit does not match origin/main"
+		fi
+	else
+		blocker "origin/main is not available locally for release tag verification"
+	fi
 else
-	blocker "not on main: $branch"
+	if [ "$branch" = "main" ]; then
+		ok "on main at $short_head"
+	else
+		blocker "not on main: $branch"
+	fi
 fi
 
 if [ -z "$(git status --porcelain)" ]; then
@@ -353,14 +403,14 @@ else
 	blocker "working tree has uncommitted changes"
 fi
 
-if git rev-parse --verify origin/main >/dev/null 2>&1; then
+if [ "$READINESS_MODE" = "main" ] && git rev-parse --verify origin/main >/dev/null 2>&1; then
 	origin_head="$(git rev-parse origin/main)"
 	if [ "$origin_head" = "$head" ]; then
 		ok "local main matches origin/main"
 	else
 		blocker "local HEAD does not match origin/main"
 	fi
-else
+elif [ "$READINESS_MODE" = "main" ]; then
 	warn "origin/main is not available locally"
 fi
 
@@ -411,7 +461,13 @@ check_latest_workflow "$FAST_CI_WORKFLOW" "$head"
 check_latest_workflow "$RELEASE_CANDIDATE_WORKFLOW" "$head"
 
 printf '\nRelease state\n'
-if git rev-parse -q --verify "refs/tags/$RELEASE_VERSION" >/dev/null; then
+if [ "$READINESS_MODE" = "tag" ]; then
+	if git rev-parse -q --verify "refs/tags/$RELEASE_VERSION" >/dev/null; then
+		ok "local tag $RELEASE_VERSION exists for release workflow"
+	else
+		blocker "local tag $RELEASE_VERSION does not exist in release workflow"
+	fi
+elif git rev-parse -q --verify "refs/tags/$RELEASE_VERSION" >/dev/null; then
 	blocker "local tag $RELEASE_VERSION already exists; tag creation requires explicit owner approval"
 else
 	ok "local tag $RELEASE_VERSION does not exist yet"

@@ -6,6 +6,7 @@ CONFIG="$ROOT/.goreleaser.yaml"
 REPO="${LAZYSS_GITHUB_REPO:-hamardikan/lazyss}"
 TAP_REPO="${LAZYSS_HOMEBREW_TAP_REPO:-hamardikan/homebrew-tap}"
 TAP_SHORT="${LAZYSS_HOMEBREW_TAP_SHORT:-hamardikan/tap}"
+READINESS_MODE="${LAZYSS_HOMEBREW_READINESS_MODE:-local}"
 
 failures=0
 blockers=0
@@ -50,13 +51,31 @@ require_config_text() {
 printf 'LazySS Homebrew readiness audit\n'
 printf 'repo: %s\n' "$REPO"
 printf 'tap:  %s\n' "$TAP_REPO"
-printf 'mode: read-only; this script does not create repos, secrets, tags, or releases\n\n'
+printf 'mode: %s\n' "$READINESS_MODE"
+printf 'mutation: read-only; this script does not create repos, secrets, tags, or releases\n\n'
+
+case "$READINESS_MODE" in
+	local | hosted)
+		;;
+	*)
+		fail "LAZYSS_HOMEBREW_READINESS_MODE must be local or hosted, got: $READINESS_MODE"
+		;;
+esac
+
+if [ "$failures" -gt 0 ]; then
+	printf '[fail] %s local readiness failure(s)\n' "$failures" >&2
+	exit 1
+fi
 
 cd "$ROOT"
 
 need_command git
 need_command gh
-need_command brew
+if [ "$READINESS_MODE" = "local" ]; then
+	need_command brew
+else
+	warn "local brew tap checks skipped in hosted readiness mode"
+fi
 if command -v goreleaser >/dev/null 2>&1; then
 	ok "goreleaser available: $(command -v goreleaser)"
 else
@@ -85,6 +104,12 @@ if grep -Eiq 'ghp_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|AWS_SECRET_ACCESS_KEY|A
 	fail "potential credential material found in tracked release docs/config"
 else
 	ok "no obvious credential material in release docs/config"
+fi
+
+if grep -q '#{@github_token}@' "$CONFIG"; then
+	fail "private cask strategy must not return token-bearing URLs"
+else
+	ok "private cask strategy keeps token material out of returned URLs"
 fi
 
 printf '\nGitHub state\n'
@@ -118,7 +143,9 @@ fi
 rm -f /tmp/lazyss-secret-names.$$ /tmp/lazyss-secret-err.$$
 
 printf '\nHomebrew state\n'
-if brew tap | grep -qx "$TAP_SHORT"; then
+if [ "$READINESS_MODE" = "hosted" ]; then
+	warn "$TAP_SHORT local tap state skipped in hosted readiness mode"
+elif brew tap | grep -qx "$TAP_SHORT"; then
 	ok "$TAP_SHORT is tapped locally"
 else
 	blocker "$TAP_SHORT is not tapped locally; tap creation/proof still needs owner-approved setup"
