@@ -127,6 +127,8 @@ Recommended V1 release posture:
 - `docs/runbooks/quality-gates.md`
 - `scripts/workflow_policy.py`
 - `scripts/workflow_policy_test.py`
+- `scripts/release_approval_plan.py`
+- `scripts/release_approval_plan_test.py`
 - `scripts/homebrew_private_evidence.py`
 - `scripts/homebrew_private_evidence_test.py`
 
@@ -154,6 +156,7 @@ Fast CI runs on pull requests and pushes to `main`:
 - workflow policy tests for timeouts, read-only PR permissions, no PR secrets,
   tag-only release publishing, release readiness ordering, classifier summaries,
   and local release-candidate parity
+- local release approval handoff generation before owner-only mutations
 - `ci-required` aggregate status for branch protection
 
 Release-candidate CI runs on release-automation pull requests, relevant `main`

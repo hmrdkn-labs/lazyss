@@ -48,6 +48,19 @@ Homebrew readiness, private Homebrew install proof, local AWS SSM prerequisite
 tooling, and live smoke evidence. It does not create repositories, secrets,
 branch protection, tags, releases, or public assets.
 
+Before requesting approval for any release-blocking mutation, generate the
+local handoff:
+
+```sh
+make release-approval-plan
+```
+
+This writes ignored `release-approval.md` with the exact remaining approval
+actions, evidence files, secret names, and final readiness command. Review it
+before asking the owner to approve branch protection, tap creation, secret
+setup, local tap changes, tag creation, release publishing, or software
+installation.
+
 Branch protection is validated by `./scripts/branch-protection-readiness.sh`.
 That audit requires protected fast CI checks, pull request reviews, up-to-date
 branches, and disabled force pushes/deletions.

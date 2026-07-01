@@ -22,6 +22,7 @@ make release-candidate-local # local release-candidate mirror for matrix, snapsh
 make release-snapshot  # goreleaser check plus snapshot artifact generation
 make release-artifacts-verify # verify archives, binaries, checksums, and generated cask under DIST=dist
 make release-preflight # read-only release readiness audit
+make release-approval-plan # create ignored release approval handoff
 make live-smoke-evidence-template # create ignored 0600 live smoke evidence draft
 make homebrew-private-evidence-template # create ignored 0600 private Homebrew proof draft
 make branch-protection-plan # create ignored branch-protection approval handoff files

@@ -140,6 +140,11 @@ branch-protection-plan:
 		--json-output branch-protection.json \
 		--markdown-output branch-protection.md
 
+.PHONY: release-approval-plan
+release-approval-plan:
+	python3 scripts/release_approval_plan.py \
+		--markdown-output release-approval.md
+
 .PHONY: release-readiness
 release-readiness:
 	./scripts/release-readiness.sh
