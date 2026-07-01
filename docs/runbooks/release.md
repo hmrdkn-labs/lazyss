@@ -69,6 +69,28 @@ Live smoke proof must be a local JSON file referenced by
 readiness audit ignores legacy one-shot smoke environment flags for release
 approval because they are not auditable.
 
+The tag-driven GitHub release workflow runs the same readiness audit before
+GoReleaser publishes artifacts. In hosted release mode it sets
+`LAZYSS_RELEASE_READINESS_MODE=tag`, verifies the tag points at `origin/main`,
+and reads live smoke proof from the repository secret
+`LAZYSS_LIVE_SMOKE_EVIDENCE_JSON`. That secret must contain the JSON evidence
+object, not token material. The workflow writes it to a `0600` temporary file
+inside the runner and does not echo the value.
+
+Hosted release readiness uses `LAZYSS_RELEASE_READINESS_GITHUB_TOKEN`, not the
+default workflow `GITHUB_TOKEN`, because it must read branch protection,
+workflow runs, repository state, secret names, and the private Homebrew tap.
+Create or rotate that token only after explicit owner approval. It needs read
+access to `hamardikan/lazyss`, branch protection metadata, Actions workflow
+runs, repository secret names, and `hamardikan/homebrew-tap`.
+
+Hosted release mode skips operator-machine runtime tool checks because the
+GitHub runner is not the SSH/AWS SSM operator machine. Live SSH and AWS SSM
+proof remains mandatory through the evidence file. Hosted release mode also
+sets `LAZYSS_HOMEBREW_READINESS_MODE=hosted`, which skips local `brew tap`
+state but still verifies tracked Homebrew release configuration and GitHub
+state.
+
 ## Local Gates
 
 Run:
@@ -93,6 +115,10 @@ goreleaser release --clean --snapshot --skip=publish
 If `goreleaser` is not installed locally, use the GitHub Actions snapshot job
 from the release-candidate workflow and record the run URL in the release issue
 or PR.
+
+The release-candidate workflow uploads `dist/` as
+`goreleaser-snapshot-<sha>` with short retention. Use that artifact to review
+archive names, checksums, and generated cask content before approving a tag.
 
 The release-candidate workflow can be forced before merge by applying the
 `release-candidate` label to a pull request. Use this for release policy,
@@ -121,3 +147,7 @@ Confirm:
 - `checksums.txt` exists.
 - Homebrew cask is generated or published according to ADR 0002.
 - `lazyss --version` prints `v0.1.0`.
+
+If the release workflow fails before GoReleaser with a readiness error, do not
+rerun blindly. Fix the failed prerequisite, verify `./scripts/release-readiness.sh`
+locally from `main`, and only then rerun the failed workflow.

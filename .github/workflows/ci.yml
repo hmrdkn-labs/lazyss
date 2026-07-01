@@ -115,3 +115,39 @@ jobs:
       - uses: golang/govulncheck-action@v1
         with:
           repo-checkout: false
+
+  ci-required:
+    name: ci-required
+    needs:
+      - format
+      - vet
+      - test
+      - build
+      - smoke-local
+      - lint
+      - govulncheck
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify required CI jobs
+        env:
+          NEEDS_JSON: ${{ toJson(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+
+          needs = json.loads(os.environ["NEEDS_JSON"])
+          failed = {
+              name: meta.get("result", "unknown")
+              for name, meta in needs.items()
+              if meta.get("result") != "success"
+          }
+          if failed:
+              for name, result in sorted(failed.items()):
+                  print(f"{name}: {result}", file=sys.stderr)
+              sys.exit(1)
+          print("all required CI jobs passed")
+          PY

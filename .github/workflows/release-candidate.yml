@@ -107,6 +107,13 @@ jobs:
         run: goreleaser check
       - name: GoReleaser snapshot
         run: goreleaser release --clean --snapshot --skip=publish
+      - name: Upload GoReleaser snapshot artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: goreleaser-snapshot-${{ github.sha }}
+          path: dist/**
+          retention-days: 7
+          if-no-files-found: error
 
   homebrew-readiness:
     needs: classify
@@ -136,3 +143,52 @@ jobs:
               exit "$rc"
               ;;
           esac
+
+  release-candidate-required:
+    name: release-candidate-required
+    needs:
+      - classify
+      - build-matrix
+      - goreleaser-snapshot
+      - homebrew-readiness
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify release-candidate jobs
+        env:
+          NEEDS_JSON: ${{ toJson(needs) }}
+          CLASSIFY_RESULT: ${{ needs.classify.result }}
+          SHOULD_RUN: ${{ needs.classify.outputs.should_run }}
+          REASON: ${{ needs.classify.outputs.reason }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+
+          classify_result = os.environ.get("CLASSIFY_RESULT")
+          should_run = os.environ.get("SHOULD_RUN")
+          reason = os.environ.get("REASON", "unknown")
+          needs = json.loads(os.environ["NEEDS_JSON"])
+
+          if classify_result != "success":
+              print(f"classify: {classify_result or 'missing'}", file=sys.stderr)
+              sys.exit(1)
+
+          if should_run != "true":
+              print(f"release-candidate gates skipped: {reason}")
+              sys.exit(0)
+
+          required = ["classify", "build-matrix", "goreleaser-snapshot", "homebrew-readiness"]
+          failed = {
+              name: needs.get(name, {}).get("result", "missing")
+              for name in required
+              if needs.get(name, {}).get("result") != "success"
+          }
+          if failed:
+              for name, result in sorted(failed.items()):
+                  print(f"{name}: {result}", file=sys.stderr)
+              sys.exit(1)
+          print(f"release-candidate gates passed: {reason}")
+          PY

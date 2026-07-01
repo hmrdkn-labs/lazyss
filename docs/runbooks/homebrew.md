@@ -15,6 +15,10 @@ generated cask must use a custom `CurlDownloadStrategy` and read
 Do not place token values in cask `url.template`, cask headers, docs, CI logs,
 release metadata, or local state.
 
+The private download strategy must keep authentication in runtime strategy state
+and request headers only. It must not return or print a URL containing
+`HOMEBREW_GITHUB_API_TOKEN`.
+
 ## Approval Gates
 
 Ask for explicit owner approval before any of these actions:
@@ -37,6 +41,22 @@ The audit is read-only. It checks local tools, `.goreleaser.yaml`, private repo
 visibility, tap repository visibility, tap publishing secret name presence, and
 local tap state. It does not create repositories, add secrets, cut tags, publish
 releases, or print token values.
+
+Hosted release preflight uses:
+
+```sh
+LAZYSS_HOMEBREW_READINESS_MODE=hosted ./scripts/homebrew-readiness.sh
+```
+
+Hosted mode skips only local `brew tap` state because the GitHub release runner
+is not the operator Homebrew machine. It still checks tracked release
+configuration, GitHub repository visibility, tap visibility, and secret names
+when the token has permission to read them.
+
+In the release workflow, hosted readiness uses
+`LAZYSS_RELEASE_READINESS_GITHUB_TOKEN` so the audit can read the private tap and
+the LazySS repository's readiness state before GoReleaser receives
+`HOMEBREW_TAP_GITHUB_TOKEN` for publishing.
 
 Exit codes:
 
@@ -80,7 +100,8 @@ homebrew_casks:
 After tap approval, remove `skip_upload: true` and configure the tap repository
 with a token that has content write access to `hamardikan/homebrew-tap`.
 
-The release workflow must not print token values.
+The release workflow references `HOMEBREW_TAP_GITHUB_TOKEN` by secret name only.
+It must not print token values.
 
 ## Private Install Test
 

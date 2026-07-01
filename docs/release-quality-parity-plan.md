@@ -139,17 +139,24 @@ Fast CI runs on pull requests and pushes to `main`:
 - `golangci-lint` using `.golangci.yml`, with the action pinned to
   `version: v2.12.2` like `lazyssm`
 - `govulncheck`
+- `ci-required` aggregate status for branch protection
 
 Release-candidate CI runs on release-automation pull requests, relevant `main`
 pushes, and manual dispatch:
 
 - Cross-platform build matrix for linux/darwin/windows amd64/arm64
 - GoReleaser snapshot validation
+- Short-retention upload of snapshot `dist/` artifacts for review
 - Homebrew readiness audit, with approval/external-state blockers reported
   without hiding local configuration failures
+- `release-candidate-required` aggregate status
 
 Superseded workflow runs should be cancelled automatically per pull request or
 branch so CI does not waste time on stale commits.
+
+Branch protection should require `ci-required`, not every component job name.
+The component jobs remain visible for diagnosis, while the aggregate gives
+GitHub branch protection a stable contract.
 
 ### Runtime Quality Gates
 
@@ -189,9 +196,15 @@ Release workflow should:
 - run on `v[0-9]+.[0-9]+.[0-9]+` tags
 - checkout with `fetch-depth: 0`
 - use `actions/setup-go` with `go-version-file: go.mod`
+- run `./scripts/release-readiness.sh` in tag mode before publishing artifacts
 - run GoReleaser v2 with `release --clean`
 - publish GitHub release archives, checksums, and changelog
 - publish/update the Homebrew tap cask
+
+Hosted release readiness requires approved secret names only:
+`LAZYSS_LIVE_SMOKE_EVIDENCE_JSON` for live smoke evidence and
+`LAZYSS_RELEASE_READINESS_GITHUB_TOKEN` for read-only GitHub readiness checks.
+Do not store or print token values in docs, logs, state, or generated artifacts.
 
 ### GoReleaser Shape
 
@@ -510,7 +523,7 @@ Tasks:
 
 1. Protect `main`:
    - require PRs
-   - require CI
+   - require `ci-required`
    - require branch up to date
    - disallow force-push
 2. Validate the read-only target state with:

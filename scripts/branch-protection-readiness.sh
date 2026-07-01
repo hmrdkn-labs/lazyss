@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO="${LAZYSS_GITHUB_REPO:-hamardikan/lazyss}"
 BRANCH="${LAZYSS_BRANCH_PROTECTION_BRANCH:-main}"
-REQUIRED_CHECKS="${LAZYSS_REQUIRED_BRANCH_CHECKS:-format vet test build smoke-local lint govulncheck}"
+REQUIRED_CHECKS="${LAZYSS_REQUIRED_BRANCH_CHECKS:-ci-required}"
 
 failures=0
 blockers=0
