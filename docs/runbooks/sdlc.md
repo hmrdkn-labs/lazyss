@@ -72,7 +72,8 @@ The GoReleaser snapshot job uploads the generated `dist/` directory as
 names, checksums, and generated cask output before approving a tag. The
 snapshot gate also verifies that the generated private cask uses the expected
 download strategy and archive checksums, and that archives contain the expected
-installable binaries.
+installable binaries. On the hosted release-candidate runner, the gate also
+extracts the host-matching archive and runs `lazyss --version`.
 
 ## Release Policy
 
@@ -84,7 +85,9 @@ GoReleaser:
 3. Write live smoke evidence from `LAZYSS_LIVE_SMOKE_EVIDENCE_JSON` into a
    temporary runner file.
 4. Run `./scripts/release-readiness.sh` in tag mode.
-5. Publish with GoReleaser only if readiness exits `0`.
+5. Upload `release-readiness.json` and `release-readiness.md` as workflow
+   artifacts, even when readiness fails after reports are written.
+6. Publish with GoReleaser only if readiness exits `0`.
 
 The release workflow still requires owner-managed external state:
 
@@ -104,6 +107,7 @@ claim to satisfy. Release issues should include:
 - fast CI run URL
 - release-candidate run URL
 - local release-readiness output
+- hosted `release-readiness-<tag>` artifact for tag runs
 - live smoke evidence file path or attached private artifact reference
 - final release workflow URL after approval
 

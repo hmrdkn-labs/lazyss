@@ -45,12 +45,24 @@ jobs:
           LAZYSS_SKIP_OPERATOR_RUNTIME_TOOL_CHECKS: "1"
           LAZYSS_HOMEBREW_READINESS_MODE: hosted
           LAZYSS_LIVE_SMOKE_EVIDENCE: live-smoke-evidence.json
+          LAZYSS_RELEASE_READINESS_JSON: release-readiness.json
+          LAZYSS_RELEASE_READINESS_MARKDOWN: release-readiness.md
         run: |
           if [ -z "${GH_TOKEN:-}" ]; then
             echo "::error ::LAZYSS_RELEASE_READINESS_GITHUB_TOKEN is required for release readiness."
             exit 2
           fi
           ./scripts/release-readiness.sh
+      - name: Upload release readiness reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-readiness-${{ github.ref_name }}
+          path: |
+            release-readiness.json
+            release-readiness.md
+          retention-days: 30
+          if-no-files-found: warn
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: "~> v2"

@@ -63,6 +63,12 @@ same check levels and messages that appear in the terminal output. Do not place
 token values, credential dumps, SSH keys, AWS SSO cache data, or private release
 asset URLs in these reports.
 
+The hosted tag workflow sets those report variables and uploads
+`release-readiness.json` plus `release-readiness.md` as a short-retention
+workflow artifact named `release-readiness-<tag>`. The upload step runs with
+`if: always()` so failed readiness audits still leave reviewable evidence when
+the readiness script had enough setup to write reports.
+
 Live smoke proof must be a local JSON file referenced by
 `LAZYSS_LIVE_SMOKE_EVIDENCE`. Use
 `make live-smoke-evidence-template` to create an ignored `0600` draft for the
@@ -128,6 +134,11 @@ checksums, and generated private cask:
 DIST=/path/to/downloaded/dist make release-artifacts-verify
 ```
 
+The hosted release-candidate gate additionally runs the archived binary that
+matches the GitHub runner host with `--version`. This catches archives that
+contain a non-empty executable file but cannot actually start on the target
+platform.
+
 The release-candidate workflow can be forced before merge by applying the
 `release-candidate` label to a pull request. Use this for release policy,
 runbook, or packaging changes that do not otherwise touch release-relevant code
@@ -154,6 +165,7 @@ Confirm:
 - Archives exist for linux/darwin/windows amd64/arm64.
 - Archives contain the expected non-empty `lazyss` or `lazyss.exe` binary, with
   executable mode set for tar archives.
+- The host-matching release-candidate archive can execute `lazyss --version`.
 - `checksums.txt` exists.
 - `DIST=/path/to/release-artifacts make release-artifacts-verify` passes,
   including generated private-cask verification.

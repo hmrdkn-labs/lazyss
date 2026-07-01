@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 import argparse
 import hashlib
+import platform
 import pathlib
 import re
+import subprocess
 import sys
 import tarfile
+import tempfile
 import zipfile
 from collections import namedtuple
 
@@ -153,7 +156,87 @@ def verify_archive_contents(found):
     return [Event("ok", "archives contain expected binaries with installable permissions")]
 
 
-def verify_dist(dist):
+def host_target():
+    if sys.platform.startswith("linux"):
+        goos = "linux"
+    elif sys.platform == "darwin":
+        goos = "darwin"
+    elif sys.platform.startswith("win"):
+        goos = "windows"
+    else:
+        return None
+
+    machine = platform.machine().lower()
+    if machine in ("x86_64", "amd64"):
+        goarch = "amd64"
+    elif machine in ("arm64", "aarch64"):
+        goarch = "arm64"
+    else:
+        return None
+    return goos, goarch
+
+
+def write_tar_binary(path, destination):
+    with tarfile.open(path, mode="r:gz") as archive:
+        member = next((item for item in archive.getmembers() if item.isfile() and item.name == "lazyss"), None)
+        if member is None:
+            raise FileNotFoundError("lazyss")
+        extracted = archive.extractfile(member)
+        if extracted is None:
+            raise FileNotFoundError("lazyss")
+        destination.write_bytes(extracted.read())
+        destination.chmod(member.mode | 0o700)
+
+
+def write_zip_binary(path, destination):
+    with zipfile.ZipFile(path) as archive:
+        destination.write_bytes(archive.read("lazyss.exe"))
+        destination.chmod(0o700)
+
+
+def verify_host_binary(found):
+    target = host_target()
+    if target is None:
+        return [Event("fail", "host platform is unsupported for archive binary smoke")]
+
+    goos, goarch = target
+    ext = ".zip" if goos == "windows" else ".tar.gz"
+    archive_path = found.get((goos, goarch, ext))
+    if archive_path is None:
+        return [Event("fail", f"missing host archive for {goos}/{goarch}")]
+
+    with tempfile.TemporaryDirectory() as tmp:
+        binary_name = "lazyss.exe" if goos == "windows" else "lazyss"
+        binary_path = pathlib.Path(tmp) / binary_name
+        try:
+            if ext == ".zip":
+                write_zip_binary(archive_path, binary_path)
+            else:
+                write_tar_binary(archive_path, binary_path)
+            result = subprocess.run(
+                [str(binary_path), "--version"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=10,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError, tarfile.TarError, zipfile.BadZipFile, KeyError) as exc:
+            return [Event("fail", f"host archive binary failed --version smoke for {goos}/{goarch}: {exc}")]
+
+    if result.returncode != 0:
+        return [
+            Event(
+                "fail",
+                f"host archive binary failed --version smoke for {goos}/{goarch}: exit {result.returncode}",
+            )
+        ]
+    if not result.stdout.startswith("lazyss "):
+        return [Event("fail", f"host archive binary returned unexpected --version output for {goos}/{goarch}")]
+    return [Event("ok", f"host archive binary responds to --version for {goos}/{goarch}")]
+
+
+def verify_dist(dist, smoke_host_binary=False):
     dist = pathlib.Path(dist)
     if not dist.is_dir():
         return [Event("fail", f"dist directory does not exist: {dist}")]
@@ -185,12 +268,19 @@ def verify_dist(dist):
     if any(event.level == "fail" for event in content_events):
         return content_events
 
+    smoke_events = []
+    if smoke_host_binary:
+        smoke_events = verify_host_binary(found)
+        if any(event.level == "fail" for event in smoke_events):
+            return smoke_events
+
     return [
         Event("ok", "all required archives are present"),
         Event("ok", "checksums.txt includes every required archive"),
         Event("ok", "archive checksums match checksums.txt"),
         *cask_events,
         *content_events,
+        *smoke_events,
     ]
 
 
@@ -208,9 +298,14 @@ def main(argv=None):
     subparsers = parser.add_subparsers(dest="command", required=True)
     verify = subparsers.add_parser("verify", help="verify a GoReleaser dist directory")
     verify.add_argument("--dist", default="dist")
+    verify.add_argument(
+        "--smoke-host-binary",
+        action="store_true",
+        help="extract the archive matching the current host and run lazyss --version",
+    )
 
     args = parser.parse_args(argv)
-    events = verify_dist(args.dist)
+    events = verify_dist(args.dist, smoke_host_binary=args.smoke_host_binary)
     print_events(events)
     return exit_code(events)
 

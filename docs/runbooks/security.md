@@ -18,7 +18,11 @@
   contain non-empty binaries, preserve executable mode for tar archives, match
   `checksums.txt`, and generate a Homebrew cask that uses the private GitHub
   download strategy without token-bearing URLs before a tag is approved or
-  installed.
+  installed. The release-candidate workflow also executes the host-matching
+  archived binary with `--version`.
+- Hosted release readiness reports are uploaded as workflow artifacts for audit,
+  but they must contain only check levels and messages. They must not include
+  secrets or credential-derived output.
 - GitHub workflow secrets are referenced by name only:
   `LAZYSS_LIVE_SMOKE_EVIDENCE_JSON` for release proof and
   `LAZYSS_RELEASE_READINESS_GITHUB_TOKEN` for hosted readiness reads and
