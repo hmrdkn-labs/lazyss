@@ -2,6 +2,7 @@ import hashlib
 import io
 import importlib.util
 import pathlib
+import stat
 import tarfile
 import tempfile
 import unittest
@@ -137,6 +138,47 @@ end
 
             self.assertEqual([event.level for event in events], ["ok", "ok", "ok", "ok", "ok"])
             self.assertIn("all required archives are present", events[0].message)
+
+    def test_accepts_archive_set_only_when_host_binary_runs_version(self):
+        original_host_target = self.module.host_target
+        self.module.host_target = lambda: ("linux", "amd64")
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                dist = pathlib.Path(tmp) / "dist"
+                files = self.complete_files()
+                files["lazyss_0.1.0_linux_amd64.tar.gz"] = self.tar_archive(
+                    content=b"#!/bin/sh\nprintf 'lazyss 0.1.0\\n'\n"
+                )
+                files["homebrew/Casks/lazyss.rb"] = self.generated_cask(files).encode("utf-8")
+                self.write_dist(dist, files)
+
+                events = self.module.verify_dist(dist, smoke_host_binary=True)
+
+                self.assertEqual([event.level for event in events], ["ok", "ok", "ok", "ok", "ok", "ok"])
+                self.assertIn("host archive binary responds to --version", events[-1].message)
+        finally:
+            self.module.host_target = original_host_target
+
+    def test_rejects_archive_set_when_host_binary_cannot_start(self):
+        original_host_target = self.module.host_target
+        self.module.host_target = lambda: ("linux", "amd64")
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                dist = pathlib.Path(tmp) / "dist"
+                files = self.complete_files()
+                files["lazyss_0.1.0_linux_amd64.tar.gz"] = self.tar_archive(
+                    mode=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR,
+                    content=b"#!/bin/sh\nexit 7\n",
+                )
+                files["homebrew/Casks/lazyss.rb"] = self.generated_cask(files).encode("utf-8")
+                self.write_dist(dist, files)
+
+                events = self.module.verify_dist(dist, smoke_host_binary=True)
+
+                self.assertEqual(events[0].level, "fail")
+                self.assertIn("host archive binary failed --version smoke", events[0].message)
+        finally:
+            self.module.host_target = original_host_target
 
     def test_rejects_missing_platform_archive(self):
         with tempfile.TemporaryDirectory() as tmp:

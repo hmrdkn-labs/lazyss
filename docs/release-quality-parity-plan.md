@@ -149,6 +149,7 @@ pushes, and manual dispatch:
 - Cross-platform build matrix for linux/darwin/windows amd64/arm64
 - GoReleaser snapshot validation
 - Archive and checksum verification for the snapshot `dist/` directory
+- Host-matching archived binary execution smoke with `lazyss --version`
 - Short-retention upload of snapshot `dist/` artifacts for review
 - Homebrew readiness audit, with approval/external-state blockers reported
   without hiding local configuration failures
@@ -205,6 +206,8 @@ Release workflow should:
 - checkout with `fetch-depth: 0`
 - use `actions/setup-go` with `go-version-file: go.mod`
 - run `./scripts/release-readiness.sh` in tag mode before publishing artifacts
+- upload readiness JSON and Markdown reports as short-retention workflow
+  artifacts, including failed readiness attempts when reports were written
 - run GoReleaser v2 with `release --clean`
 - publish GitHub release archives, checksums, and changelog
 - publish/update the Homebrew tap cask

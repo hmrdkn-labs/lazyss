@@ -94,6 +94,7 @@ The release proof jobs are:
 - GoReleaser snapshot validation
 - archive, binary-content, checksum, and generated private-cask verification for
   the snapshot `dist/` directory
+- host-matching archive execution smoke using `lazyss --version`
 - short-retention upload of the `dist/` snapshot artifacts
 - Homebrew readiness audit on macOS
 - `release-candidate-required` aggregate status
@@ -108,7 +109,9 @@ tag. The `release-artifacts-verify` gate checks that `homebrew/Casks/lazyss.rb`
 uses the private GitHub download strategy and that its platform checksums match
 the generated archives. It also unpacks every archive to verify the expected
 `lazyss` or `lazyss.exe` binary is present and non-empty, with executable mode
-set for tar archives.
+set for tar archives. The hosted release-candidate workflow opts into
+`--smoke-host-binary`, which extracts the archive matching the runner host and
+runs `lazyss --version`.
 
 Use the `release-candidate` label when a docs-only or policy-only PR still needs
 the heavier release proof before merge.
