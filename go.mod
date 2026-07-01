@@ -1,6 +1,6 @@
 module github.com/hamardikan/lazyss
 
-go 1.25.0
+go 1.25.11
 
 require (
 	charm.land/bubbletea/v2 v2.0.7

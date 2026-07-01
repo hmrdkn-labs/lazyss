@@ -4,6 +4,7 @@ BINDIR := bin
 COVERAGE := coverage.out
 COVERAGE_SUMMARY := coverage.txt
 COVERAGE_BASELINE := coverage.baseline
+GOVULNCHECK_VERSION := v1.5.0
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
@@ -55,11 +56,7 @@ lint:
 
 .PHONY: vuln
 vuln:
-	@if ! command -v govulncheck >/dev/null 2>&1; then \
-		echo "govulncheck not installed locally; CI runs govulncheck"; \
-		exit 0; \
-	fi; \
-	govulncheck ./...
+	go run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) ./...
 
 .PHONY: fmt
 fmt:
@@ -78,6 +75,24 @@ fast-pr: fmt-check mod-tidy-check vet test script-test build smoke-local lint vu
 .PHONY: heavy-quality
 heavy-quality: cover lint vuln
 
+.PHONY: workflow-policy
+workflow-policy:
+	python3 scripts/workflow_policy.py --workflows-dir .github/workflows
+
+.PHONY: build-matrix
+build-matrix:
+	@set -e; \
+	tmpdir="$$(mktemp -d)"; \
+	trap 'rm -rf "$$tmpdir"' EXIT; \
+	for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do \
+		goos="$${target%/*}"; \
+		goarch="$${target#*/}"; \
+		output="$$tmpdir/lazyss-$$goos-$$goarch"; \
+		if [ "$$goos" = "windows" ]; then output="$$output.exe"; fi; \
+		echo "build $$goos/$$goarch"; \
+		GOOS="$$goos" GOARCH="$$goarch" go build -o "$$output" $(PKG); \
+	done
+
 .PHONY: release-snapshot
 release-snapshot:
 	@if ! command -v goreleaser >/dev/null 2>&1; then \
@@ -87,6 +102,18 @@ release-snapshot:
 	goreleaser check; \
 	goreleaser release --clean --snapshot --skip=publish; \
 	python3 scripts/release_artifacts.py verify --dist dist
+
+.PHONY: release-candidate-local
+release-candidate-local: build-matrix release-snapshot
+	@set +e; \
+	$(MAKE) homebrew-readiness; \
+	rc=$$?; \
+	set -e; \
+	case "$$rc" in \
+		0) echo "homebrew-readiness passed" ;; \
+		2) echo "homebrew-readiness has approval/external-state blockers" ;; \
+		*) exit "$$rc" ;; \
+	esac
 
 .PHONY: release-artifacts-verify
 release-artifacts-verify:
@@ -129,4 +156,4 @@ live-smoke-evidence-template:
 
 .PHONY: clean
 clean:
-	rm -rf $(BINDIR) coverage.out coverage.html coverage.txt
+	rm -rf $(BINDIR) coverage.out coverage.html coverage.txt lazyss lazyss.exe

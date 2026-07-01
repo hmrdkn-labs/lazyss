@@ -124,6 +124,17 @@ Run:
 
 ## Snapshot Release
 
+When GoReleaser is installed locally, run the local release-candidate mirror
+first:
+
+```sh
+make release-candidate-local
+```
+
+This runs the cross-platform compile matrix, snapshot artifact verification, and
+Homebrew readiness audit with the same approval/external-state blocker handling
+as the hosted release-candidate workflow.
+
 Run:
 
 ```sh

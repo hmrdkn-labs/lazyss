@@ -65,10 +65,21 @@ jobs:
             : > "$changed_files_file"
           fi
 
+          decision_file="$(mktemp)"
           python3 scripts/release_candidate_classify.py \
             --event-name "$EVENT_NAME" \
             --labels-json "$LABELS_JSON" \
-            --changed-files "$changed_files_file" >> "$GITHUB_OUTPUT"
+            --changed-files "$changed_files_file" > "$decision_file"
+          cat "$decision_file" >> "$GITHUB_OUTPUT"
+
+          should_run="$(sed -n 's/^should_run=//p' "$decision_file")"
+          reason="$(sed -n 's/^reason=//p' "$decision_file")"
+          {
+            echo "### Release Candidate classifier"
+            echo ""
+            echo "- should_run: \`$should_run\`"
+            echo "- reason: \`$reason\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   build-matrix:
     needs: classify
