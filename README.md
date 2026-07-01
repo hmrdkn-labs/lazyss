@@ -87,19 +87,34 @@ smoke tests pass.
 Use the read-only readiness audit before requesting release approval:
 
 ```sh
-LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json ./scripts/release-readiness.sh
+LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json \
+LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json \
+./scripts/release-readiness.sh
 ```
 
 Release readiness can also emit JSON and Markdown evidence for a release issue:
 
 ```sh
 LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json \
+LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json \
 LAZYSS_RELEASE_READINESS_JSON=release-readiness.json \
 LAZYSS_RELEASE_READINESS_MARKDOWN=release-readiness.md \
 ./scripts/release-readiness.sh
 ```
 
-Create `live-smoke-evidence.json` from
-`docs/runbooks/live-smoke-evidence.example.json` after the real SSH and AWS SSM
-smoke checks pass. Do not put secrets, private keys, token values, SSO cache
-data, environment dumps, or full terminal logs in the evidence file.
+Create ignored local evidence drafts with:
+
+```sh
+make live-smoke-evidence-template
+make homebrew-private-evidence-template
+```
+
+Before asking for owner approval on branch protection, tap creation, repository
+secrets, local tap setup, or tagging, generate the ignored local handoff:
+
+```sh
+make release-approval-plan
+```
+
+Do not put secrets, private keys, token values, SSO cache data, environment
+dumps, private release asset URLs, or full terminal logs in evidence files.
