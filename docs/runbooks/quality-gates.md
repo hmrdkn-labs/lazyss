@@ -17,7 +17,7 @@ make check             # local core gate: fmt, go mod tidy, vet, race tests, scr
 make fast-pr           # local mirror of fast CI, including smoke/lint/vuln when tools exist
 make heavy-quality     # coverage, lint, and vulnerability scan
 make release-snapshot  # goreleaser check plus snapshot artifact generation
-make release-artifacts-verify # verify archives, checksums, and generated cask under DIST=dist
+make release-artifacts-verify # verify archives, binaries, checksums, and generated cask under DIST=dist
 make release-preflight # read-only release readiness audit
 make live-smoke-evidence-template # create ignored 0600 live smoke evidence draft
 ```
@@ -92,8 +92,8 @@ The release proof jobs are:
 
 - linux/darwin/windows amd64/arm64 build matrix
 - GoReleaser snapshot validation
-- archive, checksum, and generated private-cask verification for the snapshot
-  `dist/` directory
+- archive, binary-content, checksum, and generated private-cask verification for
+  the snapshot `dist/` directory
 - short-retention upload of the `dist/` snapshot artifacts
 - Homebrew readiness audit on macOS
 - `release-candidate-required` aggregate status
@@ -106,7 +106,9 @@ Download the `goreleaser-snapshot-<sha>` artifact from the release-candidate run
 when reviewing archive names, checksums, or generated cask output before a real
 tag. The `release-artifacts-verify` gate checks that `homebrew/Casks/lazyss.rb`
 uses the private GitHub download strategy and that its platform checksums match
-the generated archives.
+the generated archives. It also unpacks every archive to verify the expected
+`lazyss` or `lazyss.exe` binary is present and non-empty, with executable mode
+set for tar archives.
 
 Use the `release-candidate` label when a docs-only or policy-only PR still needs
 the heavier release proof before merge.

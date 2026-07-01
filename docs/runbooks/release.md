@@ -121,8 +121,8 @@ or PR.
 The release-candidate workflow uploads `dist/` as
 `goreleaser-snapshot-<sha>` with short retention. Use that artifact to review
 archive names, checksums, and generated cask content before approving a tag.
-After downloading it, verify the expected platform archives, checksums, and
-generated private cask:
+After downloading it, verify the expected platform archives, binary contents,
+checksums, and generated private cask:
 
 ```sh
 DIST=/path/to/downloaded/dist make release-artifacts-verify
@@ -152,6 +152,8 @@ Confirm:
 
 - GitHub Release `v0.1.0` exists.
 - Archives exist for linux/darwin/windows amd64/arm64.
+- Archives contain the expected non-empty `lazyss` or `lazyss.exe` binary, with
+  executable mode set for tar archives.
 - `checksums.txt` exists.
 - `DIST=/path/to/release-artifacts make release-artifacts-verify` passes,
   including generated private-cask verification.

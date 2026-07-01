@@ -4,6 +4,8 @@ import hashlib
 import pathlib
 import re
 import sys
+import tarfile
+import zipfile
 from collections import namedtuple
 
 
@@ -108,6 +110,49 @@ def verify_cask(dist, found, checksums):
     return [Event("ok", "generated cask uses private download strategy with matching archive checksums")]
 
 
+def verify_tar_binary(path, goos, goarch):
+    try:
+        with tarfile.open(path, mode="r:gz") as archive:
+            member = next((item for item in archive.getmembers() if item.isfile() and item.name == "lazyss"), None)
+    except (OSError, tarfile.TarError) as exc:
+        return [Event("fail", f"could not inspect {goos}/{goarch} tar archive: {exc}")]
+
+    if member is None:
+        return [Event("fail", f"missing lazyss binary in {goos}/{goarch} archive")]
+    if member.size <= 0:
+        return [Event("fail", f"lazyss binary is empty in {goos}/{goarch} archive")]
+    if member.mode & 0o111 == 0:
+        return [Event("fail", f"lazyss binary is not executable in {goos}/{goarch} archive")]
+    return []
+
+
+def verify_zip_binary(path, goos, goarch):
+    try:
+        with zipfile.ZipFile(path) as archive:
+            try:
+                info = archive.getinfo("lazyss.exe")
+            except KeyError:
+                return [Event("fail", f"missing lazyss.exe binary in {goos}/{goarch} archive")]
+    except (OSError, zipfile.BadZipFile) as exc:
+        return [Event("fail", f"could not inspect {goos}/{goarch} zip archive: {exc}")]
+
+    if info.file_size <= 0:
+        return [Event("fail", f"lazyss.exe binary is empty in {goos}/{goarch} archive")]
+    return []
+
+
+def verify_archive_contents(found):
+    for goos, goarch, ext in REQUIRED_TARGETS:
+        path = found[(goos, goarch, ext)]
+        if ext == ".zip":
+            errors = verify_zip_binary(path, goos, goarch)
+        else:
+            errors = verify_tar_binary(path, goos, goarch)
+        if errors:
+            return errors
+    return [Event("ok", "archives contain expected binaries with installable permissions")]
+
+
 def verify_dist(dist):
     dist = pathlib.Path(dist)
     if not dist.is_dir():
@@ -136,11 +181,16 @@ def verify_dist(dist):
     if any(event.level == "fail" for event in cask_events):
         return cask_events
 
+    content_events = verify_archive_contents(found)
+    if any(event.level == "fail" for event in content_events):
+        return content_events
+
     return [
         Event("ok", "all required archives are present"),
         Event("ok", "checksums.txt includes every required archive"),
         Event("ok", "archive checksums match checksums.txt"),
         *cask_events,
+        *content_events,
     ]
 
 
