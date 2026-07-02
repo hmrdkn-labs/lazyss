@@ -119,6 +119,67 @@ func TestModelRenderShowsControlsAndAWSOnboarding(t *testing.T) {
 	}
 }
 
+func TestModelRenderUsesCockpitPanels(t *testing.T) {
+	m := NewModel(&Runtime{Query: app.InventoryQuery{Source: "all"}, AWSProfile: "hmrdkn-dev1", AWSRegion: "ap-southeast-3"})
+	m.width = 132
+	m.height = 34
+	now := time.Date(2026, 7, 2, 9, 30, 0, 0, time.UTC)
+	m.machines = []domain.Machine{
+		{
+			ID:              "ssh:1:prod",
+			Name:            "prod",
+			Provider:        domain.ProviderSSH,
+			Address:         "prod.example",
+			NativeID:        "prod",
+			Methods:         []domain.AccessMethod{domain.AccessSSH},
+			Health:          domain.NewHealthObservation("ssh:1:prod", domain.AccessSSH, domain.HealthUp, "tcp prod.example:22", 10*time.Millisecond, now),
+			LastConnectedAt: now,
+		},
+		{
+			ID:       "aws:ssm:123:ap-southeast-3:i-1",
+			Name:     "api",
+			Provider: domain.ProviderAWS,
+			NativeID: "i-1",
+			Scope:    domain.Scope{Account: "123", Region: "ap-southeast-3", Profile: "hmrdkn-dev1"},
+			Methods:  []domain.AccessMethod{domain.AccessAWSSSMShell},
+			Health:   domain.NewHealthObservation("aws:ssm:123:ap-southeast-3:i-1", domain.AccessAWSSSMShell, domain.HealthUp, "ssm Online ec2 running", 0, now),
+		},
+	}
+	m.recompute()
+
+	got := m.render()
+	for _, want := range []string{
+		"Lazy Secure Shell",
+		"AWS: hmrdkn-dev1 profile region ap-southeast-3",
+		"Machines (2)",
+		"Provider",
+		"Name",
+		"Method",
+		"Health",
+		"Details",
+		"Native",
+		"Last connected",
+		"Recent health",
+		"prod",
+		"api",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("cockpit render missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestModelTracksWindowSize(t *testing.T) {
+	model, cmd := NewModel(nil).Update(tea.WindowSizeMsg{Width: 101, Height: 29})
+	if cmd != nil {
+		t.Fatalf("window resize should not return command")
+	}
+	m := model.(Model)
+	if m.width != 101 || m.height != 29 {
+		t.Fatalf("size = %dx%d, want 101x29", m.width, m.height)
+	}
+}
+
 func TestModelViewUsesAltScreen(t *testing.T) {
 	view := NewModel(nil).View()
 	if !view.AltScreen {
