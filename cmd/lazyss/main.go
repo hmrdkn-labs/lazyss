@@ -28,11 +28,15 @@ import (
 var version = "dev"
 
 type cliConfig struct {
-	Source     string
-	SSHConfig  string
-	AWSProfile string
-	AWSRegion  string
-	Version    bool
+	Source         string
+	SSHConfig      string
+	AWSProfile     string
+	AWSRegion      string
+	CleanupHosts   []string
+	CleanupWrite   bool
+	CleanupCheck   bool
+	CleanupTimeout time.Duration
+	Version        bool
 }
 
 func main() {
@@ -48,6 +52,8 @@ func main() {
 	switch command {
 	case "doctor":
 		os.Exit(runDoctor(cfg))
+	case "ssh cleanup":
+		os.Exit(runSSHCleanup(cfg))
 	case "", "tui":
 		os.Exit(runTUI(cfg))
 	default:
@@ -69,7 +75,18 @@ func parseArgs(args []string) (cliConfig, string, error) {
 	command := ""
 	if len(remaining) > 0 {
 		command = remaining[0]
-		trailing, err := parseFlagSegment(&cfg, remaining[1:])
+		commandArgs := remaining[1:]
+		if command == "ssh" {
+			if len(commandArgs) == 0 {
+				return cfg, "", fmt.Errorf("expected ssh subcommand")
+			}
+			if commandArgs[0] != "cleanup" {
+				return cfg, "", fmt.Errorf("unknown ssh subcommand %q", commandArgs[0])
+			}
+			command = "ssh cleanup"
+			commandArgs = commandArgs[1:]
+		}
+		trailing, err := parseFlagSegment(&cfg, commandArgs)
 		if err != nil {
 			return cfg, "", err
 		}
@@ -85,12 +102,27 @@ func parseArgs(args []string) (cliConfig, string, error) {
 	return cfg, command, nil
 }
 
+type stringListFlag []string
+
+func (s *stringListFlag) String() string {
+	return fmt.Sprint([]string(*s))
+}
+
+func (s *stringListFlag) Set(value string) error {
+	*s = append(*s, value)
+	return nil
+}
+
 func parseFlagSegment(cfg *cliConfig, args []string) ([]string, error) {
 	fs := flag.NewFlagSet("lazyss", flag.ContinueOnError)
 	fs.StringVar(&cfg.Source, "source", cfg.Source, "inventory source: all, ssh, aws")
 	fs.StringVar(&cfg.SSHConfig, "ssh-config", cfg.SSHConfig, "SSH config path")
 	fs.StringVar(&cfg.AWSProfile, "aws-profile", cfg.AWSProfile, "AWS profile")
 	fs.StringVar(&cfg.AWSRegion, "aws-region", cfg.AWSRegion, "AWS region")
+	fs.Var((*stringListFlag)(&cfg.CleanupHosts), "host", "SSH host to remove with ssh cleanup --write; repeatable")
+	fs.BoolVar(&cfg.CleanupWrite, "write", cfg.CleanupWrite, "write SSH cleanup changes")
+	fs.BoolVar(&cfg.CleanupCheck, "check", cfg.CleanupCheck, "check SSH host TCP reachability in cleanup report")
+	fs.DurationVar(&cfg.CleanupTimeout, "timeout", cfg.CleanupTimeout, "SSH cleanup reachability timeout")
 	fs.BoolVar(&cfg.Version, "version", cfg.Version, "print version")
 	if err := fs.Parse(args); err != nil {
 		return nil, err
@@ -207,6 +239,71 @@ func runDoctor(cfg cliConfig) int {
 		return 1
 	}
 	return 0
+}
+
+func runSSHCleanup(cfg cliConfig) int {
+	if cfg.SSHConfig == "" {
+		fmt.Fprintln(os.Stderr, "ssh cleanup: --ssh-config is required")
+		return 2
+	}
+	if cfg.CleanupWrite {
+		result, err := sshconfig.ApplyCleanup(cfg.SSHConfig, sshconfig.CleanupApplyOptions{Hosts: cfg.CleanupHosts})
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "ssh cleanup:", err)
+			return 1
+		}
+		fmt.Println("lazyss ssh cleanup")
+		fmt.Println("mode: write")
+		fmt.Println("backup:", result.BackupPath)
+		if len(result.RemovedHosts) == 0 {
+			fmt.Println("removed: none")
+			return 0
+		}
+		for _, host := range result.RemovedHosts {
+			fmt.Println("removed:", host)
+		}
+		return 0
+	}
+
+	plan, err := sshconfig.PlanCleanup(cfg.SSHConfig, sshconfig.CleanupOptions{Check: cfg.CleanupCheck, Timeout: cfg.CleanupTimeout})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "ssh cleanup:", err)
+		return 1
+	}
+	fmt.Println("lazyss ssh cleanup")
+	fmt.Println("mode: dry-run")
+	if cfg.CleanupCheck {
+		fmt.Println("check: tcp")
+	}
+	for _, item := range plan.Items {
+		line := fmt.Sprintf("  %-22s %-16s %-18s %s", item.Host, item.Action, item.Reason, cleanupTarget(item))
+		if item.Protected {
+			line += " protected"
+		}
+		if cfg.CleanupCheck {
+			line += " check=" + nonempty(item.Check, "unchecked")
+			if item.CheckErr != "" {
+				line += " error=" + item.CheckErr
+			}
+		}
+		fmt.Println(line)
+	}
+	fmt.Println("write: lazyss ssh cleanup --host <name> --write")
+	return 0
+}
+
+func cleanupTarget(item sshconfig.CleanupItem) string {
+	if item.HostName == "" {
+		return "-"
+	}
+	return fmt.Sprintf("%s@%s:%d", nonempty(item.User, "-"), item.HostName, item.Port)
+}
+
+func nonempty(value, fallback string) string {
+	if value == "" {
+		return fallback
+	}
+	return value
 }
 
 type failingProvider struct {

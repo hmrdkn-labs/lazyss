@@ -34,3 +34,39 @@ func TestInventoryReadsSSHConfigWithoutWriting(t *testing.T) {
 		t.Fatalf("machine mapping = %#v", m)
 	}
 }
+
+func TestInventoryExcludesSCMIdentityAndPortForwardAliases(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config")
+	input := `
+Host github-work
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519
+
+Host bitbucket-work
+  HostName bitbucket.org
+  User git
+  IdentityFile ~/.ssh/id_bitbucket
+
+Host llm-api
+  HostName workstation.example.com
+  User hmrdkn
+  LocalForward 4000 localhost:4000
+
+Host workstation
+  HostName workstation.example.com
+  User hmrdkn
+`
+	if err := os.WriteFile(path, []byte(input), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	machines, _, err := NewInventory(path).ListMachines(context.Background(), app.InventoryQuery{})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if len(machines) != 1 || machines[0].Name != "workstation" {
+		t.Fatalf("machines = %#v", machines)
+	}
+}

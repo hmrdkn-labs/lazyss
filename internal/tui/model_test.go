@@ -134,6 +134,7 @@ func TestModelFilterModeShowsAvailableFilters(t *testing.T) {
 		"name:prefix",
 		"method:ssh|ssm",
 		"health:up|down|unknown",
+		"hidden:true|false",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("filter view missing %q:\n%s", want, got)
@@ -142,14 +143,14 @@ func TestModelFilterModeShowsAvailableFilters(t *testing.T) {
 }
 
 func TestParseFilterExpression(t *testing.T) {
-	filter, err := parseFilterExpression("tag:Use=maps name:procal method:ssm health:up api")
+	filter, err := parseFilterExpression("tag:Use=maps name:procal method:ssm health:up hidden:false api")
 	if err != nil {
 		t.Fatalf("parse filter: %v", err)
 	}
 	if filter.Tags["Use"] != "maps" {
 		t.Fatalf("tags = %#v", filter.Tags)
 	}
-	if filter.NamePrefix != "procal" || filter.Method != string(domain.AccessAWSSSMShell) || filter.Health != "up" || filter.Text != "api" {
+	if filter.NamePrefix != "procal" || filter.Method != string(domain.AccessAWSSSMShell) || filter.Health != "up" || filter.Hidden != "false" || filter.Text != "api" {
 		t.Fatalf("filter = %#v", filter)
 	}
 }
@@ -221,6 +222,43 @@ func TestModelCyclesSourceAndRefreshes(t *testing.T) {
 	}
 	if !strings.Contains(m.render(), "source ssm") {
 		t.Fatalf("render missing ssm source: %s", m.render())
+	}
+}
+
+func TestModelHidesSelectedMachineAndCanShowHidden(t *testing.T) {
+	store := &fakeStateStore{overlays: map[domain.MachineID]domain.MachineOverlay{}}
+	runtime := &Runtime{
+		Inventory: &app.InventoryService{Store: store},
+		Query:     app.InventoryQuery{Source: "ssh"},
+	}
+	m := NewModel(runtime)
+	m.machines = []domain.Machine{{
+		ID:       "ssh:1:old",
+		Name:     "old",
+		Provider: domain.ProviderSSH,
+		Methods:  []domain.AccessMethod{domain.AccessSSH},
+	}}
+	m.recompute()
+
+	model, _ := m.Update(keyPress("x"))
+	m = model.(Model)
+	if !store.overlays["ssh:1:old"].Hidden {
+		t.Fatalf("overlay was not hidden: %#v", store.overlays)
+	}
+	if len(m.visible) != 0 {
+		t.Fatalf("hidden machine should leave visible list: %#v", m.visible)
+	}
+	if !strings.Contains(m.statusLine, "hidden old") {
+		t.Fatalf("status line = %q", m.statusLine)
+	}
+
+	model, _ = m.Update(keyPress("u"))
+	m = model.(Model)
+	if !runtime.Query.ShowHidden || len(m.visible) != 1 || !m.visible[0].Hidden {
+		t.Fatalf("show hidden failed query=%#v visible=%#v", runtime.Query, m.visible)
+	}
+	if !strings.Contains(m.footer(), "hide") || !strings.Contains(m.footer(), "show hidden") {
+		t.Fatalf("footer missing hide controls: %s", m.footer())
 	}
 }
 
@@ -502,6 +540,27 @@ func (f *fakePreferences) SavePreferences(_ context.Context, prefs domain.Operat
 	f.saved = prefs
 	return f.err
 }
+
+type fakeStateStore struct {
+	overlays map[domain.MachineID]domain.MachineOverlay
+}
+
+func (f *fakeStateStore) LoadOverlay(_ context.Context, id domain.MachineID) (domain.MachineOverlay, error) {
+	overlay := f.overlays[id]
+	if overlay.MachineID == "" {
+		overlay.MachineID = id
+	}
+	return overlay, nil
+}
+
+func (f *fakeStateStore) SaveOverlay(_ context.Context, overlay domain.MachineOverlay) error {
+	f.overlays[overlay.MachineID] = overlay
+	return nil
+}
+
+func (f *fakeStateStore) RecordHealth(context.Context, domain.HealthObservation) error { return nil }
+
+func (f *fakeStateStore) RecordSession(context.Context, domain.SessionEvent) error { return nil }
 
 type profileInventoryProvider struct {
 	profile string

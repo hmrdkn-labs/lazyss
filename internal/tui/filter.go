@@ -14,6 +14,7 @@ type cockpitFilter struct {
 	NamePrefix string
 	Method     string
 	Health     string
+	Hidden     string
 	Text       string
 }
 
@@ -41,6 +42,12 @@ func parseFilterExpression(raw string) (cockpitFilter, error) {
 				return cockpitFilter{}, err
 			}
 			filter.Health = health
+		case "hidden":
+			hidden, err := normalizeBoolFilter(value)
+			if err != nil {
+				return cockpitFilter{}, err
+			}
+			filter.Hidden = hidden
 		default:
 			tagKey := key
 			if strings.HasPrefix(strings.ToLower(tagKey), "tag:") {
@@ -95,8 +102,20 @@ func normalizeHealthFilter(value string) (string, error) {
 	}
 }
 
+func normalizeBoolFilter(value string) (string, error) {
+	value = strings.ToLower(strings.TrimSpace(value))
+	switch value {
+	case "true", "yes", "1":
+		return "true", nil
+	case "false", "no", "0":
+		return "false", nil
+	default:
+		return "", fmt.Errorf("unknown boolean filter %q", value)
+	}
+}
+
 func (f cockpitFilter) empty() bool {
-	return f.Raw == "" && len(f.Tags) == 0 && f.NamePrefix == "" && f.Method == "" && f.Health == "" && f.Text == ""
+	return f.Raw == "" && len(f.Tags) == 0 && f.NamePrefix == "" && f.Method == "" && f.Health == "" && f.Hidden == "" && f.Text == ""
 }
 
 func (f cockpitFilter) queryTags() map[string]string {
@@ -118,6 +137,9 @@ func (f cockpitFilter) matches(machine domain.Machine) bool {
 		return false
 	}
 	if f.Health != "" && strings.ToLower(string(machine.Health.Status)) != f.Health {
+		return false
+	}
+	if f.Hidden != "" && fmt.Sprintf("%t", machine.Hidden) != f.Hidden {
 		return false
 	}
 	for key, value := range f.Tags {
