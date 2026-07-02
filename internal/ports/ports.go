@@ -14,6 +14,7 @@ type InventoryQuery struct {
 	Source     string
 	Tags       map[string]string
 	NamePrefix string
+	ShowHidden bool
 }
 
 // InventoryProvider lists machines from one source.

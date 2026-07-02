@@ -33,12 +33,13 @@ func TestApplyOverlayAndPreferredMethod(t *testing.T) {
 	overlay := MachineOverlay{
 		MachineID:       m.ID,
 		Pinned:          true,
+		Hidden:          true,
 		Tags:            []string{"prod", "web"},
 		Note:            "critical",
 		PreferredMethod: AccessAWSSSMShell,
 	}
 	m.ApplyOverlay(overlay)
-	if !m.Pinned || m.Note != "critical" || m.DefaultMethod() != AccessAWSSSMShell {
+	if !m.Pinned || !m.Hidden || m.Note != "critical" || m.DefaultMethod() != AccessAWSSSMShell {
 		t.Fatalf("overlay not applied: %#v", m)
 	}
 }

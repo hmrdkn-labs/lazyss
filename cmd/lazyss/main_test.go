@@ -26,6 +26,19 @@ func TestParseArgsAcceptsFlagsAfterCommand(t *testing.T) {
 	}
 }
 
+func TestParseArgsAcceptsSSHCleanupCommand(t *testing.T) {
+	cfg, cmd, err := parseArgs([]string{"ssh", "cleanup", "--ssh-config", "/tmp/config", "--host", "stale", "--host", "old", "--write", "--check"})
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if cmd != "ssh cleanup" || cfg.SSHConfig != "/tmp/config" || !cfg.CleanupWrite || !cfg.CleanupCheck {
+		t.Fatalf("cfg=%#v cmd=%q", cfg, cmd)
+	}
+	if got := cfg.CleanupHosts; len(got) != 2 || got[0] != "stale" || got[1] != "old" {
+		t.Fatalf("cleanup hosts = %#v", got)
+	}
+}
+
 func TestResolveAWSConfigUsesCLIOverrideBeforePreferences(t *testing.T) {
 	prefs := domain.OperatorPreferences{AWSProfile: "persisted", AWSRegion: "ap-southeast-1"}
 	cfg := resolveAWSConfig(cliConfig{AWSProfile: "flagged", AWSRegion: "us-east-1"}, prefs)

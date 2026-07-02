@@ -77,6 +77,7 @@ type Machine struct {
 	PreferredMethod AccessMethod        `json:"preferred_method,omitempty"`
 	Health          HealthObservation   `json:"health"`
 	Pinned          bool                `json:"pinned"`
+	Hidden          bool                `json:"hidden,omitempty"`
 	Note            string              `json:"note,omitempty"`
 	LastCheckedAt   time.Time           `json:"last_checked_at,omitempty"`
 	LastConnectedAt time.Time           `json:"last_connected_at,omitempty"`
@@ -90,6 +91,7 @@ type Machine struct {
 type MachineOverlay struct {
 	MachineID       MachineID           `json:"machine_id"`
 	Pinned          bool                `json:"pinned,omitempty"`
+	Hidden          bool                `json:"hidden,omitempty"`
 	Tags            []string            `json:"tags,omitempty"`
 	Note            string              `json:"note,omitempty"`
 	PreferredMethod AccessMethod        `json:"preferred_method,omitempty"`
@@ -167,6 +169,7 @@ func (m *Machine) ApplyOverlay(overlay MachineOverlay) {
 		return
 	}
 	m.Pinned = overlay.Pinned
+	m.Hidden = overlay.Hidden
 	m.Tags = append([]string(nil), overlay.Tags...)
 	m.Note = overlay.Note
 	m.PreferredMethod = overlay.PreferredMethod

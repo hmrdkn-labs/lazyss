@@ -72,6 +72,9 @@ func (s InventoryService) List(ctx context.Context, q InventoryQuery) (Inventory
 					m.ApplyOverlay(overlay)
 				}
 			}
+			if m.Hidden && !q.ShowHidden {
+				continue
+			}
 			if q.Search == "" || strings.Contains(strings.ToLower(m.Name+" "+m.Address+" "+m.NativeID), strings.ToLower(q.Search)) {
 				result.Machines = append(result.Machines, m)
 			}

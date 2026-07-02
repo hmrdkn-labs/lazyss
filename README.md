@@ -16,9 +16,12 @@ V1 supports:
 - `aws ssm start-session` sessions
 - manual health checks
 - local JSON state under the OS user config directory
+- local hide/unhide for inventory cleanup
+- guarded SSH config cleanup with dry-run, protected SCM identity hosts, and
+  backup-before-write
 
-V1 deliberately does not edit SSH config, write ProxyCommand entries, run a
-monitoring daemon, store secrets, or implement non-AWS cloud adapters.
+V1 deliberately does not write ProxyCommand entries, run a monitoring daemon,
+store secrets, delete private keys, or implement non-AWS cloud adapters.
 
 ## Usage
 
@@ -30,12 +33,26 @@ lazyss doctor
 lazyss --source all
 lazyss --source ssh --ssh-config ~/.ssh/config
 lazyss --source aws --aws-profile prod --aws-region ap-southeast-1
+lazyss ssh cleanup --ssh-config ~/.ssh/config
+lazyss ssh cleanup --ssh-config ~/.ssh/config --check
 ```
 
 Inside the cockpit, use `P` to choose a local AWS profile and `L` to run
 `aws sso login` for the selected profile. LazySS stores only the chosen profile
 and region labels in local state; it never stores AWS credentials or SSO cache
 contents.
+Use `x` to hide or unhide a selected machine locally, and `u` to toggle hidden
+machines in the current cockpit view.
+
+SSH cleanup is dry-run by default. It hides SCM identity aliases such as GitHub
+or Bitbucket from the machine cockpit, recommends port-forward aliases for
+local hiding, and marks duplicate machine targets as delete candidates. To edit
+the SSH config, pass explicit hosts with `--write`; LazySS writes a
+`config.lazyss-backup-<timestamp>` file first and never removes private keys:
+
+```sh
+lazyss ssh cleanup --ssh-config ~/.ssh/config --host ts-workstation-name --write
+```
 
 ## Install
 

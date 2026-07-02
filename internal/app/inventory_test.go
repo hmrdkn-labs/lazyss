@@ -47,6 +47,33 @@ func TestInventoryPreservesPartialProviderFailure(t *testing.T) {
 	}
 }
 
+func TestInventorySkipsHiddenMachinesUnlessRequested(t *testing.T) {
+	store := newMemoryStore()
+	store.overlays["ssh:a:hidden"] = domain.MachineOverlay{MachineID: "ssh:a:hidden", Hidden: true}
+	svc := InventoryService{Providers: []InventoryProvider{
+		fakeProvider{name: "ssh", machines: []domain.Machine{
+			{ID: "ssh:a:visible", Name: "visible", Provider: domain.ProviderSSH},
+			{ID: "ssh:a:hidden", Name: "hidden", Provider: domain.ProviderSSH},
+		}},
+	}, Store: store}
+
+	result, err := svc.List(context.Background(), InventoryQuery{})
+	if err != nil {
+		t.Fatalf("list hidden filtered: %v", err)
+	}
+	if len(result.Machines) != 1 || result.Machines[0].Name != "visible" {
+		t.Fatalf("hidden should be filtered by default: %#v", result.Machines)
+	}
+
+	result, err = svc.List(context.Background(), InventoryQuery{ShowHidden: true})
+	if err != nil {
+		t.Fatalf("list hidden shown: %v", err)
+	}
+	if len(result.Machines) != 2 {
+		t.Fatalf("show hidden machines = %#v", result.Machines)
+	}
+}
+
 type fakeProvider struct {
 	name     string
 	machines []domain.Machine

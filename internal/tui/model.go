@@ -270,7 +270,7 @@ func (m Model) shouldShowAWSOnboarding() bool {
 }
 
 func (m Model) footer() string {
-	return "Keys: j/k move | s source all/ssh/ssm | f filter | / search | Enter connect | g check | G check visible | P profile | L login | r refresh | h details | q quit\n"
+	return "Keys: j/k move | s source all/ssh/ssm | x hide | u show hidden | f filter | / search | Enter connect | g check | G check visible | P profile | L login | r refresh | h details | q quit\n"
 }
 
 func (m Model) layoutSize() (int, int) {
@@ -394,6 +394,7 @@ func (m Model) detailPanel(width, height int) string {
 		m.detailLine("Last checked", rel(machine.LastCheckedAt), width),
 		m.detailLine("Last connected", rel(machine.LastConnectedAt), width),
 		m.detailLine("Connections", fmt.Sprintf("%d", machine.ConnectionCount), width),
+		m.detailLine("Hidden", fmt.Sprintf("%t", machine.Hidden), width),
 	)
 	if machine.Scope.Profile != "" || machine.Scope.Region != "" || machine.Scope.Account != "" {
 		lines = append(lines, "", panelTitleStyle.Render("Scope"))
@@ -479,7 +480,7 @@ func (m Model) inputValue() string {
 }
 
 func (m Model) availableFiltersLine() string {
-	return "Available filters: tag:Key=Value | name:prefix | method:ssh|ssm | health:up|down|unknown | text"
+	return "Available filters: tag:Key=Value | name:prefix | method:ssh|ssm | health:up|down|unknown | hidden:true|false | text"
 }
 
 func (m Model) providerWarning(status domain.ProviderStatus) string {
@@ -586,6 +587,10 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.cycleMethod()
 	case "p":
 		m.togglePin()
+	case "x":
+		m.toggleHidden()
+	case "u":
+		return m.toggleShowHidden()
 	case "/":
 		m.inputMode = "search"
 	case "f":
@@ -677,6 +682,9 @@ func (m Model) submitFilter() (tea.Model, tea.Cmd) {
 	if m.runtime != nil {
 		m.runtime.Query.Tags = filter.queryTags()
 		m.runtime.Query.NamePrefix = filter.NamePrefix
+		if filter.Hidden != "" {
+			m.runtime.Query.ShowHidden = filter.Hidden == "true"
+		}
 	}
 	m.statusLine = "filter: " + nonempty(filter.Raw, "cleared")
 	m.refreshSeq++
@@ -801,6 +809,15 @@ func (m *Model) recompute() {
 			m.visible = append(m.visible, m.machines[match.Index])
 		}
 	}
+	if !m.showHidden() {
+		filtered := m.visible[:0]
+		for _, machine := range m.visible {
+			if !machine.Hidden {
+				filtered = append(filtered, machine)
+			}
+		}
+		m.visible = filtered
+	}
 	if !m.filter.empty() {
 		filtered := m.visible[:0]
 		for _, machine := range m.visible {
@@ -862,6 +879,40 @@ func (m *Model) togglePin() {
 	m.recompute()
 }
 
+func (m *Model) toggleHidden() {
+	if len(m.visible) == 0 {
+		return
+	}
+	selected := m.visible[m.cursor]
+	selected.Hidden = !selected.Hidden
+	m.replaceMachine(selected)
+	m.saveOverlay(selected)
+	if selected.Hidden {
+		m.statusLine = "hidden " + nonempty(selected.Name, string(selected.ID))
+	} else {
+		m.statusLine = "unhidden " + nonempty(selected.Name, string(selected.ID))
+	}
+	m.recompute()
+}
+
+func (m Model) toggleShowHidden() (tea.Model, tea.Cmd) {
+	if m.runtime == nil {
+		return m, nil
+	}
+	m.runtime.Query.ShowHidden = !m.runtime.Query.ShowHidden
+	if m.runtime.Query.ShowHidden {
+		m.statusLine = "show hidden"
+	} else {
+		m.statusLine = "hide hidden"
+	}
+	m.recompute()
+	return m, nil
+}
+
+func (m Model) showHidden() bool {
+	return m.runtime != nil && m.runtime.Query.ShowHidden
+}
+
 func (m Model) saveOverlay(machine domain.Machine) {
 	if m.runtime == nil || m.runtime.Inventory == nil || m.runtime.Inventory.Store == nil {
 		return
@@ -869,6 +920,7 @@ func (m Model) saveOverlay(machine domain.Machine) {
 	overlay := domain.MachineOverlay{
 		MachineID:       machine.ID,
 		Pinned:          machine.Pinned,
+		Hidden:          machine.Hidden,
 		Tags:            machine.Tags,
 		Note:            machine.Note,
 		PreferredMethod: machine.SelectedMethod,

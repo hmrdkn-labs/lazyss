@@ -44,6 +44,9 @@ func (i Inventory) ListMachines(_ context.Context, _ app.InventoryQuery) ([]doma
 		if h.alias == "" || strings.ContainsAny(h.alias, "*?") {
 			continue
 		}
+		if h.isSCMIdentity() || h.isPortForwardAlias() {
+			continue
+		}
 		port := h.port
 		if port == 0 {
 			port = 22
@@ -69,10 +72,13 @@ func (i Inventory) ListMachines(_ context.Context, _ app.InventoryQuery) ([]doma
 }
 
 type hostBlock struct {
-	alias    string
-	hostname string
-	user     string
-	port     int
+	alias         string
+	hostname      string
+	user          string
+	port          int
+	localForwards []string
+	identityFiles []string
+	proxyCommand  string
 }
 
 type scanner interface {
@@ -115,12 +121,35 @@ func parse(sc scanner) []hostBlock {
 			if p, err := strconv.Atoi(value); err == nil {
 				current.port = p
 			}
+		case "localforward":
+			current.localForwards = append(current.localForwards, value)
+		case "identityfile":
+			current.identityFiles = append(current.identityFiles, value)
+		case "proxycommand":
+			current.proxyCommand = value
 		}
 	}
 	if current != nil {
 		out = append(out, *current)
 	}
 	return out
+}
+
+func (h hostBlock) isSCMIdentity() bool {
+	return strings.EqualFold(h.user, "git") && isSCMHost(h.hostname)
+}
+
+func (h hostBlock) isPortForwardAlias() bool {
+	return len(h.localForwards) > 0
+}
+
+func isSCMHost(host string) bool {
+	switch strings.ToLower(strings.TrimSpace(host)) {
+	case "github.com", "bitbucket.org", "gitlab.com", "ssh.dev.azure.com":
+		return true
+	default:
+		return false
+	}
 }
 
 // Runner runs SSH commands for direct sessions and config resolution.
