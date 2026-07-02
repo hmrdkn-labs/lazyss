@@ -108,6 +108,8 @@ func TestModelRenderShowsControlsAndAWSOnboarding(t *testing.T) {
 		"AWS: no profile selected",
 		"P profile",
 		"L login",
+		"s source",
+		"f filter",
 		"Enter connect",
 		"g check",
 		"/ search",
@@ -116,6 +118,109 @@ func TestModelRenderShowsControlsAndAWSOnboarding(t *testing.T) {
 		if !strings.Contains(got, want) {
 			t.Fatalf("render missing %q:\n%s", want, got)
 		}
+	}
+}
+
+func TestModelFilterModeShowsAvailableFilters(t *testing.T) {
+	m := NewModel(&Runtime{Query: app.InventoryQuery{Source: "all"}})
+	model, _ := m.Update(keyPress("f"))
+	m = model.(Model)
+
+	got := m.render()
+	for _, want := range []string{
+		"filter:",
+		"Available filters",
+		"tag:Key=Value",
+		"name:prefix",
+		"method:ssh|ssm",
+		"health:up|down|unknown",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("filter view missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestParseFilterExpression(t *testing.T) {
+	filter, err := parseFilterExpression("tag:Use=maps name:procal method:ssm health:up api")
+	if err != nil {
+		t.Fatalf("parse filter: %v", err)
+	}
+	if filter.Tags["Use"] != "maps" {
+		t.Fatalf("tags = %#v", filter.Tags)
+	}
+	if filter.NamePrefix != "procal" || filter.Method != string(domain.AccessAWSSSMShell) || filter.Health != "up" || filter.Text != "api" {
+		t.Fatalf("filter = %#v", filter)
+	}
+}
+
+func TestModelAppliesStructuredFilterAndRefreshes(t *testing.T) {
+	provider := &queryCapturingProvider{machines: []domain.Machine{
+		{
+			ID:           "aws:ssm:123:ap-southeast-3:i-1",
+			Name:         "procal-g1-dev-maps",
+			Provider:     domain.ProviderAWS,
+			Methods:      []domain.AccessMethod{domain.AccessAWSSSMShell},
+			ProviderTags: map[string]string{"Use": "maps"},
+			Health:       domain.NewHealthObservation("aws:ssm:123:ap-southeast-3:i-1", domain.AccessAWSSSMShell, domain.HealthUp, "ssm Online", 0, time.Now()),
+		},
+		{
+			ID:           "aws:ssm:123:ap-southeast-3:i-2",
+			Name:         "procal-g1-dev-api",
+			Provider:     domain.ProviderAWS,
+			Methods:      []domain.AccessMethod{domain.AccessAWSSSMShell},
+			ProviderTags: map[string]string{"Use": "api"},
+			Health:       domain.NewHealthObservation("aws:ssm:123:ap-southeast-3:i-2", domain.AccessAWSSSMShell, domain.HealthUp, "ssm Online", 0, time.Now()),
+		},
+	}}
+	runtime := &Runtime{
+		Inventory: &app.InventoryService{Providers: []app.InventoryProvider{provider}},
+		Query:     app.InventoryQuery{Source: "aws"},
+	}
+	m := NewModel(runtime)
+	m.filterText = "tag:Use=maps name:procal method:ssm health:up"
+	model, cmd := m.submitFilter()
+	if cmd == nil {
+		t.Fatalf("expected refresh command")
+	}
+	m = model.(Model)
+	if m.inputMode != "" {
+		t.Fatalf("filter mode should close, got %q", m.inputMode)
+	}
+	model, _ = m.Update(cmd())
+	m = model.(Model)
+	if provider.query.Tags["Use"] != "maps" || provider.query.NamePrefix != "procal" {
+		t.Fatalf("query = %#v", provider.query)
+	}
+	if len(m.visible) != 1 || m.visible[0].Name != "procal-g1-dev-maps" {
+		t.Fatalf("visible = %#v", m.visible)
+	}
+}
+
+func TestModelCyclesSourceAndRefreshes(t *testing.T) {
+	provider := &queryCapturingProvider{}
+	runtime := &Runtime{
+		Inventory: &app.InventoryService{Providers: []app.InventoryProvider{provider}},
+		Query:     app.InventoryQuery{Source: "all"},
+	}
+	m := NewModel(runtime)
+
+	model, cmd := m.Update(keyPress("s"))
+	m = model.(Model)
+	if runtime.Query.Source != "ssh" || cmd == nil {
+		t.Fatalf("source=%q cmd nil=%v", runtime.Query.Source, cmd == nil)
+	}
+	if !strings.Contains(m.render(), "source ssh") {
+		t.Fatalf("render missing ssh source: %s", m.render())
+	}
+
+	model, cmd = m.Update(keyPress("s"))
+	m = model.(Model)
+	if runtime.Query.Source != "aws" || cmd == nil {
+		t.Fatalf("source=%q cmd nil=%v", runtime.Query.Source, cmd == nil)
+	}
+	if !strings.Contains(m.render(), "source ssm") {
+		t.Fatalf("render missing ssm source: %s", m.render())
 	}
 }
 
@@ -136,15 +241,17 @@ func TestModelRenderUsesCockpitPanels(t *testing.T) {
 			LastConnectedAt: now,
 		},
 		{
-			ID:       "aws:ssm:123:ap-southeast-3:i-1",
-			Name:     "api",
-			Provider: domain.ProviderAWS,
-			NativeID: "i-1",
-			Scope:    domain.Scope{Account: "123", Region: "ap-southeast-3", Profile: "hmrdkn-dev1"},
-			Methods:  []domain.AccessMethod{domain.AccessAWSSSMShell},
-			Health:   domain.NewHealthObservation("aws:ssm:123:ap-southeast-3:i-1", domain.AccessAWSSSMShell, domain.HealthUp, "ssm Online ec2 running", 0, now),
+			ID:           "aws:ssm:123:ap-southeast-3:i-1",
+			Name:         "api",
+			Provider:     domain.ProviderAWS,
+			NativeID:     "i-1",
+			Scope:        domain.Scope{Account: "123", Region: "ap-southeast-3", Profile: "hmrdkn-dev1"},
+			Methods:      []domain.AccessMethod{domain.AccessAWSSSMShell},
+			ProviderTags: map[string]string{"Use": "maps"},
+			Health:       domain.NewHealthObservation("aws:ssm:123:ap-southeast-3:i-1", domain.AccessAWSSSMShell, domain.HealthUp, "ssm Online ec2 running", 0, now),
 		},
 	}
+	m.cursor = 1
 	m.recompute()
 
 	got := m.render()
@@ -160,6 +267,8 @@ func TestModelRenderUsesCockpitPanels(t *testing.T) {
 		"Native",
 		"Last connected",
 		"Recent health",
+		"Tags",
+		"Use=maps",
 		"prod",
 		"api",
 	} {
@@ -355,4 +464,16 @@ func (p profileInventoryProvider) ListMachines(context.Context, app.InventoryQue
 		Scope:    domain.Scope{Profile: p.profile},
 		Methods:  []domain.AccessMethod{domain.AccessAWSSSMShell},
 	}}, domain.ProviderStatus{Name: "aws", Status: domain.ProviderHealthy}, nil
+}
+
+type queryCapturingProvider struct {
+	query    app.InventoryQuery
+	machines []domain.Machine
+}
+
+func (p *queryCapturingProvider) ProviderName() string { return "aws" }
+
+func (p *queryCapturingProvider) ListMachines(_ context.Context, q app.InventoryQuery) ([]domain.Machine, domain.ProviderStatus, error) {
+	p.query = q
+	return append([]domain.Machine(nil), p.machines...), domain.ProviderStatus{Name: "aws", Status: domain.ProviderHealthy}, nil
 }

@@ -44,6 +44,8 @@ type Model struct {
 	width         int
 	height        int
 	search        string
+	filterText    string
+	filter        cockpitFilter
 	inputMode     string
 	details       bool
 	profiles      []string
@@ -160,7 +162,10 @@ func (m Model) renderCockpit() string {
 		b.WriteString(meta + "\n")
 	}
 	if m.inputMode != "" {
-		fmt.Fprintf(&b, "%s: %s\n", m.inputMode, m.search)
+		fmt.Fprintf(&b, "%s: %s\n", m.inputMode, m.inputValue())
+		if m.inputMode == "filter" {
+			b.WriteString(m.availableFiltersLine() + "\n")
+		}
 	}
 	if status != "" {
 		b.WriteString(status + "\n")
@@ -259,7 +264,7 @@ func (m Model) shouldShowAWSOnboarding() bool {
 }
 
 func (m Model) footer() string {
-	return "Keys: j/k move | Enter connect | g check | G check visible | P profile | L login | / search | r refresh | h details | q quit\n"
+	return "Keys: j/k move | s source all/ssh/ssm | f filter | / search | Enter connect | g check | G check visible | P profile | L login | r refresh | h details | q quit\n"
 }
 
 func (m Model) layoutSize() (int, int) {
@@ -276,6 +281,9 @@ func (m Model) layoutSize() (int, int) {
 func (m Model) sourceLabel() string {
 	if m.runtime == nil || m.runtime.Query.Source == "" {
 		return "source all"
+	}
+	if m.runtime.Query.Source == "aws" {
+		return "source ssm"
 	}
 	return "source " + m.runtime.Query.Source
 }
@@ -389,6 +397,12 @@ func (m Model) detailPanel(width, height int) string {
 			m.detailLine("Account", machine.Scope.Account, width),
 		)
 	}
+	if len(machine.ProviderTags) > 0 {
+		lines = append(lines, "", panelTitleStyle.Render("Tags"))
+		for _, tag := range sortedProviderTags(machine.ProviderTags) {
+			lines = append(lines, displayFit(tag, width))
+		}
+	}
 	if machine.Note != "" {
 		lines = append(lines, "", panelTitleStyle.Render("Note"), displayFit(machine.Note, width))
 	}
@@ -449,6 +463,17 @@ func (m Model) compactList(width, height int) string {
 		lines = append(lines, displayFit(line, width))
 	}
 	return strings.Join(lines, "\n")
+}
+
+func (m Model) inputValue() string {
+	if m.inputMode == "filter" {
+		return m.filterText
+	}
+	return m.search
+}
+
+func (m Model) availableFiltersLine() string {
+	return "Available filters: tag:Key=Value | name:prefix | method:ssh|ssm | health:up|down|unknown | text"
 }
 
 func (m Model) providerWarning(status domain.ProviderStatus) string {
@@ -541,6 +566,8 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "r":
 		m.refreshSeq++
 		return m, m.fetchCmd(m.refreshSeq)
+	case "s":
+		return m.cycleSource()
 	case "j", "down":
 		if m.cursor < len(m.visible)-1 {
 			m.cursor++
@@ -604,23 +631,67 @@ func (m Model) handleProfileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 func (m Model) handleInputKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
+		mode := m.inputMode
 		m.inputMode = ""
-		if m.search != "" {
+		if mode == "search" && m.search != "" {
 			m.applySearch("")
 		}
 	case "enter":
+		if m.inputMode == "filter" {
+			return m.submitFilter()
+		}
 		m.inputMode = ""
 	case "backspace":
-		if len(m.search) > 0 {
+		if m.inputMode == "filter" && len(m.filterText) > 0 {
+			m.filterText = m.filterText[:len(m.filterText)-1]
+		} else if len(m.search) > 0 {
 			m.applySearch(m.search[:len(m.search)-1])
 		}
 	default:
 		key := msg.String()
 		if len([]rune(key)) == 1 {
-			m.applySearch(m.search + key)
+			if m.inputMode == "filter" {
+				m.filterText += key
+			} else {
+				m.applySearch(m.search + key)
+			}
 		}
 	}
 	return m, nil
+}
+
+func (m Model) submitFilter() (tea.Model, tea.Cmd) {
+	filter, err := parseFilterExpression(m.filterText)
+	if err != nil {
+		m.statusLine = "filter: " + err.Error()
+		return m, nil
+	}
+	m.inputMode = ""
+	m.filter = filter
+	if m.runtime != nil {
+		m.runtime.Query.Tags = filter.queryTags()
+		m.runtime.Query.NamePrefix = filter.NamePrefix
+	}
+	m.statusLine = "filter: " + nonempty(filter.Raw, "cleared")
+	m.refreshSeq++
+	return m, m.fetchCmd(m.refreshSeq)
+}
+
+func (m Model) cycleSource() (tea.Model, tea.Cmd) {
+	if m.runtime == nil {
+		return m, nil
+	}
+	switch m.runtime.Query.Source {
+	case "", "all":
+		m.runtime.Query.Source = "ssh"
+	case "ssh":
+		m.runtime.Query.Source = "aws"
+	default:
+		m.runtime.Query.Source = "all"
+	}
+	m.statusLine = m.sourceLabel()
+	m.refreshSeq++
+	return m, m.fetchCmd(m.refreshSeq)
 }
 
 func (m Model) fetchCmd(seq int) tea.Cmd {
@@ -710,6 +781,15 @@ func (m *Model) recompute() {
 		for _, match := range matches {
 			m.visible = append(m.visible, m.machines[match.Index])
 		}
+	}
+	if !m.filter.empty() {
+		filtered := m.visible[:0]
+		for _, machine := range m.visible {
+			if m.filter.matches(machine) {
+				filtered = append(filtered, machine)
+			}
+		}
+		m.visible = filtered
 	}
 	if len(m.visible) == 0 {
 		m.cursor = 0
