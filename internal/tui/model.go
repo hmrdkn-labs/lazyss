@@ -983,14 +983,30 @@ func (m Model) connectSelectedCmd() tea.Cmd {
 	}
 	machine := m.visible[m.cursor]
 	method := machine.DefaultMethod()
-	return func() tea.Msg {
-		_, err := m.runtime.Connect.Connect(context.Background(), machine, method, app.ConnectOptions{})
+	return tea.Exec(connectExecCommand{connect: m.runtime.Connect, machine: machine, method: method}, func(err error) tea.Msg {
 		if err != nil {
 			return statusMsg(err.Error())
 		}
 		return statusMsg("session ended")
-	}
+	})
 }
+
+type connectExecCommand struct {
+	connect *app.ConnectService
+	machine domain.Machine
+	method  domain.AccessMethod
+}
+
+func (c connectExecCommand) Run() error {
+	_, err := c.connect.Connect(context.Background(), c.machine, c.method, app.ConnectOptions{})
+	return err
+}
+
+func (connectExecCommand) SetStdin(io.Reader) {}
+
+func (connectExecCommand) SetStdout(io.Writer) {}
+
+func (connectExecCommand) SetStderr(io.Writer) {}
 
 type healthMsg domain.HealthObservation
 type statusMsg string
