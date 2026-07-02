@@ -5,7 +5,7 @@
 - Commands are executed with explicit argv. LazySS never builds shell strings.
 - V1 reads SSH config but does not edit it.
 - Local state is written with `0600` file permissions.
-- Readiness reports, PRs, runbooks, workflow logs, and generated casks must not
+- Readiness reports, PRs, runbooks, workflow logs, and generated tap files must not
   contain token values, private release asset URLs with embedded credentials,
   AWS credential material, SSH private keys, or SSO cache contents.
 - Private Homebrew downloads must resolve `HOMEBREW_GITHUB_API_TOKEN` at runtime
@@ -16,8 +16,8 @@
   command environment dumps, or full credential-provider output.
 - Release artifact checks verify that the six expected platform archives exist,
   contain non-empty binaries, preserve executable mode for tar archives, match
-  `checksums.txt`, and generate a Homebrew cask that uses the private GitHub
-  download strategy without token-bearing URLs before a tag is approved or
+  `checksums.txt`, and generate a Homebrew tap package that uses the private
+  GitHub download strategy without token-bearing URLs before a tag is approved or
   installed. The release-candidate workflow also executes the host-matching
   archived binary with `--version`.
 - Hosted release readiness reports are uploaded as workflow artifacts for audit,

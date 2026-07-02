@@ -47,16 +47,18 @@ After `v0.1.0`, download the archive for your OS and architecture from the
 private GitHub release, verify it against `checksums.txt`, and put `lazyss` on
 your `PATH`.
 
-### Homebrew Cask
+### Homebrew
 
 After the private Homebrew tap is approved and published:
 
 ```sh
-brew install --cask hamardikan/tap/lazyss
+brew install --formula hamardikan/tap/lazyss
 ```
 
 Private release assets require `HOMEBREW_GITHUB_API_TOKEN` in the operator
-shell. Do not print the token value.
+shell. Do not print the token value. The tap may also contain a cask, but the
+formula is the primary CLI install path because unsigned cask binaries can be
+blocked by macOS quarantine.
 
 ### Go Install
 
@@ -83,8 +85,8 @@ make smoke-local
 `v0.1.0` must not be tagged until local gates, fast hosted CI, the
 release-candidate workflow, Homebrew readiness, and real SSH/AWS SSM smoke
 tests pass. For the first release, token-backed Homebrew install proof is a
-post-publish gate because the private cask and release assets do not exist
-before GoReleaser publishes them.
+post-publish gate because the private package and release assets do not exist
+before publishing.
 
 Use the read-only readiness audit before requesting release approval:
 

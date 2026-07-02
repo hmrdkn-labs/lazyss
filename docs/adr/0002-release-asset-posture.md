@@ -1,71 +1,66 @@
 # ADR 0002: Release Asset and Homebrew Posture
 
-Status: accepted for pre-release implementation
+Status: amended after v0.1.0 publish
 
-Date: 2026-06-30
+Date: 2026-07-02
 
 ## Context
 
 LazySS is a private repository and should remain private unless the owner
-explicitly approves a visibility change. The target install path is Homebrew
-cask based on current GoReleaser guidance. GoReleaser formula support exists in
-older reference repos, but current GoReleaser documentation marks formula
-publishing as deprecated in favor of `homebrew_casks`.
+explicitly approves a visibility change. The pre-release target install path was
+a Homebrew cask based on GoReleaser cask publishing guidance. The `v0.1.0`
+post-publish proof showed that unsigned cask binaries can retain macOS
+quarantine and be blocked by Gatekeeper with a message that macOS cannot verify
+the binary is free of malware.
 
-Private GitHub release assets are not directly usable by unauthenticated
-Homebrew installs. Current GoReleaser cask documentation supports private
-repositories through a cask `custom_block` that defines a `CurlDownloadStrategy`
-subclass and references that class from `url.using`. This is required because
-Homebrew 5.1.14 scrubs sensitive environment variables during cask evaluation,
-including `HOMEBREW_GITHUB_API_TOKEN`; token lookup must happen at download
-time.
+Homebrew formula installation of the same private release archive runs without
+that quarantine block. The private tap still needs token-backed downloads
+because release assets remain private.
 
 ## Decision
 
 V1 keeps both source and release assets private by default.
 
-The Homebrew path is:
+The primary Homebrew path is:
 
 ```sh
-brew install --cask hamardikan/tap/lazyss
+brew install --formula hamardikan/tap/lazyss
 ```
 
-The generated cask must use a private GitHub download strategy that reads
-`HOMEBREW_GITHUB_API_TOKEN` at download time. LazySS must not embed tokens in
-cask URLs, headers, docs, CI logs, local state, or release metadata.
+The tap package must use a private GitHub download strategy that reads
+`HOMEBREW_GITHUB_API_TOKEN` at download time. LazySS must not embed token values
+in package URLs, headers, docs, CI logs, local state, or release metadata.
 
-Until the owner approves the tap repository and tap token, GoReleaser must keep
-Homebrew publishing in dry-run mode with `skip_upload: true`. After that
-approval, remove `skip_upload: true` so the tag workflow can publish
-`Casks/lazyss.rb` to the private tap.
+A cask may remain as a secondary generated artifact, but it is not the primary
+operator install path until binaries are Developer ID signed and notarized.
 
 ## Proof Protocol
 
-The private cask download cannot be fully proven without approved external
+The private Homebrew download cannot be fully proven without approved external
 state: a release asset, a tap repository, and an operator token. For the first
 release, the install proof is a post-publish gate because `v0.1.0` assets and
-the tap cask do not exist until GoReleaser publishes them:
+the tap package do not exist until publishing completes:
 
-1. Build a release candidate with GoReleaser snapshot and verify the generated
-   cask strategy before the real tag.
-2. Generate `Casks/lazyss.rb` with the private download strategy.
+1. Build a release candidate with GoReleaser snapshot and verify generated
+   archive names, checksums, and private download strategy.
+2. Publish the private release assets and tap package.
 3. Export `HOMEBREW_GITHUB_API_TOKEN` in the operator shell without printing it.
 4. After the real release publishes, install from a clean Homebrew environment:
 
    ```sh
-   brew install --cask hamardikan/tap/lazyss
+   brew install --formula hamardikan/tap/lazyss
    lazyss --version
    lazyss doctor
    ```
 
-5. Confirm no token value appears in shell history, CI logs, generated cask,
-   state files, or docs.
+5. Confirm no token value appears in shell history, CI logs, generated tap
+   files, state files, or docs.
 
 ## Consequences
 
-- Release automation can be validated before approval with `skip_upload: true`.
 - Homebrew publishing remains gated on explicit approval for the tap repository
-  and token, then runs as part of the tag workflow.
-- If private asset installation fails during the proof protocol, the fallback is
-  a new ADR deciding whether release assets may be public while the source repo
-  remains private.
+  and token, then runs as part of the release path.
+- Formula install is the supported private macOS operator path for unsigned CLI
+  binaries.
+- Cask install remains blocked by macOS Gatekeeper until LazySS has Developer ID
+  signing and notarization or the operator manually removes quarantine.

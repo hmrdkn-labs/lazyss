@@ -42,7 +42,7 @@ jobs:
           LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON: ${{ secrets.LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON }}
         run: |
           if [ -z "${LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON:-}" ]; then
-            echo "LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON is not set; first-release pre-publish readiness will skip private cask install evidence."
+            echo "LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON is not set; first-release pre-publish readiness will skip private package install evidence."
             exit 0
           fi
           umask 077

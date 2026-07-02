@@ -30,7 +30,8 @@ class HomebrewPrivateEvidenceTest(unittest.TestCase):
             "tap": {
                 "repo": "hamardikan/homebrew-tap",
                 "tap": "hamardikan/tap",
-                "cask": "lazyss",
+                "package_type": "formula",
+                "package": "lazyss",
                 "tapped": True,
             },
             "install": {
@@ -46,7 +47,7 @@ class HomebrewPrivateEvidenceTest(unittest.TestCase):
             },
             "safety": {
                 "no_token_in_logs": True,
-                "no_token_in_cask": True,
+                "no_token_in_package": True,
                 "no_private_asset_url_recorded": True,
                 "token_value_not_recorded": True,
             },
@@ -57,6 +58,25 @@ class HomebrewPrivateEvidenceTest(unittest.TestCase):
 
         self.assertEqual([event.level for event in events], ["ok", "ok", "ok"])
         self.assertIn("private Homebrew install evidence validated", events[0].message)
+
+    def test_accepts_legacy_cask_evidence(self):
+        legacy = dict(self.valid)
+        legacy["tap"] = {
+            "repo": "hamardikan/homebrew-tap",
+            "tap": "hamardikan/tap",
+            "cask": "lazyss",
+            "tapped": True,
+        }
+        legacy["safety"] = {
+            "no_token_in_logs": True,
+            "no_token_in_cask": True,
+            "no_private_asset_url_recorded": True,
+            "token_value_not_recorded": True,
+        }
+
+        events = self.module.validate_payload(legacy, "v0.1.0", self.commit)
+
+        self.assertEqual([event.level for event in events], ["ok", "ok", "ok"])
 
     def test_rejects_token_material_before_parsing(self):
         raw = '{"token":"ghp_abcdefghijklmnopqrstuvwxyz1234567890"}'
@@ -87,6 +107,8 @@ class HomebrewPrivateEvidenceTest(unittest.TestCase):
             payload = self.module.read_json(path)
             self.assertEqual(payload["target_version"], "v0.1.0")
             self.assertEqual(payload["commit"], self.commit)
+            self.assertEqual(payload["tap"]["package_type"], "formula")
+            self.assertEqual(payload["tap"]["package"], "lazyss")
             self.assertFalse(payload["install"]["passed"])
             self.assertEqual(payload["install"]["token_env_name"], "HOMEBREW_GITHUB_API_TOKEN")
             self.assertFalse(payload["safety"]["token_value_not_recorded"])

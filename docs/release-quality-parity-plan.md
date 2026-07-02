@@ -74,18 +74,21 @@ Homebrew’s own docs recommend:
 
 ## Release Decision
 
-Use **GoReleaser v2 with `homebrew_casks`** as the primary Homebrew route because
-it matches current GoReleaser guidance.
+Use a **private Homebrew formula** as the primary operator install route for
+V1. The pre-release cask-first decision matched current GoReleaser guidance, but
+the `v0.1.0` post-publish proof showed that unsigned cask binaries can retain
+macOS quarantine and be blocked by Gatekeeper. The formula path installs and
+runs the same private release archive without that quarantine block.
 
 Target install command after release:
 
 ```sh
-brew install --cask hamardikan/tap/lazyss
+brew install --formula hamardikan/tap/lazyss
 ```
 
-If the required UX is exactly `brew install hamardikan/tap/lazyss` without
-`--cask`, create a follow-up formula track. That track should be explicit
-because GoReleaser’s formula support is currently documented as deprecated.
+The generated cask can remain as a secondary artifact while binaries are
+unsigned. It is not the primary macOS operator path until Developer ID signing
+and notarization are implemented.
 
 For private releases, the plan must support token-backed Homebrew download.
 Recommended V1 release posture:
@@ -98,13 +101,14 @@ Recommended V1 release posture:
    with access to both repos.
 5. Document `HOMEBREW_GITHUB_API_TOKEN` for local Homebrew installs from the
    private release.
-6. Before the first tag, verify the generated cask strategy from the
+6. Before the first tag, verify the generated private download strategy from the
    release-candidate snapshot. After the first publish, capture redacted private
    install proof in `homebrew-private-evidence.json` using
    `make homebrew-private-evidence-template` and validate it with
    `scripts/homebrew_private_evidence.py`.
-7. If private cask installation cannot be made reliable, keep the source repo
-   private but publish release assets publicly as an explicit release decision.
+7. If private formula installation cannot be made reliable, keep the source repo
+   private and write an explicit fallback decision for public artifacts or
+   Developer ID signing/notarization.
 
 ## Target State
 
@@ -230,7 +234,7 @@ Release workflow should:
   artifacts, including failed readiness attempts when reports were written
 - run GoReleaser v2 with `release --clean`
 - publish GitHub release archives, checksums, and changelog
-- publish/update the Homebrew tap cask
+- publish/update the Homebrew tap package
 
 Hosted release readiness requires approved secret names only:
 `LAZYSS_LIVE_SMOKE_EVIDENCE_JSON` for live smoke evidence and
@@ -353,11 +357,12 @@ Tasks:
 
 1. Confirm whether the target install must be private-source/private-assets or
    private-source/public-assets.
-2. If private assets are required, prove the cask can download one private
-   GitHub release asset from a clean Homebrew environment using a custom download
-   strategy and `HOMEBREW_GITHUB_API_TOKEN`.
-3. If private cask download is unreliable, document the decision to publish
-   release assets publicly while keeping the source repository private.
+2. If private assets are required, prove the Homebrew package can download one
+   private GitHub release asset from a clean Homebrew environment using a custom
+   download strategy and `HOMEBREW_GITHUB_API_TOKEN`.
+3. If private cask download is unreliable because macOS blocks unsigned
+   quarantined binaries, use the formula path or document a signing/notarization
+   decision.
 4. Do not create repos, add tokens, or cut tags without explicit user approval.
 
 Acceptance:
@@ -391,12 +396,12 @@ Tasks:
 9. Expand README with install modes:
    - `make build`
    - GitHub release archive
-   - Homebrew cask
+   - Homebrew formula
    - `go install github.com/hamardikan/lazyss/cmd/lazyss@latest` only as an
      authenticated developer path while the repo remains private
 10. Draft `docs/runbooks/homebrew.md` only after Milestone 0 selects the asset
     strategy; include tap setup, secrets, private install token requirements,
-    and `brew install --cask` validation.
+    and `brew install --formula` validation.
 11. Add `docs/runbooks/quality-gates.md` with local and hosted gates.
 
 Acceptance:
@@ -562,7 +567,7 @@ Acceptance:
 - Install works:
 
   ```sh
-  brew install --cask hamardikan/tap/lazyss
+  brew install --formula hamardikan/tap/lazyss
   lazyss --version
   lazyss doctor
   ```

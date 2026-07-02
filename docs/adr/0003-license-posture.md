@@ -8,7 +8,7 @@ Accepted.
 
 LazySS is currently developed as a private personal project in
 `hamardikan/lazyss`. The V1 release path is private GitHub release artifacts
-and a private Homebrew cask flow. The project includes cloud and operator
+and a private Homebrew formula flow. The project includes cloud and operator
 access tooling where the first release must prioritize controlled distribution,
 security review, and owner-approved release steps.
 

@@ -1,23 +1,28 @@
 # LazySS Homebrew Runbook
 
-LazySS uses a Homebrew cask path for V1:
+LazySS uses a Homebrew formula path for the primary V1 CLI install:
 
 ```sh
-brew install --cask hamardikan/tap/lazyss
+brew install --formula hamardikan/tap/lazyss
 ```
 
 ## Current Decision
 
 ADR 0002 selects private source and private release assets by default. The
-generated cask must use a custom `CurlDownloadStrategy` and read
+private Homebrew package must use a custom `CurlDownloadStrategy` and read
 `HOMEBREW_GITHUB_API_TOKEN` at download time.
 
-Do not place token values in cask `url.template`, cask headers, docs, CI logs,
+Do not place token values in formula or cask URLs, headers, docs, CI logs,
 release metadata, or local state.
 
 The private download strategy must keep authentication in runtime strategy state
 and request headers only. It must not return or print a URL containing
 `HOMEBREW_GITHUB_API_TOKEN`.
+
+The tap may also contain a generated cask for parity with GoReleaser's current
+cask publishing path. On macOS, unsigned cask binaries can retain quarantine and
+be blocked by Gatekeeper. Until LazySS has Developer ID signing and
+notarization, use the formula path for operator installs.
 
 The release-candidate snapshot gate verifies the generated
 `homebrew/Casks/lazyss.rb` file, not only `.goreleaser.yaml`. It checks that the
@@ -91,7 +96,8 @@ gh repo create hamardikan/homebrew-tap --private
 brew tap-new hamardikan/homebrew-tap
 ```
 
-The tap repository should contain casks under `Casks/`.
+The tap repository should contain formulae under `Formula/`. Generated casks can
+remain under `Casks/` as a secondary artifact.
 
 ## Release Publishing
 
@@ -120,7 +126,7 @@ the release-candidate workflow and run:
 DIST=/path/to/downloaded/dist make release-artifacts-verify
 ```
 
-This validates the generated private cask shape without creating the tap,
+This validates the generated private download shape without creating the tap,
 adding secrets, publishing a release, or requiring a real Homebrew install.
 
 ## Private Install Test
@@ -130,18 +136,19 @@ the token value.
 
 ```sh
 brew uninstall --cask lazyss || true
-brew install --cask hamardikan/tap/lazyss
+brew uninstall --formula lazyss || true
+brew install --formula hamardikan/tap/lazyss
 lazyss --version
 lazyss doctor
 ```
 
 Expected result:
 
-- Homebrew installs the cask without exposing token material.
+- Homebrew installs the formula without exposing token material.
 - `lazyss --version` prints the release version.
 - `lazyss doctor` reports local readiness without leaking credentials.
 
-After the first private release has published the cask and private release
+After the first private release has published the package and private release
 assets, create the ignored local evidence file:
 
 ```sh
@@ -173,6 +180,7 @@ LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json \
 
 ## Fallback Decision
 
-If private cask installation cannot be made reliable, stop and write a follow-up
-ADR. The fallback is to keep `hamardikan/lazyss` private while publishing release
-assets through an explicitly approved public artifact path.
+If private formula installation cannot be made reliable, stop and write a
+follow-up ADR. The fallback is to keep `hamardikan/lazyss` private while adding
+Developer ID signing/notarization or publishing release assets through an
+explicitly approved public artifact path.
