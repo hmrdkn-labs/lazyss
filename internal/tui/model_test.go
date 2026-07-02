@@ -476,7 +476,7 @@ func TestModelSelectsAWSProfilePersistsAndRefreshes(t *testing.T) {
 	if cmd == nil {
 		t.Fatalf("expected profile list command")
 	}
-	model, cmd = model.Update(cmd())
+	model, _ = model.Update(cmd())
 	m = model.(Model)
 	if m.inputMode != "profile" || len(m.profiles) != 2 {
 		t.Fatalf("profile mode not opened: mode=%q profiles=%#v", m.inputMode, m.profiles)

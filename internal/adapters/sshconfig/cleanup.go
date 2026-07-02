@@ -14,8 +14,11 @@ import (
 type CleanupAction string
 
 const (
-	CleanupKeep            CleanupAction = "keep"
-	CleanupHide            CleanupAction = "hide"
+	// CleanupKeep leaves an SSH host visible and unchanged.
+	CleanupKeep CleanupAction = "keep"
+	// CleanupHide recommends hiding an SSH host from the LazySS cockpit.
+	CleanupHide CleanupAction = "hide"
+	// CleanupDeleteCandidate recommends optional explicit removal from SSH config.
 	CleanupDeleteCandidate CleanupAction = "delete-candidate"
 )
 

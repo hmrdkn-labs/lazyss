@@ -118,17 +118,6 @@ func (f cockpitFilter) empty() bool {
 	return f.Raw == "" && len(f.Tags) == 0 && f.NamePrefix == "" && f.Method == "" && f.Health == "" && f.Hidden == "" && f.Text == ""
 }
 
-func (f cockpitFilter) queryTags() map[string]string {
-	if len(f.Tags) == 0 {
-		return nil
-	}
-	out := make(map[string]string, len(f.Tags))
-	for key, value := range f.Tags {
-		out[key] = value
-	}
-	return out
-}
-
 func (f cockpitFilter) matches(machine domain.Machine) bool {
 	if f.NamePrefix != "" && !strings.HasPrefix(strings.ToLower(machine.Name), strings.ToLower(f.NamePrefix)) {
 		return false
