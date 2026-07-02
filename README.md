@@ -32,6 +32,11 @@ lazyss --source ssh --ssh-config ~/.ssh/config
 lazyss --source aws --aws-profile prod --aws-region ap-southeast-1
 ```
 
+Inside the cockpit, use `P` to choose a local AWS profile and `L` to run
+`aws sso login` for the selected profile. LazySS stores only the chosen profile
+and region labels in local state; it never stores AWS credentials or SSO cache
+contents.
+
 ## Install
 
 ### From a Local Checkout

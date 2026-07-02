@@ -131,6 +131,13 @@ type ProviderStatus struct {
 	Message string        `json:"message,omitempty"`
 }
 
+// OperatorPreferences stores safe local cockpit defaults. It must not contain
+// credential material, tokens, private keys, or environment dumps.
+type OperatorPreferences struct {
+	AWSProfile string `json:"aws_profile,omitempty"`
+	AWSRegion  string `json:"aws_region,omitempty"`
+}
+
 // NewSSHMachineID returns the stable ID for an SSH config alias.
 func NewSSHMachineID(configPath, alias string) MachineID {
 	sum := sha256.Sum256([]byte(configPath))
