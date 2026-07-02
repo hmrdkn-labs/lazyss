@@ -40,6 +40,30 @@ func TestStoreWritesAtomicStateWith0600AndCappedHistory(t *testing.T) {
 	}
 }
 
+func TestStorePersistsOperatorPreferences(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "state.json")
+	store := New(path, 2)
+	ctx := context.Background()
+	prefs := domain.OperatorPreferences{AWSProfile: "hmrdkn-dev1", AWSRegion: "ap-southeast-1"}
+	if err := store.SavePreferences(ctx, prefs); err != nil {
+		t.Fatalf("save preferences: %v", err)
+	}
+	got, err := store.LoadPreferences(ctx)
+	if err != nil {
+		t.Fatalf("load preferences: %v", err)
+	}
+	if got != prefs {
+		t.Fatalf("preferences = %#v, want %#v", got, prefs)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("stat: %v", err)
+	}
+	if got := info.Mode().Perm(); got != 0o600 {
+		t.Fatalf("mode = %o, want 0600", got)
+	}
+}
+
 func TestStoreReportsCorruptJSON(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
 	if err := os.WriteFile(path, []byte("{nope"), 0o600); err != nil {

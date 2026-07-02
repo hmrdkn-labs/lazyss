@@ -45,6 +45,16 @@ output and does not leak credentials.
 3. Run `./bin/lazyss --source aws --aws-profile <profile> --aws-region <region>`.
 4. Select an SSM-ready machine, press `g`, then press `Enter`.
 
+For a non-interactive adapter smoke against real AWS SSM inventory, run the
+opt-in live test. It is excluded from normal CI because it depends on local SSO
+state and a real account with at least one managed node:
+
+```sh
+LAZYSS_LIVE_AWS_PROFILE=<profile> \
+LAZYSS_LIVE_AWS_REGION=<region> \
+go test -tags liveaws ./internal/adapters/awsssm -run TestLiveAWSInventoryWithProfile -count=1 -v
+```
+
 ## Failure Safety
 
 1. Use a bad SSH host and confirm failed connects record failure without

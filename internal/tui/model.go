@@ -4,6 +4,7 @@ package tui
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -12,31 +13,40 @@ import (
 
 	"github.com/hamardikan/lazyss/internal/app"
 	"github.com/hamardikan/lazyss/internal/domain"
+	"github.com/hamardikan/lazyss/internal/ports"
 )
 
 const maxProviderWarningRunes = 78
 
 // Runtime wires the TUI to app-layer services and clipboard support.
 type Runtime struct {
-	Inventory *app.InventoryService
-	Connect   *app.ConnectService
-	Health    *app.HealthService
-	Query     app.InventoryQuery
-	Copy      func(string) error
+	Inventory     *app.InventoryService
+	Connect       *app.ConnectService
+	Health        *app.HealthService
+	Query         app.InventoryQuery
+	Copy          func(string) error
+	Preferences   ports.PreferenceStore
+	AWSProfiles   ports.AWSProfileProvider
+	AWSLogin      ports.AWSLoginRunner
+	AWSProfile    string
+	AWSRegion     string
+	SetAWSProfile func(ctx context.Context, profile string) (*app.InventoryService, error)
 }
 
 // Model is the Bubble Tea state for the machine cockpit.
 type Model struct {
-	runtime    *Runtime
-	machines   []domain.Machine
-	visible    []domain.Machine
-	statuses   []domain.ProviderStatus
-	cursor     int
-	search     string
-	inputMode  string
-	details    bool
-	refreshSeq int
-	statusLine string
+	runtime       *Runtime
+	machines      []domain.Machine
+	visible       []domain.Machine
+	statuses      []domain.ProviderStatus
+	cursor        int
+	search        string
+	inputMode     string
+	details       bool
+	profiles      []string
+	profileCursor int
+	refreshSeq    int
+	statusLine    string
 }
 
 type machinesMsg struct {
@@ -44,6 +54,21 @@ type machinesMsg struct {
 	machines []domain.Machine
 	statuses []domain.ProviderStatus
 	err      error
+}
+
+type profilesMsg struct {
+	profiles []string
+	err      error
+}
+
+type profileSelectedMsg struct {
+	profile   string
+	inventory *app.InventoryService
+	err       error
+}
+
+type awsLoginMsg struct {
+	err error
 }
 
 // NewModel creates a TUI model with an initial filtered view.
@@ -71,6 +96,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.applyHealth(domain.HealthObservation(msg))
 	case statusMsg:
 		m.statusLine = string(msg)
+	case profilesMsg:
+		m.handleProfilesMsg(msg)
+	case profileSelectedMsg:
+		return m.handleProfileSelectedMsg(msg)
+	case awsLoginMsg:
+		return m.handleAWSLoginMsg(msg)
 	case tea.KeyPressMsg:
 		return m.handleKey(msg)
 	}
@@ -85,15 +116,36 @@ func (m Model) View() tea.View {
 func (m Model) render() string {
 	var b strings.Builder
 	b.WriteString("Lazy Secure Shell\n")
+	if m.runtime != nil && (m.runtime.AWSProfile != "" || m.runtime.AWSRegion != "") {
+		fmt.Fprintf(&b, "aws profile: %s", awsProfileLabel(m.runtime.AWSProfile))
+		if m.runtime.AWSRegion != "" {
+			fmt.Fprintf(&b, " region: %s", m.runtime.AWSRegion)
+		}
+		b.WriteByte('\n')
+	}
 	if m.statusLine != "" {
 		b.WriteString(m.statusLine + "\n")
 	}
 	if len(m.statuses) > 0 {
 		for _, status := range m.statuses {
 			if status.Status == domain.ProviderDegraded {
-				b.WriteString(providerWarning(status) + "\n")
+				b.WriteString(m.providerWarning(status) + "\n")
 			}
 		}
+	}
+	if m.inputMode == "profile" {
+		b.WriteString("AWS profiles\n")
+		if len(m.profiles) == 0 {
+			b.WriteString("No profiles\n")
+		}
+		for i, profile := range m.profiles {
+			cursor := " "
+			if i == m.profileCursor {
+				cursor = ">"
+			}
+			fmt.Fprintf(&b, "%s %s\n", cursor, profile)
+		}
+		return b.String()
 	}
 	if m.inputMode != "" {
 		fmt.Fprintf(&b, "%s: %s\n", m.inputMode, m.search)
@@ -136,10 +188,17 @@ func (m Model) render() string {
 	return b.String()
 }
 
-func providerWarning(status domain.ProviderStatus) string {
+func (m Model) providerWarning(status domain.ProviderStatus) string {
 	message := compactProviderMessage(status.Message)
 	if message == "" {
 		message = "provider unavailable"
+	}
+	if status.Name == "aws" && isAWSAuthMessage(message) {
+		label := ""
+		if m.runtime != nil && m.runtime.AWSProfile != "" {
+			label = " " + awsProfileLabel(m.runtime.AWSProfile)
+		}
+		return truncateRunes(fmt.Sprintf("source aws%s degraded: auth failed; P profile / L login", label), maxProviderWarningRunes)
 	}
 	line := fmt.Sprintf("source %s degraded: %s", status.Name, message)
 	if len([]rune(line)) > maxProviderWarningRunes {
@@ -148,6 +207,32 @@ func providerWarning(status domain.ProviderStatus) string {
 		}
 	}
 	return truncateRunes(line, maxProviderWarningRunes)
+}
+
+func awsProfileLabel(profile string) string {
+	if strings.TrimSpace(profile) == "" {
+		return "default"
+	}
+	return profile
+}
+
+func isAWSAuthMessage(message string) bool {
+	message = strings.ToLower(message)
+	if strings.Contains(message, "auth failed") {
+		return true
+	}
+	for _, code := range []string{
+		"expiredtoken",
+		"expiredtokenexception",
+		"invalidclienttokenid",
+		"signaturedoesnotmatch",
+		"unrecognizedclientexception",
+	} {
+		if strings.Contains(message, strings.ToLower(code)) {
+			return true
+		}
+	}
+	return false
 }
 
 func compactProviderMessage(message string) string {
@@ -174,6 +259,9 @@ func truncateRunes(s string, max int) string {
 }
 
 func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	if m.inputMode == "profile" {
+		return m.handleProfileKey(msg)
+	}
 	if m.inputMode != "" {
 		return m.handleInputKey(msg)
 	}
@@ -207,8 +295,36 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, m.checkSelectedCmd()
 	case "G":
 		return m, m.checkVisibleCmd()
+	case "P":
+		return m, m.listProfilesCmd()
+	case "L":
+		return m, m.awsLoginCmd()
 	case "enter":
 		return m, m.connectSelectedCmd()
+	}
+	return m, nil
+}
+
+func (m Model) handleProfileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc":
+		m.inputMode = ""
+	case "j", "down":
+		if m.profileCursor < len(m.profiles)-1 {
+			m.profileCursor++
+		}
+	case "k", "up":
+		if m.profileCursor > 0 {
+			m.profileCursor--
+		}
+	case "enter":
+		if len(m.profiles) == 0 {
+			m.inputMode = ""
+			return m, nil
+		}
+		profile := m.profiles[m.profileCursor]
+		m.inputMode = ""
+		return m, m.selectProfileCmd(profile)
 	}
 	return m, nil
 }
@@ -236,6 +352,11 @@ func (m Model) handleInputKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) fetchCmd(seq int) tea.Cmd {
+	if m.runtime == nil || m.runtime.Inventory == nil {
+		return func() tea.Msg {
+			return machinesMsg{seq: seq, err: fmt.Errorf("inventory is not configured")}
+		}
+	}
 	return func() tea.Msg {
 		result, err := m.runtime.Inventory.List(context.Background(), m.runtime.Query)
 		return machinesMsg{seq: seq, machines: result.Machines, statuses: result.Statuses, err: err}
@@ -252,6 +373,51 @@ func (m *Model) handleMachinesMsg(msg machinesMsg) {
 		m.statusLine = msg.err.Error()
 	}
 	m.recompute()
+}
+
+func (m *Model) handleProfilesMsg(msg profilesMsg) {
+	if msg.err != nil {
+		m.statusLine = "aws profiles: " + msg.err.Error()
+		return
+	}
+	m.profiles = append([]string(nil), msg.profiles...)
+	m.profileCursor = 0
+	m.inputMode = "profile"
+	if len(m.profiles) == 0 {
+		m.statusLine = "aws profiles: none found"
+	}
+}
+
+func (m Model) handleProfileSelectedMsg(msg profileSelectedMsg) (tea.Model, tea.Cmd) {
+	if msg.err != nil {
+		m.statusLine = "aws profile: " + msg.err.Error()
+		return m, nil
+	}
+	if m.runtime != nil {
+		m.runtime.AWSProfile = msg.profile
+		if msg.inventory != nil {
+			m.runtime.Inventory = msg.inventory
+		}
+		if m.runtime.Preferences != nil {
+			_ = m.runtime.Preferences.SavePreferences(context.Background(), domain.OperatorPreferences{
+				AWSProfile: msg.profile,
+				AWSRegion:  m.runtime.AWSRegion,
+			})
+		}
+	}
+	m.statusLine = "aws profile: " + msg.profile
+	m.refreshSeq++
+	return m, m.fetchCmd(m.refreshSeq)
+}
+
+func (m Model) handleAWSLoginMsg(msg awsLoginMsg) (tea.Model, tea.Cmd) {
+	if msg.err != nil {
+		m.statusLine = "aws login: " + msg.err.Error()
+		return m, nil
+	}
+	m.statusLine = "aws login complete"
+	m.refreshSeq++
+	return m, m.fetchCmd(m.refreshSeq)
 }
 
 func (m *Model) applySearch(query string) {
@@ -379,6 +545,65 @@ func (m Model) checkVisibleCmd() tea.Cmd {
 		return machinesMsg{seq: m.refreshSeq, machines: result.Machines, statuses: result.Statuses}
 	}
 }
+
+func (m Model) listProfilesCmd() tea.Cmd {
+	if m.runtime == nil || m.runtime.AWSProfiles == nil {
+		return func() tea.Msg {
+			return profilesMsg{err: fmt.Errorf("aws profile discovery is not configured")}
+		}
+	}
+	return func() tea.Msg {
+		profiles, err := m.runtime.AWSProfiles.ListProfiles(context.Background())
+		return profilesMsg{profiles: profiles, err: err}
+	}
+}
+
+func (m Model) selectProfileCmd(profile string) tea.Cmd {
+	if m.runtime == nil || m.runtime.SetAWSProfile == nil {
+		return func() tea.Msg {
+			return profileSelectedMsg{profile: profile, err: fmt.Errorf("aws profile switching is not configured")}
+		}
+	}
+	return func() tea.Msg {
+		inventory, err := m.runtime.SetAWSProfile(context.Background(), profile)
+		return profileSelectedMsg{profile: profile, inventory: inventory, err: err}
+	}
+}
+
+func (m Model) awsLoginCmd() tea.Cmd {
+	if m.runtime == nil || m.runtime.AWSLogin == nil {
+		return func() tea.Msg {
+			return awsLoginMsg{err: fmt.Errorf("aws login is not configured")}
+		}
+	}
+	profile := ""
+	if m.runtime != nil {
+		profile = strings.TrimSpace(m.runtime.AWSProfile)
+	}
+	if profile == "" {
+		return func() tea.Msg {
+			return awsLoginMsg{err: fmt.Errorf("choose an AWS profile with P first")}
+		}
+	}
+	return tea.Exec(loginExecCommand{runner: m.runtime.AWSLogin, profile: profile}, func(err error) tea.Msg {
+		return awsLoginMsg{err: err}
+	})
+}
+
+type loginExecCommand struct {
+	runner  ports.AWSLoginRunner
+	profile string
+}
+
+func (c loginExecCommand) Run() error {
+	return c.runner.Login(context.Background(), c.profile)
+}
+
+func (loginExecCommand) SetStdin(io.Reader) {}
+
+func (loginExecCommand) SetStdout(io.Writer) {}
+
+func (loginExecCommand) SetStderr(io.Writer) {}
 
 func (m Model) copySelectedCmd() tea.Cmd {
 	if m.runtime == nil || m.runtime.Connect == nil || len(m.visible) == 0 {

@@ -64,6 +64,22 @@ type StateStore interface {
 	RecordSession(ctx context.Context, event domain.SessionEvent) error
 }
 
+// PreferenceStore persists safe local cockpit preferences.
+type PreferenceStore interface {
+	LoadPreferences(ctx context.Context) (domain.OperatorPreferences, error)
+	SavePreferences(ctx context.Context, prefs domain.OperatorPreferences) error
+}
+
+// AWSProfileProvider lists configured AWS profile names without credentials.
+type AWSProfileProvider interface {
+	ListProfiles(ctx context.Context) ([]string, error)
+}
+
+// AWSLoginRunner launches an AWS login flow for one profile.
+type AWSLoginRunner interface {
+	Login(ctx context.Context, profile string) error
+}
+
 // Clock provides testable time.
 type Clock interface {
 	Now() time.Time

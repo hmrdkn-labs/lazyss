@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 
+	"github.com/hamardikan/lazyss/internal/adapters/awsconfig"
 	"github.com/hamardikan/lazyss/internal/adapters/awsssm"
 	"github.com/hamardikan/lazyss/internal/adapters/sshconfig"
 	"github.com/hamardikan/lazyss/internal/adapters/statejson"
@@ -104,18 +105,35 @@ func runTUI(cfg cliConfig) int {
 		return 1
 	}
 	store := statejson.New(statePath, 20)
-	providers := buildProviders(cfg)
+	prefs, err := store.LoadPreferences(context.Background())
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "preferences:", err)
+	}
+	effectiveCfg := resolveAWSConfig(cfg, prefs)
+	providers := buildProviders(effectiveCfg)
+	awsCLI := awsconfig.NewCLI(nil)
 	connectors := []ports.Connector{sshconfig.NewConnector(nil, nil), awsssm.NewConnector(nil)}
 	checkers := []ports.HealthChecker{
 		sshconfig.NewChecker(nil, nil, 3*time.Second),
 		awsssm.Checker{},
 	}
 	runtime := &tui.Runtime{
-		Inventory: &app.InventoryService{Providers: providers, Store: store},
-		Connect:   &app.ConnectService{Connectors: connectors, Store: store},
-		Health:    &app.HealthService{Checkers: checkers, Store: store, MaxConcurrent: 8},
-		Query:     app.InventoryQuery{Source: cfg.Source},
-		Copy:      clipboard.WriteAll,
+		Inventory:   &app.InventoryService{Providers: providers, Store: store},
+		Connect:     &app.ConnectService{Connectors: connectors, Store: store},
+		Health:      &app.HealthService{Checkers: checkers, Store: store, MaxConcurrent: 8},
+		Query:       app.InventoryQuery{Source: effectiveCfg.Source},
+		Copy:        clipboard.WriteAll,
+		Preferences: store,
+		AWSProfiles: awsCLI,
+		AWSLogin:    awsCLI,
+		AWSProfile:  effectiveCfg.AWSProfile,
+		AWSRegion:   effectiveCfg.AWSRegion,
+		SetAWSProfile: func(_ context.Context, profile string) (*app.InventoryService, error) {
+			nextCfg := effectiveCfg
+			nextCfg.AWSProfile = profile
+			effectiveCfg.AWSProfile = profile
+			return &app.InventoryService{Providers: buildProviders(nextCfg), Store: store}, nil
+		},
 	}
 	if _, err := tea.NewProgram(tui.NewModel(runtime)).Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "tui:", err)
@@ -140,6 +158,16 @@ func buildProviders(cfg cliConfig) []ports.InventoryProvider {
 		}
 	}
 	return providers
+}
+
+func resolveAWSConfig(cfg cliConfig, prefs domain.OperatorPreferences) cliConfig {
+	if cfg.AWSProfile == "" {
+		cfg.AWSProfile = prefs.AWSProfile
+	}
+	if cfg.AWSRegion == "" {
+		cfg.AWSRegion = prefs.AWSRegion
+	}
+	return cfg
 }
 
 func runDoctor(cfg cliConfig) int {

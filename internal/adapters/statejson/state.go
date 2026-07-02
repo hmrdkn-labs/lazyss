@@ -24,7 +24,8 @@ type Store struct {
 }
 
 type stateFile struct {
-	Overlays map[domain.MachineID]domain.MachineOverlay `json:"overlays"`
+	Preferences domain.OperatorPreferences                 `json:"preferences,omitempty"`
+	Overlays    map[domain.MachineID]domain.MachineOverlay `json:"overlays"`
 }
 
 // New creates a JSON state store.
@@ -68,6 +69,29 @@ func (s *Store) SaveOverlay(_ context.Context, overlay domain.MachineOverlay) er
 		return err
 	}
 	st.Overlays[overlay.MachineID] = overlay
+	return s.save(st)
+}
+
+// LoadPreferences returns safe local cockpit preferences.
+func (s *Store) LoadPreferences(_ context.Context) (domain.OperatorPreferences, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	st, err := s.load()
+	if err != nil {
+		return domain.OperatorPreferences{}, err
+	}
+	return st.Preferences, nil
+}
+
+// SavePreferences persists safe local cockpit preferences.
+func (s *Store) SavePreferences(_ context.Context, prefs domain.OperatorPreferences) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	st, err := s.load()
+	if err != nil {
+		return err
+	}
+	st.Preferences = prefs
 	return s.save(st)
 }
 
