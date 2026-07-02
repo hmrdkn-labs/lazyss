@@ -17,11 +17,11 @@ class ReleaseApprovalPlanTest(unittest.TestCase):
                     "python3",
                     str(SCRIPT),
                     "--repo",
-                    "hamardikan/lazyss",
+                    "hmrdkn-labs/lazyss",
                     "--tap-repo",
-                    "hamardikan/homebrew-tap",
+                    "hmrdkn-labs/homebrew-tap",
                     "--tap",
-                    "hamardikan/tap",
+                    "hmrdkn-labs/tap",
                     "--target-version",
                     "v0.1.0",
                     "--markdown-output",
@@ -39,24 +39,22 @@ class ReleaseApprovalPlanTest(unittest.TestCase):
 
             markdown = out.read_text(encoding="utf-8")
             self.assertIn("# LazySS Release Approval Plan", markdown)
-            self.assertIn("Repository: `hamardikan/lazyss`", markdown)
-            self.assertIn("Tap repository: `hamardikan/homebrew-tap`", markdown)
-            self.assertIn("Tap: `hamardikan/tap`", markdown)
+            self.assertIn("Repository: `hmrdkn-labs/lazyss`", markdown)
+            self.assertIn("Tap repository: `hmrdkn-labs/homebrew-tap`", markdown)
+            self.assertIn("Tap: `hmrdkn-labs/tap`", markdown)
             self.assertIn("Target version: `v0.1.0`", markdown)
             self.assertIn("local and read-only", markdown)
             self.assertIn("does not create repositories, secrets, branch protection, tags, releases, or public assets", markdown)
             self.assertIn("Do not paste token values", markdown)
             self.assertIn("session-manager-plugin", markdown)
             self.assertIn("make branch-protection-plan", markdown)
+            self.assertIn("gh repo view hmrdkn-labs/lazyss", markdown)
+            self.assertIn("gh repo create hmrdkn-labs/homebrew-tap --public", markdown)
             self.assertIn("HOMEBREW_TAP_GITHUB_TOKEN", markdown)
             self.assertIn("LAZYSS_RELEASE_READINESS_GITHUB_TOKEN", markdown)
             self.assertIn("LAZYSS_LIVE_SMOKE_EVIDENCE_JSON", markdown)
-            self.assertIn("LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON", markdown)
             self.assertIn("make live-smoke-evidence-template", markdown)
-            self.assertIn("make homebrew-private-evidence-template", markdown)
-            self.assertIn("after post-publish private package", markdown)
-            self.assertIn("brew install --formula hamardikan/tap/lazyss", markdown)
-            self.assertIn("LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE=1", markdown)
+            self.assertIn("brew install --formula hmrdkn-labs/tap/lazyss", markdown)
             self.assertIn("LAZYSS_LIVE_SMOKE_EVIDENCE=live-smoke-evidence.json", markdown)
             self.assertIn("./scripts/release-readiness.sh", markdown)
             self.assertIn("git tag v0.1.0", markdown)

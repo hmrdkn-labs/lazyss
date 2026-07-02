@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/hamardikan/lazyss/internal/domain"
+	"github.com/hmrdkn-labs/lazyss/internal/domain"
 )
 
 func TestParseArgs(t *testing.T) {

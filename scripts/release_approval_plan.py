@@ -34,7 +34,7 @@ does not create repositories, secrets, branch protection, tags, releases, or pub
 ## Mutation Policy
 
 - Do not paste token values, AWS credentials, SSH keys, SSO cache data,
-  authorization headers, private release asset URLs, or environment dumps into
+  authorization headers, release asset URLs with credentials, or environment dumps into
   this file, issue comments, PR comments, logs, or generated evidence.
 - Every command below that mutates GitHub, Homebrew, branch protection, local
   taps, tags, releases, or installed software requires explicit owner approval.
@@ -63,35 +63,48 @@ does not create repositories, secrets, branch protection, tags, releases, or pub
    ./scripts/branch-protection-readiness.sh
    ```
 
-3. Create or confirm the private Homebrew tap.
+3. Confirm the public repository location and visibility.
+
+   Target source repository: `{repo}`
+
+   The source repository must be owned by `hmrdkn-labs` and public before the
+   first public release tag is cut:
+
+   ```sh
+   gh repo view {repo} --json nameWithOwner,isPrivate,visibility
+   ```
+
+4. Create or confirm the public Homebrew tap.
 
    Target repository: `{tap_repo}`
    Target local tap: `{tap}`
 
-   The tap should stay private while `{repo}` remains private. Do not make
-   release assets public unless that is an explicit release decision.
+   If it does not exist and the owner approves creation:
 
-4. Add required repository secrets after owner approval.
+   ```sh
+   gh repo create {tap_repo} --public --description "Homebrew tap for hmrdkn-labs tools"
+   brew tap {tap}
+   ```
+
+5. Add required repository secrets after owner approval.
 
    Secret names required by the release path:
 
    - `HOMEBREW_TAP_GITHUB_TOKEN`
    - `LAZYSS_RELEASE_READINESS_GITHUB_TOKEN`
    - `LAZYSS_LIVE_SMOKE_EVIDENCE_JSON`
-   - `LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON` after post-publish private package
-     install proof exists
 
    Store only the approved values in GitHub Secrets. Do not record secret values
    in this plan. Evidence JSON secrets must contain redacted evidence objects
    only, not token material.
 
-5. Tap the private Homebrew repository locally after it exists.
+6. Tap the public Homebrew repository locally after it exists.
 
    ```sh
    brew tap {tap}
    ```
 
-6. Capture live smoke proof.
+7. Capture live smoke proof.
 
    ```sh
    make live-smoke-evidence-template
@@ -107,26 +120,17 @@ does not create repositories, secrets, branch protection, tags, releases, or pub
      --commit "$(git rev-parse HEAD)"
    ```
 
-7. Capture private Homebrew install proof after the first publish.
+8. Verify public Homebrew install after the first publish.
 
    ```sh
-   make homebrew-private-evidence-template
-   ```
-
-   Fill `homebrew-private-evidence.json` only after the release workflow
-   publishes the private package and a token-backed private install succeeds.
-   Keep the token in the operator environment and out of evidence:
-
-   ```sh
+   brew update
    brew install --formula {tap}/lazyss
-   python3 scripts/homebrew_private_evidence.py validate \\
-     --file homebrew-private-evidence.json \\
-     --target-version {target_version} \\
-     --commit "$(git rev-parse HEAD)"
-   LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE=1 \\
-   LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json \\
-   ./scripts/release-readiness.sh
+   lazyss --version
+   lazyss doctor
    ```
+
+   Record the command output in the release issue. Do not paste token values,
+   environment dumps, AWS credentials, or SSH keys.
 
 ## Final Readiness Command
 
@@ -139,9 +143,7 @@ LAZYSS_RELEASE_READINESS_MARKDOWN=release-readiness.md \\
 ./scripts/release-readiness.sh
 ```
 
-Expected result before tagging: exit `0`. For the first release, private
-Homebrew install evidence is validated after GoReleaser publishes the private
-release assets and tap package.
+Expected result before tagging: exit `0`.
 
 ## Tag After Green Readiness
 
@@ -165,9 +167,9 @@ def write_text(path, text):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Generate a read-only LazySS release approval handoff.")
-    parser.add_argument("--repo", default="hamardikan/lazyss")
-    parser.add_argument("--tap-repo", default="hamardikan/homebrew-tap")
-    parser.add_argument("--tap", default="hamardikan/tap")
+    parser.add_argument("--repo", default="hmrdkn-labs/lazyss")
+    parser.add_argument("--tap-repo", default="hmrdkn-labs/homebrew-tap")
+    parser.add_argument("--tap", default="hmrdkn-labs/tap")
     parser.add_argument("--target-version", default=os.environ.get("LAZYSS_RELEASE_VERSION", "v0.1.0"))
     parser.add_argument("--markdown-output", default="release-approval.md")
     args = parser.parse_args(argv)

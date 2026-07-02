@@ -157,7 +157,7 @@ def template_payload(target_version, commit, now):
         },
         "notes": (
             "Use non-secret labels only. Do not include host passwords, private keys, AWS credentials, "
-            "SSO cache data, GitHub tokens, env dumps, or private release asset URLs."
+"SSO cache data, GitHub tokens, env dumps, or release asset URLs with credentials."
         ),
     }
 

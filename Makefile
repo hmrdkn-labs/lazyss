@@ -101,6 +101,10 @@ release-snapshot:
 	fi; \
 	goreleaser check; \
 	goreleaser release --clean --snapshot --skip=publish; \
+	python3 scripts/homebrew_formula.py generate \
+		--dist dist \
+		--version "$${LAZYSS_RELEASE_VERSION:-v0.0.0-snapshot}" \
+		--output dist/homebrew/Formula/lazyss.rb; \
 	python3 scripts/release_artifacts.py verify --dist dist
 
 .PHONY: release-candidate-local
@@ -160,13 +164,6 @@ release-preflight: release-readiness
 live-smoke-evidence-template:
 	python3 scripts/live_smoke_evidence.py template \
 		--output live-smoke-evidence.json \
-		--target-version "$${LAZYSS_RELEASE_VERSION:-v0.1.0}" \
-		--commit "$$(git rev-parse HEAD)"
-
-.PHONY: homebrew-private-evidence-template
-homebrew-private-evidence-template:
-	python3 scripts/homebrew_private_evidence.py template \
-		--output homebrew-private-evidence.json \
 		--target-version "$${LAZYSS_RELEASE_VERSION:-v0.1.0}" \
 		--commit "$$(git rev-parse HEAD)"
 

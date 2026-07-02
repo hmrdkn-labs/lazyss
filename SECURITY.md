@@ -1,8 +1,7 @@
 # Security Policy
 
-LazySS is currently a private project. Report vulnerabilities directly to the
-repository owner through the private GitHub repository or an agreed private
-channel.
+Report vulnerabilities through a private GitHub security advisory on
+`hmrdkn-labs/lazyss` or another agreed private channel with the maintainers.
 
 ## Secret Handling
 
@@ -25,5 +24,7 @@ automation paths.
 
 ## Release Safety
 
-Private Homebrew installs require token-backed download. Token values must not
-appear in generated casks, docs, CI logs, release notes, or state files.
+Release automation must not print GitHub token values, AWS credential material,
+authorization headers, or operator environment dumps. Homebrew formula
+publishing uses a GitHub secret for tap write access, but the generated formula
+must contain only public release URLs and checksums.

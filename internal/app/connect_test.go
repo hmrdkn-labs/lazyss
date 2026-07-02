@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hamardikan/lazyss/internal/domain"
-	"github.com/hamardikan/lazyss/internal/ports"
+	"github.com/hmrdkn-labs/lazyss/internal/domain"
+	"github.com/hmrdkn-labs/lazyss/internal/ports"
 )
 
 func TestConnectRecordsSuccessAndFailure(t *testing.T) {

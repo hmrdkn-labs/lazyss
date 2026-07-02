@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hamardikan/lazyss/internal/domain"
-	"github.com/hamardikan/lazyss/internal/ports"
+	"github.com/hmrdkn-labs/lazyss/internal/domain"
+	"github.com/hmrdkn-labs/lazyss/internal/ports"
 )
 
 // InventoryQuery filters inventory provider results.

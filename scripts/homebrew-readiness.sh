@@ -3,9 +3,11 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG="$ROOT/.goreleaser.yaml"
-REPO="${LAZYSS_GITHUB_REPO:-hamardikan/lazyss}"
-TAP_REPO="${LAZYSS_HOMEBREW_TAP_REPO:-hamardikan/homebrew-tap}"
-TAP_SHORT="${LAZYSS_HOMEBREW_TAP_SHORT:-hamardikan/tap}"
+RELEASE_WORKFLOW="$ROOT/.github/workflows/release.yml"
+FORMULA_GENERATOR="$ROOT/scripts/homebrew_formula.py"
+REPO="${LAZYSS_GITHUB_REPO:-hmrdkn-labs/lazyss}"
+TAP_REPO="${LAZYSS_HOMEBREW_TAP_REPO:-hmrdkn-labs/homebrew-tap}"
+TAP_SHORT="${LAZYSS_HOMEBREW_TAP_SHORT:-hmrdkn-labs/tap}"
 READINESS_MODE="${LAZYSS_HOMEBREW_READINESS_MODE:-local}"
 REQUIRE_TAP_UPLOAD="${LAZYSS_REQUIRE_HOMEBREW_TAP_UPLOAD:-0}"
 
@@ -46,6 +48,36 @@ require_config_text() {
 		ok "$label"
 	else
 		fail "$label missing in .goreleaser.yaml"
+	fi
+}
+
+forbid_config_text() {
+	local pattern="$1"
+	local label="$2"
+	if grep -q "$pattern" "$CONFIG"; then
+		fail "$label must not appear in public Homebrew config"
+	else
+		ok "$label absent"
+	fi
+}
+
+require_file() {
+	local path="$1"
+	local label="$2"
+	if [ -f "$path" ]; then
+		ok "$label"
+	else
+		fail "$label missing"
+	fi
+}
+
+require_workflow_text() {
+	local pattern="$1"
+	local label="$2"
+	if grep -q "$pattern" "$RELEASE_WORKFLOW"; then
+		ok "$label"
+	else
+		fail "$label missing in release workflow"
 	fi
 }
 
@@ -98,9 +130,18 @@ else
 	fail ".goreleaser.yaml missing"
 fi
 
-require_config_text '^homebrew_casks:' "uses GoReleaser homebrew_casks"
-require_config_text 'name: lazyss' "cask name is lazyss"
-require_config_text 'directory: Casks' "cask output directory is Casks"
+require_file "$FORMULA_GENERATOR" "Homebrew formula generator exists"
+require_file "$RELEASE_WORKFLOW" "release workflow exists"
+require_workflow_text 'scripts/homebrew_formula.py generate' "release workflow generates formula"
+require_workflow_text 'repository: hmrdkn-labs/homebrew-tap' "release workflow checks out public tap"
+require_workflow_text 'HOMEBREW_TAP_GITHUB_TOKEN' "release workflow references tap publishing secret by name only"
+require_workflow_text 'Formula/lazyss.rb' "release workflow writes Formula/lazyss.rb"
+forbid_config_text '^brews:' "deprecated GoReleaser brews"
+forbid_config_text '^homebrew_casks:' "homebrew_casks"
+forbid_config_text 'directory: Casks' "Casks output directory"
+forbid_config_text 'HOMEBREW_GITHUB_API_TOKEN' "private release download token"
+forbid_config_text 'GitHubPrivateRepositoryReleaseDownloadStrategy' "private GitHub download strategy"
+forbid_config_text 'Authorization: Bearer' "authorization header template"
 if grep -q 'skip_upload: true' "$CONFIG"; then
 	if [ "$REQUIRE_TAP_UPLOAD" = "1" ]; then
 		fail "tap publishing is required but .goreleaser.yaml still has skip_upload: true"
@@ -110,12 +151,6 @@ if grep -q 'skip_upload: true' "$CONFIG"; then
 else
 	ok "tap publishing is enabled for the approved tap"
 fi
-require_config_text 'owner: hamardikan' "tap owner is hamardikan"
-require_config_text 'name: homebrew-tap' "tap repository name is homebrew-tap"
-require_config_text 'HOMEBREW_TAP_GITHUB_TOKEN' "tap publishing secret is referenced by name only"
-require_config_text 'HOMEBREW_GITHUB_API_TOKEN' "private install token env name is documented in generated cask"
-require_config_text 'GitHubPrivateRepositoryReleaseDownloadStrategy' "private GitHub download strategy is configured"
-require_config_text 'using: GitHubPrivateRepositoryReleaseDownloadStrategy' "cask url uses private download strategy"
 
 if grep -Eiq 'ghp_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|AWS_SECRET_ACCESS_KEY|AWS_SESSION_TOKEN|BEGIN (OPENSSH|RSA|EC|DSA) PRIVATE KEY' "$CONFIG" docs .github 2>/dev/null; then
 	fail "potential credential material found in tracked release docs/config"
@@ -123,41 +158,53 @@ else
 	ok "no obvious credential material in release docs/config"
 fi
 
-if grep -q '#{@github_token}@' "$CONFIG"; then
-	fail "private cask strategy must not return token-bearing URLs"
-else
-	ok "private cask strategy keeps token material out of returned URLs"
-fi
-
 printf '\nGitHub state\n'
-if gh repo view "$REPO" --json isPrivate,nameWithOwner,defaultBranchRef --jq '"\(.nameWithOwner) private=\(.isPrivate) default=\(.defaultBranchRef.name)"' >/tmp/lazyss-repo-view.$$ 2>/tmp/lazyss-repo-view-err.$$; then
-	repo_line="$(cat /tmp/lazyss-repo-view.$$)"
+repo_out="$(mktemp "${TMPDIR:-/tmp}/lazyss-repo-view.XXXXXX")"
+repo_err="$(mktemp "${TMPDIR:-/tmp}/lazyss-repo-view-err.XXXXXX")"
+if gh repo view "$REPO" --json isPrivate,nameWithOwner,defaultBranchRef --jq '"\(.nameWithOwner) private=\(.isPrivate) default=\(.defaultBranchRef.name)"' >"$repo_out" 2>"$repo_err"; then
+	repo_line="$(cat "$repo_out")"
 	ok "$repo_line"
-	if ! gh repo view "$REPO" --json isPrivate --jq '.isPrivate' | grep -qx 'true'; then
-		fail "$REPO is not private"
+	if gh repo view "$REPO" --json isPrivate --jq '.isPrivate' | grep -qx 'false'; then
+		ok "$REPO is public"
+	else
+		blocker "$REPO is still private; public release requires repository visibility change"
 	fi
 else
-	warn "could not query $REPO with gh: $(tr '\n' ' ' </tmp/lazyss-repo-view-err.$$)"
+	warn "could not query $REPO with gh: $(tr '\n' ' ' <"$repo_err")"
 fi
-rm -f /tmp/lazyss-repo-view.$$ /tmp/lazyss-repo-view-err.$$
+rm -f "$repo_out" "$repo_err"
 
-if gh repo view "$TAP_REPO" --json isPrivate,nameWithOwner,defaultBranchRef --jq '"\(.nameWithOwner) private=\(.isPrivate) default=\(.defaultBranchRef.name)"' >/tmp/lazyss-tap-view.$$ 2>/tmp/lazyss-tap-view-err.$$; then
-	ok "$(cat /tmp/lazyss-tap-view.$$)"
+tap_out="$(mktemp "${TMPDIR:-/tmp}/lazyss-tap-view.XXXXXX")"
+tap_err="$(mktemp "${TMPDIR:-/tmp}/lazyss-tap-view-err.XXXXXX")"
+if gh repo view "$TAP_REPO" --json isPrivate,nameWithOwner,defaultBranchRef --jq '"\(.nameWithOwner) private=\(.isPrivate) default=\(.defaultBranchRef.name)"' >"$tap_out" 2>"$tap_err"; then
+	tap_line="$(cat "$tap_out")"
+	ok "$tap_line"
+	if gh repo view "$TAP_REPO" --json isPrivate --jq '.isPrivate' | grep -qx 'false'; then
+		ok "$TAP_REPO is public"
+	else
+		blocker "$TAP_REPO is private; public Homebrew tap should be public"
+	fi
 else
-	blocker "$TAP_REPO does not exist or is not visible to gh; owner approval is required before creating it"
+	blocker "$TAP_REPO does not exist or is not visible to gh; approval is required before creating it"
 fi
-rm -f /tmp/lazyss-tap-view.$$ /tmp/lazyss-tap-view-err.$$
+rm -f "$tap_out" "$tap_err"
 
-if gh secret list --repo "$REPO" --json name --jq '.[].name' >/tmp/lazyss-secret-names.$$ 2>/tmp/lazyss-secret-err.$$; then
-	if grep -qx 'HOMEBREW_TAP_GITHUB_TOKEN' /tmp/lazyss-secret-names.$$; then
+secret_names="$(mktemp "${TMPDIR:-/tmp}/lazyss-secret-names.XXXXXX")"
+secret_err="$(mktemp "${TMPDIR:-/tmp}/lazyss-secret-err.XXXXXX")"
+if gh secret list --repo "$REPO" --json name --jq '.[].name' >"$secret_names" 2>"$secret_err"; then
+	if grep -qx 'HOMEBREW_TAP_GITHUB_TOKEN' "$secret_names"; then
 		ok "HOMEBREW_TAP_GITHUB_TOKEN secret name exists"
 	else
-		blocker "HOMEBREW_TAP_GITHUB_TOKEN secret name is missing; owner approval is required before adding it"
+		blocker "HOMEBREW_TAP_GITHUB_TOKEN secret name is missing; it is required for release publishing"
 	fi
 else
-	warn "could not list GitHub secret names: $(tr '\n' ' ' </tmp/lazyss-secret-err.$$)"
+	if [ "$REQUIRE_TAP_UPLOAD" = "1" ]; then
+		blocker "could not list GitHub secret names while tap upload is required: $(tr '\n' ' ' <"$secret_err")"
+	else
+		warn "could not list GitHub secret names: $(tr '\n' ' ' <"$secret_err")"
+	fi
 fi
-rm -f /tmp/lazyss-secret-names.$$ /tmp/lazyss-secret-err.$$
+rm -f "$secret_names" "$secret_err"
 
 printf '\nHomebrew state\n'
 if [ "$READINESS_MODE" = "hosted" ]; then
@@ -165,7 +212,7 @@ if [ "$READINESS_MODE" = "hosted" ]; then
 elif brew tap | grep -qx "$TAP_SHORT"; then
 	ok "$TAP_SHORT is tapped locally"
 else
-	blocker "$TAP_SHORT is not tapped locally; tap creation/proof still needs owner-approved setup"
+	blocker "$TAP_SHORT is not tapped locally; run brew tap $TAP_SHORT after tap creation"
 fi
 
 printf '\nSummary\n'
@@ -178,4 +225,4 @@ if [ "$blockers" -gt 0 ]; then
 	exit 2
 fi
 
-ok "private Homebrew readiness audit passed"
+ok "public Homebrew readiness audit passed"

@@ -12,10 +12,10 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/sahilm/fuzzy"
 
-	"github.com/hamardikan/lazyss/internal/app"
-	"github.com/hamardikan/lazyss/internal/brand"
-	"github.com/hamardikan/lazyss/internal/domain"
-	"github.com/hamardikan/lazyss/internal/ports"
+	"github.com/hmrdkn-labs/lazyss/internal/app"
+	"github.com/hmrdkn-labs/lazyss/internal/brand"
+	"github.com/hmrdkn-labs/lazyss/internal/domain"
+	"github.com/hmrdkn-labs/lazyss/internal/ports"
 )
 
 const maxProviderWarningRunes = 78

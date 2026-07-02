@@ -17,9 +17,9 @@ import (
 	ssmtypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	smithy "github.com/aws/smithy-go"
-	"github.com/hamardikan/lazyss/internal/app"
-	"github.com/hamardikan/lazyss/internal/domain"
-	"github.com/hamardikan/lazyss/internal/ports"
+	"github.com/hmrdkn-labs/lazyss/internal/app"
+	"github.com/hmrdkn-labs/lazyss/internal/domain"
+	"github.com/hmrdkn-labs/lazyss/internal/ports"
 )
 
 // SSMAPI is the subset of AWS SSM used by the inventory adapter.

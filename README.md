@@ -170,30 +170,28 @@ make build
 
 ### From GitHub Releases
 
-After `v0.1.0`, download the archive for your OS and architecture from the
-private GitHub release, verify it against `checksums.txt`, and put `lazyss` on
-your `PATH`.
+After `v0.1.0`, download the archive for your OS and architecture from
+[GitHub Releases](https://github.com/hmrdkn-labs/lazyss/releases), verify it
+against `checksums.txt`, and put `lazyss` on your `PATH`.
 
 ### Homebrew
 
-After the private Homebrew tap is approved and published:
+After the public Homebrew tap is published:
 
 ```sh
-brew install --formula hamardikan/tap/lazyss
+brew install --formula hmrdkn-labs/tap/lazyss
 ```
 
-Private release assets require `HOMEBREW_GITHUB_API_TOKEN` in the operator
-shell. Do not print the token value. The tap may also contain a cask, but the
-formula is the primary CLI install path because unsigned cask binaries can be
-blocked by macOS quarantine.
+The formula is the primary macOS/Linux install path. Unsigned cask binaries can
+be blocked by macOS quarantine, so LazySS publishes a formula until the project
+has Developer ID signing and notarization.
 
 ### Go Install
 
-While the repository is private, `go install` is a developer path only. It
-requires GitHub authentication and `GOPRIVATE` configuration:
+Public Go module install:
 
 ```sh
-GOPRIVATE=github.com/hamardikan/* go install github.com/hamardikan/lazyss/cmd/lazyss@latest
+go install github.com/hmrdkn-labs/lazyss/cmd/lazyss@latest
 ```
 
 ## Verification
@@ -211,9 +209,8 @@ make smoke-local
 
 `v0.1.0` must not be tagged until local gates, fast hosted CI, the
 release-candidate workflow, Homebrew readiness, and real SSH/AWS SSM smoke
-tests pass. For the first release, token-backed Homebrew install proof is a
-post-publish gate because the private package and release assets do not exist
-before publishing.
+tests pass. After publishing, verify a clean Homebrew formula install from the
+public tap.
 
 Use the read-only readiness audit before requesting release approval:
 
@@ -235,7 +232,6 @@ Create ignored local evidence drafts with:
 
 ```sh
 make live-smoke-evidence-template
-make homebrew-private-evidence-template
 ```
 
 Before asking for owner approval on branch protection, tap creation, repository
@@ -246,4 +242,5 @@ make release-approval-plan
 ```
 
 Do not put secrets, private keys, token values, SSO cache data, environment
-dumps, private release asset URLs, or full terminal logs in evidence files.
+dumps, release asset URLs with credentials, or full terminal logs in evidence
+files.

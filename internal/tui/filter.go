@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/hamardikan/lazyss/internal/domain"
+	"github.com/hmrdkn-labs/lazyss/internal/domain"
 )
 
 type cockpitFilter struct {
