@@ -94,8 +94,8 @@ local release-candidate mirror target.
 
 The GoReleaser snapshot job uploads the generated `dist/` directory as
 `goreleaser-snapshot-<sha>` with short retention. Use it to inspect archive
-names, checksums, and generated cask output before approving a tag. The
-snapshot gate also verifies that the generated private cask uses the expected
+names, checksums, and generated private download output before approving a tag.
+The snapshot gate also verifies that the generated private package uses the expected
 download strategy and archive checksums, and that archives contain the expected
 installable binaries. On the hosted release-candidate runner, the gate also
 extracts the host-matching archive and runs `lazyss --version`.

@@ -26,7 +26,7 @@ class ReleaseWorkflowTest(unittest.TestCase):
         self.assertLess(text.index("Write optional private Homebrew evidence"), text.index("Release readiness audit"))
         self.assertIn("LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE", text)
         self.assertIn('LAZYSS_REQUIRE_HOMEBREW_TAP_UPLOAD: "1"', text)
-        self.assertIn("first-release pre-publish readiness will skip private cask install evidence", text)
+        self.assertIn("first-release pre-publish readiness will skip private package install evidence", text)
 
 
 if __name__ == "__main__":

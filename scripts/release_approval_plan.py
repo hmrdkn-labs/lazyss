@@ -78,7 +78,7 @@ does not create repositories, secrets, branch protection, tags, releases, or pub
    - `HOMEBREW_TAP_GITHUB_TOKEN`
    - `LAZYSS_RELEASE_READINESS_GITHUB_TOKEN`
    - `LAZYSS_LIVE_SMOKE_EVIDENCE_JSON`
-   - `LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON` after post-publish private cask
+   - `LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON` after post-publish private package
      install proof exists
 
    Store only the approved values in GitHub Secrets. Do not record secret values
@@ -114,11 +114,11 @@ does not create repositories, secrets, branch protection, tags, releases, or pub
    ```
 
    Fill `homebrew-private-evidence.json` only after the release workflow
-   publishes the private cask and a token-backed private cask install succeeds.
+   publishes the private package and a token-backed private install succeeds.
    Keep the token in the operator environment and out of evidence:
 
    ```sh
-   brew install --cask {tap}/lazyss
+   brew install --formula {tap}/lazyss
    python3 scripts/homebrew_private_evidence.py validate \\
      --file homebrew-private-evidence.json \\
      --target-version {target_version} \\
@@ -141,7 +141,7 @@ LAZYSS_RELEASE_READINESS_MARKDOWN=release-readiness.md \\
 
 Expected result before tagging: exit `0`. For the first release, private
 Homebrew install evidence is validated after GoReleaser publishes the private
-release assets and tap cask.
+release assets and tap package.
 
 ## Tag After Green Readiness
 

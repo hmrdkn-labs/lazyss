@@ -9,9 +9,9 @@ Do not tag `v0.1.0` until every prerequisite below is verified.
 - GoReleaser snapshot has passed.
 - Homebrew readiness has passed for the approved private tap and publishing
   secret.
-- Private Homebrew cask install proof is captured after the first publish. It
+- Private Homebrew package install proof is captured after the first publish. It
   cannot be a pre-publish blocker for `v0.1.0` because the private release
-  asset and tap cask do not exist until GoReleaser publishes them.
+  asset and tap package do not exist until publishing completes.
 - Branch protection readiness has passed.
 - Real smoke tests have passed for one SSH host and one AWS SSM-ready instance.
 - No private keys, AWS credentials, GitHub tokens, SSO cache data, or
@@ -110,7 +110,7 @@ approval because they are not auditable.
 Private Homebrew proof is a post-publish JSON file referenced by
 `LAZYSS_HOMEBREW_PRIVATE_EVIDENCE`. Use
 `make homebrew-private-evidence-template` to create an ignored `0600` draft for
-the current commit. Edit that file after a token-backed `brew install --cask
+the current commit. Edit that file after a token-backed `brew install --formula
 hamardikan/tap/lazyss` works from the private release assets, then validate it
 with `python3 scripts/homebrew_private_evidence.py validate`. Store only
 redacted pass/fail evidence; do not include GitHub token values, authorization
@@ -137,8 +137,8 @@ Hosted release readiness accepts optional `LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON
 once private Homebrew install proof has been gathered. That secret must contain
 only the redacted `homebrew-private-evidence.json` object. If the secret exists,
 the workflow sets `LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE=1` and validates it.
-For the first publish, the secret may be absent because the cask install proof
-is captured after GoReleaser creates the private release assets and tap cask.
+For the first publish, the secret may be absent because install proof is
+captured after publishing creates the private release assets and tap package.
 
 Hosted release readiness uses `LAZYSS_RELEASE_READINESS_GITHUB_TOKEN`, not the
 default workflow `GITHUB_TOKEN`, because it must read branch protection,
@@ -194,7 +194,7 @@ The release-candidate workflow uploads `dist/` as
 `goreleaser-snapshot-<sha>` with short retention. Use that artifact to review
 archive names, checksums, and generated cask content before approving a tag.
 After downloading it, verify the expected platform archives, binary contents,
-checksums, and generated private cask:
+checksums, and generated private download strategy:
 
 ```sh
 DIST=/path/to/downloaded/dist make release-artifacts-verify
@@ -235,9 +235,9 @@ Confirm:
 - `checksums.txt` exists.
 - `DIST=/path/to/release-artifacts make release-artifacts-verify` passes,
   including generated private-cask verification.
-- Homebrew cask is generated or published according to ADR 0002.
-- `lazyss --version` prints `v0.1.0`.
-- Token-backed `brew install --cask hamardikan/tap/lazyss` works from the
+- Homebrew formula is published according to ADR 0002.
+- `lazyss --version` prints the release version.
+- Token-backed `brew install --formula hamardikan/tap/lazyss` works from the
   operator machine, then `homebrew-private-evidence.json` validates with
   `LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE=1`.
 

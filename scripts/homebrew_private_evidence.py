@@ -86,7 +86,12 @@ def validate_payload(data, release_version, head):
     else:
         require(["tap", "repo"], "hamardikan/homebrew-tap")
         require(["tap", "tap"], "hamardikan/tap")
-        require(["tap", "cask"], "lazyss")
+        package_type = tap.get("package_type", "cask")
+        if package_type not in ("formula", "cask"):
+            blockers.append("tap.package_type must be 'formula' or 'cask'")
+        package = tap.get("package", tap.get("cask"))
+        if package != "lazyss":
+            blockers.append("tap.package must be lazyss")
         require(["tap", "tapped"], True)
 
     install = data.get("install")
@@ -110,20 +115,22 @@ def validate_payload(data, release_version, head):
     if not isinstance(safety, dict):
         blockers.append("safety evidence must be an object")
     else:
-        for field in (
+        common_fields = (
             "no_token_in_logs",
-            "no_token_in_cask",
             "no_private_asset_url_recorded",
             "token_value_not_recorded",
-        ):
+        )
+        for field in common_fields:
             require(["safety", field], True)
+        if safety.get("no_token_in_package", safety.get("no_token_in_cask")) is not True:
+            blockers.append("safety.no_token_in_package must be True")
 
     if blockers:
         return [Event("blocker", f"private Homebrew evidence invalid: {message}") for message in blockers]
 
     return [
         Event("ok", f"private Homebrew install evidence validated for {release_version} at {head[:12]}"),
-        Event("ok", "private Homebrew cask downloaded a private release asset using HOMEBREW_GITHUB_API_TOKEN"),
+        Event("ok", "private Homebrew package downloaded a private release asset using HOMEBREW_GITHUB_API_TOKEN"),
         Event("ok", "private Homebrew evidence safety checks passed without recorded token material"),
     ]
 
@@ -139,7 +146,8 @@ def template_payload(target_version, commit, now):
         "tap": {
             "repo": "hamardikan/homebrew-tap",
             "tap": "hamardikan/tap",
-            "cask": "lazyss",
+            "package_type": "formula",
+            "package": "lazyss",
             "tapped": False,
         },
         "install": {
@@ -155,7 +163,7 @@ def template_payload(target_version, commit, now):
         },
         "safety": {
             "no_token_in_logs": False,
-            "no_token_in_cask": False,
+            "no_token_in_package": False,
             "no_private_asset_url_recorded": False,
             "token_value_not_recorded": False,
         },
