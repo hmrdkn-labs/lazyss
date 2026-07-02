@@ -10,8 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	ssmtypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	smithy "github.com/aws/smithy-go"
-	"github.com/hamardikan/lazyss/internal/app"
-	"github.com/hamardikan/lazyss/internal/domain"
+	"github.com/hmrdkn-labs/lazyss/internal/app"
+	"github.com/hmrdkn-labs/lazyss/internal/domain"
 )
 
 func TestInventoryPaginatesAndMapsSSMEC2Readiness(t *testing.T) {

@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hamardikan/lazyss/internal/app"
-	"github.com/hamardikan/lazyss/internal/domain"
+	"github.com/hmrdkn-labs/lazyss/internal/app"
+	"github.com/hmrdkn-labs/lazyss/internal/domain"
 )
 
 func TestInventoryReadsSSHConfigWithoutWriting(t *testing.T) {

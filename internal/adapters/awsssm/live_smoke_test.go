@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hamardikan/lazyss/internal/app"
-	"github.com/hamardikan/lazyss/internal/domain"
+	"github.com/hmrdkn-labs/lazyss/internal/app"
+	"github.com/hmrdkn-labs/lazyss/internal/domain"
 )
 
 func TestLiveAWSInventoryWithProfile(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hamardikan/lazyss/internal/domain"
+	"github.com/hmrdkn-labs/lazyss/internal/domain"
 )
 
 func TestStoreWritesAtomicStateWith0600AndCappedHistory(t *testing.T) {

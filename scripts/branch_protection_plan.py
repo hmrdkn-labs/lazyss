@@ -98,7 +98,7 @@ def write_text(path, text):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Generate a read-only LazySS branch protection setup plan.")
-    parser.add_argument("--repo", default="hamardikan/lazyss")
+    parser.add_argument("--repo", default="hmrdkn-labs/lazyss")
     parser.add_argument("--branch", default="main")
     parser.add_argument("--required-check", action="append", default=None)
     parser.add_argument("--approving-review-count", type=int, default=0)

@@ -24,19 +24,18 @@ REQUIRED_TARGETS = (
 )
 
 ARCHIVE_RE = re.compile(r"^lazyss_.+_(?P<goos>darwin|linux|windows)_(?P<goarch>amd64|arm64)(?P<ext>\.tar\.gz|\.zip)$")
-CASK_PATH = pathlib.Path("homebrew") / "Casks" / "lazyss.rb"
-CASK_PRIVATE_STRATEGY_FRAGMENTS = (
-    'cask "lazyss"',
-    'class GitHubPrivateRepositoryReleaseDownloadStrategy < CurlDownloadStrategy',
-    'ENV["HOMEBREW_GITHUB_API_TOKEN"]',
-    'Authorization: Bearer #{@github_token}',
-    'https://api.github.com/repos/#{@owner}/#{@repo}/releases/assets/#{asset_id}',
-    "using: GitHubPrivateRepositoryReleaseDownloadStrategy",
-    'verified: "github.com/hamardikan/lazyss/"',
-    'binary "lazyss"',
+FORMULA_PATH = pathlib.Path("homebrew") / "Formula" / "lazyss.rb"
+FORMULA_REQUIRED_FRAGMENTS = (
+    "class Lazyss < Formula",
+    'desc "Terminal machine cockpit for SSH and AWS SSM"',
+    'homepage "https://github.com/hmrdkn-labs/lazyss"',
+    'license "MIT"',
+    'bin.install "lazyss"',
+    'system "#{bin}/lazyss", "--version"',
 )
-CASK_SECRET_RE = re.compile(
+FORMULA_FORBIDDEN_RE = re.compile(
     r"ghp_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|AWS_SECRET_ACCESS_KEY|AWS_SESSION_TOKEN|BEGIN (OPENSSH|RSA|EC|DSA) PRIVATE KEY"
+    r"|HOMEBREW_GITHUB_API_TOKEN|GitHubPrivateRepositoryReleaseDownloadStrategy|Authorization:\s*Bearer"
 )
 
 
@@ -82,22 +81,19 @@ def archive_targets(dist):
     return found
 
 
-def verify_cask(dist, found, checksums):
-    path = pathlib.Path(dist) / CASK_PATH
+def verify_formula(dist, found, checksums):
+    path = pathlib.Path(dist) / FORMULA_PATH
     try:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
-        return [Event("fail", f"generated cask is missing or unreadable: {exc}")]
+        return [Event("fail", f"generated formula is missing or unreadable: {exc}")]
 
-    missing = [fragment for fragment in CASK_PRIVATE_STRATEGY_FRAGMENTS if fragment not in text]
+    missing = [fragment for fragment in FORMULA_REQUIRED_FRAGMENTS if fragment not in text]
     if missing:
-        return [Event("fail", f"generated cask is missing private download strategy fragment: {missing[0]}")]
+        return [Event("fail", f"generated formula is missing required fragment: {missing[0]}")]
 
-    if CASK_SECRET_RE.search(text):
-        return [Event("fail", "generated cask contains credential material")]
-
-    if "#{@github_token}@" in text:
-        return [Event("fail", "generated cask must not construct token-bearing URLs")]
+    if FORMULA_FORBIDDEN_RE.search(text):
+        return [Event("fail", "generated formula contains credential material or private download strategy")]
 
     for goos, goarch, ext in REQUIRED_TARGETS:
         if goos == "windows":
@@ -105,12 +101,12 @@ def verify_cask(dist, found, checksums):
         archive = found[(goos, goarch, ext)]
         expected = checksums[archive.name]
         if expected not in text:
-            return [Event("fail", f"missing cask checksum for {archive.name}")]
+            return [Event("fail", f"missing formula checksum for {archive.name}")]
         archive_suffix = f"_{goos}_{goarch}{ext}"
         if archive_suffix not in text:
-            return [Event("fail", f"missing cask url for {goos}/{goarch}")]
+            return [Event("fail", f"missing formula url for {goos}/{goarch}")]
 
-    return [Event("ok", "generated cask uses private download strategy with matching archive checksums")]
+    return [Event("ok", "generated formula uses public release URLs with matching archive checksums")]
 
 
 def verify_tar_binary(path, goos, goarch):
@@ -260,9 +256,9 @@ def verify_dist(dist, smoke_host_binary=False):
         if actual != expected:
             return [Event("fail", f"checksum mismatch for {path.name}")]
 
-    cask_events = verify_cask(dist, found, checksums)
-    if any(event.level == "fail" for event in cask_events):
-        return cask_events
+    formula_events = verify_formula(dist, found, checksums)
+    if any(event.level == "fail" for event in formula_events):
+        return formula_events
 
     content_events = verify_archive_contents(found)
     if any(event.level == "fail" for event in content_events):
@@ -278,7 +274,7 @@ def verify_dist(dist, smoke_host_binary=False):
         Event("ok", "all required archives are present"),
         Event("ok", "checksums.txt includes every required archive"),
         Event("ok", "archive checksums match checksums.txt"),
-        *cask_events,
+        *formula_events,
         *content_events,
         *smoke_events,
     ]

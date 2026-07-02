@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/hamardikan/lazyss/internal/domain"
+	"github.com/hmrdkn-labs/lazyss/internal/domain"
 )
 
 func TestInventoryAggregatesProvidersAndOverlays(t *testing.T) {

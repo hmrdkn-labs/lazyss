@@ -37,27 +37,15 @@ jobs:
           fi
           umask 077
           printf '%s' "$LAZYSS_LIVE_SMOKE_EVIDENCE_JSON" > live-smoke-evidence.json
-      - name: Write optional private Homebrew evidence
-        env:
-          LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON: ${{ secrets.LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON }}
-        run: |
-          if [ -z "${LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON:-}" ]; then
-            echo "LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON is not set; first-release pre-publish readiness will skip private package install evidence."
-            exit 0
-          fi
-          umask 077
-          printf '%s' "$LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON" > homebrew-private-evidence.json
       - name: Release readiness audit
         env:
           GH_TOKEN: ${{ secrets.LAZYSS_RELEASE_READINESS_GITHUB_TOKEN }}
           LAZYSS_RELEASE_VERSION: ${{ github.ref_name }}
           LAZYSS_RELEASE_READINESS_MODE: tag
-          LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE: ${{ secrets.LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON != '' && '1' || '0' }}
           LAZYSS_REQUIRE_HOMEBREW_TAP_UPLOAD: "1"
           LAZYSS_SKIP_OPERATOR_RUNTIME_TOOL_CHECKS: "1"
           LAZYSS_HOMEBREW_READINESS_MODE: hosted
           LAZYSS_LIVE_SMOKE_EVIDENCE: live-smoke-evidence.json
-          LAZYSS_HOMEBREW_PRIVATE_EVIDENCE: ${{ secrets.LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON != '' && 'homebrew-private-evidence.json' || '' }}
           LAZYSS_RELEASE_READINESS_JSON: release-readiness.json
           LAZYSS_RELEASE_READINESS_MARKDOWN: release-readiness.md
         run: |
@@ -82,4 +70,25 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+      - name: Checkout Homebrew tap
+        uses: actions/checkout@v7
+        with:
+          repository: hmrdkn-labs/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          path: homebrew-tap
+      - name: Update Homebrew formula
+        run: |
+          python3 scripts/homebrew_formula.py generate \
+            --dist dist \
+            --version "${{ github.ref_name }}" \
+            --output homebrew-tap/Formula/lazyss.rb
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/lazyss.rb
+          if git diff --cached --quiet; then
+            echo "Homebrew formula already up to date."
+            exit 0
+          fi
+          git commit -m "brew: update lazyss ${{ github.ref_name }}"
+          git push

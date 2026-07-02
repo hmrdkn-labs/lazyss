@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hamardikan/lazyss/internal/domain"
+	"github.com/hmrdkn-labs/lazyss/internal/domain"
 )
 
 type memoryStore struct {

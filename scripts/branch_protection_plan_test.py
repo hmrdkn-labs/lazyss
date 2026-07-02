@@ -18,7 +18,7 @@ class BranchProtectionPlanTest(unittest.TestCase):
                     "python3",
                     str(SCRIPT),
                     "--repo",
-                    "hamardikan/lazyss",
+                    "hmrdkn-labs/lazyss",
                     "--branch",
                     "main",
                     "--required-check",
@@ -49,12 +49,12 @@ class BranchProtectionPlanTest(unittest.TestCase):
             self.assertEqual(payload["required_conversation_resolution"], True)
 
             markdown = (out / "branch-protection.md").read_text(encoding="utf-8")
-            self.assertIn("hamardikan/lazyss", markdown)
+            self.assertIn("hmrdkn-labs/lazyss", markdown)
             self.assertIn("main", markdown)
             self.assertIn("ci-required", markdown)
             self.assertIn("Approving reviews: `0`", markdown)
             self.assertIn("solo-maintainer mode", markdown)
-            self.assertIn("gh api --method PUT repos/hamardikan/lazyss/branches/main/protection", markdown)
+            self.assertIn("gh api --method PUT repos/hmrdkn-labs/lazyss/branches/main/protection", markdown)
             self.assertIn("./scripts/branch-protection-readiness.sh", markdown)
             self.assertIn("requires explicit owner approval", markdown)
 
@@ -93,7 +93,7 @@ class BranchProtectionPlanTest(unittest.TestCase):
                     "python3",
                     str(SCRIPT),
                     "--repo",
-                    "hamardikan/lazyss",
+                    "hmrdkn-labs/lazyss",
                     "--required-check",
                     "github_pat_secret",
                     "--json-output",

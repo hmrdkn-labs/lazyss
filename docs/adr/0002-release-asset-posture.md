@@ -1,66 +1,62 @@
 # ADR 0002: Release Asset and Homebrew Posture
 
-Status: amended after v0.1.0 publish
+Status: amended for public launch
 
 Date: 2026-07-02
 
 ## Context
 
-LazySS is a private repository and should remain private unless the owner
-explicitly approves a visibility change. The pre-release target install path was
-a Homebrew cask based on GoReleaser cask publishing guidance. The `v0.1.0`
-post-publish proof showed that unsigned cask binaries can retain macOS
-quarantine and be blocked by Gatekeeper with a message that macOS cannot verify
-the binary is free of malware.
+LazySS started with a private repository and a token-backed Homebrew cask plan.
+The first macOS install proof showed that unsigned cask binaries can retain
+quarantine and be blocked by Gatekeeper. Formula installs avoid that cask
+quarantine path and fit a terminal CLI better.
 
-Homebrew formula installation of the same private release archive runs without
-that quarantine block. The private tap still needs token-backed downloads
-because release assets remain private.
+The project is moving to the public `hmrdkn-labs/lazyss` repository, so release
+assets and Homebrew package metadata should be public. Private GitHub release
+download strategies are no longer appropriate.
 
 ## Decision
 
-V1 keeps both source and release assets private by default.
+LazySS publishes public GitHub release assets and a public Homebrew formula.
 
-The primary Homebrew path is:
+The primary install path is:
 
 ```sh
-brew install --formula hamardikan/tap/lazyss
+brew install --formula hmrdkn-labs/tap/lazyss
 ```
 
-The tap package must use a private GitHub download strategy that reads
-`HOMEBREW_GITHUB_API_TOKEN` at download time. LazySS must not embed token values
-in package URLs, headers, docs, CI logs, local state, or release metadata.
+GoReleaser builds and publishes the release archives. LazySS release automation
+then generates `Formula/lazyss.rb` from the GoReleaser `dist/` output and
+pushes it to `hmrdkn-labs/homebrew-tap`. The formula uses public release URLs,
+release checksums, `bin.install "lazyss"`, and a `lazyss --version` test.
 
-A cask may remain as a secondary generated artifact, but it is not the primary
-operator install path until binaries are Developer ID signed and notarized.
+A cask is not published for V1. A cask can be reconsidered after Developer ID
+signing and notarization are in place.
 
 ## Proof Protocol
 
-The private Homebrew download cannot be fully proven without approved external
-state: a release asset, a tap repository, and an operator token. For the first
-release, the install proof is a post-publish gate because `v0.1.0` assets and
-the tap package do not exist until publishing completes:
+Before tagging:
 
-1. Build a release candidate with GoReleaser snapshot and verify generated
-   archive names, checksums, and private download strategy.
-2. Publish the private release assets and tap package.
-3. Export `HOMEBREW_GITHUB_API_TOKEN` in the operator shell without printing it.
-4. After the real release publishes, install from a clean Homebrew environment:
+1. Run the local and hosted release-candidate gates.
+2. Verify the generated `homebrew/Formula/lazyss.rb` from the release-candidate
+   snapshot.
+3. Confirm the tap repository exists and the release workflow has a tap write
+   secret named `HOMEBREW_TAP_GITHUB_TOKEN`.
+4. Confirm real SSH and AWS SSM smoke evidence has been captured.
 
-   ```sh
-   brew install --formula hamardikan/tap/lazyss
-   lazyss --version
-   lazyss doctor
-   ```
+After publishing:
 
-5. Confirm no token value appears in shell history, CI logs, generated tap
-   files, state files, or docs.
+```sh
+brew update
+brew install --formula hmrdkn-labs/tap/lazyss
+lazyss --version
+lazyss doctor
+```
 
 ## Consequences
 
-- Homebrew publishing remains gated on explicit approval for the tap repository
-  and token, then runs as part of the release path.
-- Formula install is the supported private macOS operator path for unsigned CLI
-  binaries.
-- Cask install remains blocked by macOS Gatekeeper until LazySS has Developer ID
-  signing and notarization or the operator manually removes quarantine.
+- Public users can install without `GOPRIVATE` or a release-download token.
+- The release workflow still needs a GitHub token with write access to the tap
+  repository.
+- The generated formula must not contain credentials, private API URLs, or
+  custom token download strategies.

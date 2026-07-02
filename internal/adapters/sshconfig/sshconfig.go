@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hamardikan/lazyss/internal/app"
-	"github.com/hamardikan/lazyss/internal/domain"
-	"github.com/hamardikan/lazyss/internal/ports"
+	"github.com/hmrdkn-labs/lazyss/internal/app"
+	"github.com/hmrdkn-labs/lazyss/internal/domain"
+	"github.com/hmrdkn-labs/lazyss/internal/ports"
 )
 
 // Inventory reads machines from an OpenSSH config file without mutating it.

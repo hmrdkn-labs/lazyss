@@ -20,11 +20,10 @@ make workflow-policy   # static policy checks for GitHub Actions workflow shape
 make build-matrix      # local cross-platform compile matrix
 make release-candidate-local # local release-candidate mirror for matrix, snapshot, and Homebrew readiness
 make release-snapshot  # goreleaser check plus snapshot artifact generation
-make release-artifacts-verify # verify archives, binaries, checksums, and generated cask under DIST=dist
+make release-artifacts-verify # verify archives, binaries, checksums, and generated formula under DIST=dist
 make release-preflight # read-only release readiness audit
 make release-approval-plan # create ignored release approval handoff
 make live-smoke-evidence-template # create ignored 0600 live smoke evidence draft
-make homebrew-private-evidence-template # create ignored 0600 private Homebrew proof draft
 make branch-protection-plan # create ignored branch-protection approval handoff files
 ```
 
@@ -118,7 +117,7 @@ The release proof jobs are:
 
 - linux/darwin/windows amd64/arm64 build matrix
 - GoReleaser snapshot validation
-- archive, binary-content, checksum, and generated private-cask verification for
+- archive, binary-content, checksum, and generated formula verification for
   the snapshot `dist/` directory
 - host-matching archive execution smoke using `lazyss --version`
 - short-retention upload of the `dist/` snapshot artifacts
@@ -143,14 +142,15 @@ make release-candidate-local
 ```
 
 This target runs the local cross-platform compile matrix, GoReleaser snapshot
-validation, archive/cask verification, and Homebrew readiness with the same
+validation, archive/formula verification, and Homebrew readiness with the same
 approval/external-state blocker semantics used by hosted release-candidate CI.
 
 Download the `goreleaser-snapshot-<sha>` artifact from the release-candidate run
-when reviewing archive names, checksums, or generated cask output before a real
-tag. The `release-artifacts-verify` gate checks that `homebrew/Casks/lazyss.rb`
-uses the private GitHub download strategy and that its platform checksums match
-the generated archives. It also unpacks every archive to verify the expected
+when reviewing archive names, checksums, or generated formula output before a
+real tag. The `release-artifacts-verify` gate checks that
+`homebrew/Formula/lazyss.rb` uses public release URLs and that its platform
+checksums match the generated archives. It also unpacks every archive to verify
+the expected
 `lazyss` or `lazyss.exe` binary is present and non-empty, with executable mode
 set for tar archives. The hosted release-candidate workflow opts into
 `--smoke-host-binary`, which extracts the archive matching the runner host and
@@ -173,9 +173,8 @@ Before tagging `v0.1.0`, verify:
 - AWS degraded setup does not hide SSH inventory
 - one AWS SSM-ready instance can be inventoried and launched
 - state permissions and failed connection history remain correct
-- private Homebrew install evidence is planned as a post-publish gate for the
-  first release because the private package cannot install until release assets
-  and the tap package exist
+- public Homebrew install from `hmrdkn-labs/tap/lazyss` works after the release
+  workflow publishes the formula
 
 For release issues or audits that need machine-readable evidence, generate
 structured reports without changing release state:

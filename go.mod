@@ -1,4 +1,4 @@
-module github.com/hamardikan/lazyss
+module github.com/hmrdkn-labs/lazyss
 
 go 1.25.11
 

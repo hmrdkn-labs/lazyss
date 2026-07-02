@@ -18,15 +18,20 @@ class ReleaseWorkflowTest(unittest.TestCase):
         self.assertIn("release-readiness.json", text)
         self.assertIn("release-readiness.md", text)
 
-    def test_release_workflow_supports_optional_private_homebrew_evidence(self):
+    def test_release_workflow_requires_public_homebrew_tap_upload(self):
         text = RELEASE_WORKFLOW.read_text(encoding="utf-8")
 
-        self.assertIn("LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON", text)
-        self.assertIn("homebrew-private-evidence.json", text)
-        self.assertLess(text.index("Write optional private Homebrew evidence"), text.index("Release readiness audit"))
-        self.assertIn("LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE", text)
+        self.assertNotIn("LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON", text)
+        self.assertNotIn("homebrew-private-evidence.json", text)
+        self.assertNotIn("Write optional private Homebrew evidence", text)
+        self.assertNotIn("LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE", text)
         self.assertIn('LAZYSS_REQUIRE_HOMEBREW_TAP_UPLOAD: "1"', text)
-        self.assertIn("first-release pre-publish readiness will skip private package install evidence", text)
+        self.assertIn("HOMEBREW_TAP_GITHUB_TOKEN", text)
+        self.assertIn("Checkout Homebrew tap", text)
+        self.assertIn("repository: hmrdkn-labs/homebrew-tap", text)
+        self.assertIn("scripts/homebrew_formula.py generate", text)
+        self.assertIn("homebrew-tap/Formula/lazyss.rb", text)
+        self.assertLess(text.index("goreleaser/goreleaser-action"), text.index("Update Homebrew formula"))
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/hamardikan/lazyss/internal/domain"
+	"github.com/hmrdkn-labs/lazyss/internal/domain"
 )
 
 // InventoryQuery filters inventory provider results.

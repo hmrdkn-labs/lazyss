@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/hamardikan/lazyss/internal/ports"
+	"github.com/hmrdkn-labs/lazyss/internal/ports"
 )
 
 // CLI lists AWS profiles and launches SSO login through the AWS CLI.

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hamardikan/lazyss/internal/domain"
+	"github.com/hmrdkn-labs/lazyss/internal/domain"
 )
 
 func TestHealthChecksVisibleWithConcurrencyCap(t *testing.T) {

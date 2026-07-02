@@ -123,6 +123,12 @@ jobs:
         run: goreleaser check
       - name: GoReleaser snapshot
         run: goreleaser release --clean --snapshot --skip=publish
+      - name: Generate Homebrew formula
+        run: |
+          python3 scripts/homebrew_formula.py generate \
+            --dist dist \
+            --version v0.0.0-snapshot \
+            --output dist/homebrew/Formula/lazyss.rb
       - name: Verify snapshot artifacts
         run: python3 scripts/release_artifacts.py verify --dist dist --smoke-host-binary
       - name: Upload GoReleaser snapshot artifacts

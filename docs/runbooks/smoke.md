@@ -86,7 +86,7 @@ Edit it only after the real smoke checks pass. Fill in only non-secret labels:
 - `aws_ssm.target_label`: managed-node ID or redacted target label
 
 Do not include host passwords, private keys, AWS credentials, SSO cache data,
-GitHub tokens, environment dumps, private release asset URLs, or full terminal
+GitHub tokens, environment dumps, release asset URLs with credentials, or full terminal
 logs.
 
 Validate the evidence directly:

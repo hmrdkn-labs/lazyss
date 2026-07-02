@@ -7,15 +7,12 @@ Do not tag `v0.1.0` until every prerequisite below is verified.
 - `main` is green in fast GitHub CI.
 - The release-candidate workflow has passed for the release candidate commit.
 - GoReleaser snapshot has passed.
-- Homebrew readiness has passed for the approved private tap and publishing
-  secret.
-- Private Homebrew package install proof is captured after the first publish. It
-  cannot be a pre-publish blocker for `v0.1.0` because the private release
-  asset and tap package do not exist until publishing completes.
+- Homebrew readiness has passed for the public tap and publishing secret.
 - Branch protection readiness has passed.
 - Real smoke tests have passed for one SSH host and one AWS SSM-ready instance.
 - No private keys, AWS credentials, GitHub tokens, SSO cache data, or
-  environment dumps appear in docs, generated casks, state files, or logs.
+  environment dumps appear in docs, generated formula files, state files, or
+  logs.
 
 Run the read-only Homebrew readiness audit before requesting tap or release
 approval:
@@ -44,12 +41,11 @@ LAZYSS_RELEASE_READINESS_MARKDOWN=release-readiness.md \
 ./scripts/release-readiness.sh
 ```
 
-This audit checks the current branch, clean worktree, repo privacy, latest fast
-CI, latest release-candidate workflow, branch protection, tag/release absence,
-Homebrew readiness, local AWS SSM prerequisite tooling, and live smoke evidence.
-If `LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE=1` is set, it also requires and
-validates private Homebrew install proof. It does not create repositories, secrets,
-branch protection, tags, releases, or public assets.
+This audit checks the current branch, clean worktree, public repo visibility,
+latest fast CI, latest release-candidate workflow, branch protection,
+tag/release absence, Homebrew readiness, local AWS SSM prerequisite tooling, and
+live smoke evidence. It does not create repositories, secrets, branch
+protection, tags, releases, or public assets.
 
 Before requesting approval for any release-blocking mutation, generate the
 local handoff:
@@ -58,26 +54,18 @@ local handoff:
 make release-approval-plan
 ```
 
-This writes ignored `release-approval.md` with the exact remaining approval
-actions, evidence files, secret names, and final readiness command. Review it
-before asking the owner to approve branch protection, tap creation, secret
-setup, local tap changes, tag creation, release publishing, or software
-installation.
+Branch protection is validated by:
 
-Branch protection is validated by `./scripts/branch-protection-readiness.sh`.
-That audit requires protected fast CI checks, pull request reviews, up-to-date
-branches, and disabled force pushes/deletions.
+```sh
+./scripts/branch-protection-readiness.sh
+```
 
-If branch protection is not configured yet, generate the local read-only handoff
-before requesting owner approval:
+If branch protection is not configured yet, generate the local read-only
+handoff before requesting owner approval:
 
 ```sh
 make branch-protection-plan
 ```
-
-This writes ignored `branch-protection.json` and `branch-protection.md` files.
-Review them before applying the Markdown command. Do not enable branch
-protection without explicit owner approval.
 
 Exit codes:
 
@@ -85,44 +73,21 @@ Exit codes:
 - `1`: local release configuration or tool setup has a fixable failure.
 - `2`: approval, external-state, or live-smoke blockers remain.
 
-The `make release-readiness` target is a convenience wrapper for local human
-use, but call the script directly when exact exit-code handling matters.
-
 The JSON and Markdown report environment variables are optional. They write the
-same check levels and messages that appear in the terminal output. Do not place
-token values, credential dumps, SSH keys, AWS SSO cache data, or private release
-asset URLs in these reports.
-
-The hosted tag workflow sets those report variables and uploads
-`release-readiness.json` plus `release-readiness.md` as a short-retention
-workflow artifact named `release-readiness-<tag>`. The upload step runs with
-`if: always()` so failed readiness audits still leave reviewable evidence when
-the readiness script had enough setup to write reports.
+same check levels and messages that appear in terminal output. Do not place
+token values, credential dumps, SSH keys, AWS SSO cache data, or credentialed
+release asset URLs in these reports.
 
 Live smoke proof must be a local JSON file referenced by
-`LAZYSS_LIVE_SMOKE_EVIDENCE`. Use
-`make live-smoke-evidence-template` to create an ignored `0600` draft for the
-current commit. Edit that file after live SSH and AWS SSM smoke checks pass,
-then validate it with `python3 scripts/live_smoke_evidence.py validate`. The
-readiness audit ignores legacy one-shot smoke environment flags for release
-approval because they are not auditable.
-
-Private Homebrew proof is a post-publish JSON file referenced by
-`LAZYSS_HOMEBREW_PRIVATE_EVIDENCE`. Use
-`make homebrew-private-evidence-template` to create an ignored `0600` draft for
-the current commit. Edit that file after a token-backed `brew install --formula
-hamardikan/tap/lazyss` works from the private release assets, then validate it
-with `python3 scripts/homebrew_private_evidence.py validate`. Store only
-redacted pass/fail evidence; do not include GitHub token values, authorization
-headers, private release asset API URLs, Homebrew debug logs with token
-material, AWS credentials, SSH keys, or environment dumps.
-
-To make private Homebrew proof mandatory in a post-publish audit, run:
+`LAZYSS_LIVE_SMOKE_EVIDENCE`. Use `make live-smoke-evidence-template` to create
+an ignored `0600` draft for the current commit. Edit that file after live SSH
+and AWS SSM smoke checks pass, then validate it with:
 
 ```sh
-LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE=1 \
-LAZYSS_HOMEBREW_PRIVATE_EVIDENCE=homebrew-private-evidence.json \
-./scripts/release-readiness.sh
+python3 scripts/live_smoke_evidence.py validate \
+  --file live-smoke-evidence.json \
+  --target-version v0.1.0 \
+  --commit "$(git rev-parse HEAD)"
 ```
 
 The tag-driven GitHub release workflow runs the same readiness audit before
@@ -130,22 +95,13 @@ GoReleaser publishes artifacts. In hosted release mode it sets
 `LAZYSS_RELEASE_READINESS_MODE=tag`, verifies the tag points at `origin/main`,
 and reads live smoke proof from the repository secret
 `LAZYSS_LIVE_SMOKE_EVIDENCE_JSON`. That secret must contain the JSON evidence
-object, not token material. The workflow writes it to a `0600` temporary file
-inside the runner and does not echo the value.
-
-Hosted release readiness accepts optional `LAZYSS_HOMEBREW_PRIVATE_EVIDENCE_JSON`
-once private Homebrew install proof has been gathered. That secret must contain
-only the redacted `homebrew-private-evidence.json` object. If the secret exists,
-the workflow sets `LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE=1` and validates it.
-For the first publish, the secret may be absent because install proof is
-captured after publishing creates the private release assets and tap package.
+object, not token material.
 
 Hosted release readiness uses `LAZYSS_RELEASE_READINESS_GITHUB_TOKEN`, not the
 default workflow `GITHUB_TOKEN`, because it must read branch protection,
-workflow runs, repository state, secret names, and the private Homebrew tap.
+workflow runs, repository state, repository secret names, and the Homebrew tap.
 Create or rotate that token only after explicit owner approval. It needs read
-access to `hamardikan/lazyss`, branch protection metadata, Actions workflow
-runs, repository secret names, and `hamardikan/homebrew-tap`.
+access to `hmrdkn-labs/lazyss` and `hmrdkn-labs/homebrew-tap`.
 
 Hosted release mode skips operator-machine runtime tool checks because the
 GitHub runner is not the SSH/AWS SSM operator machine. Live SSH and AWS SSM
@@ -158,13 +114,13 @@ state.
 
 Run:
 
-   ```sh
-   gofmt -l .
-   go vet ./...
-   go test -race -coverprofile=coverage.out ./...
-   go tool cover -func=coverage.out | tail -1
-   go build ./cmd/lazyss
-   ```
+```sh
+gofmt -l .
+go vet ./...
+go test -race -coverprofile=coverage.out ./...
+go tool cover -func=coverage.out | tail -1
+go build ./cmd/lazyss
+```
 
 ## Snapshot Release
 
@@ -175,9 +131,9 @@ first:
 make release-candidate-local
 ```
 
-This runs the cross-platform compile matrix, snapshot artifact verification, and
-Homebrew readiness audit with the same approval/external-state blocker handling
-as the hosted release-candidate workflow.
+This runs the cross-platform compile matrix, snapshot artifact verification,
+and Homebrew readiness audit with the same approval/external-state blocker
+handling as the hosted release-candidate workflow.
 
 Run:
 
@@ -192,37 +148,30 @@ or PR.
 
 The release-candidate workflow uploads `dist/` as
 `goreleaser-snapshot-<sha>` with short retention. Use that artifact to review
-archive names, checksums, and generated cask content before approving a tag.
+archive names, checksums, and generated formula content before approving a tag.
 After downloading it, verify the expected platform archives, binary contents,
-checksums, and generated private download strategy:
+checksums, and generated formula:
 
 ```sh
 DIST=/path/to/downloaded/dist make release-artifacts-verify
 ```
 
 The hosted release-candidate gate additionally runs the archived binary that
-matches the GitHub runner host with `--version`. This catches archives that
-contain a non-empty executable file but cannot actually start on the target
-platform.
-
-The release-candidate workflow can be forced before merge by applying the
-`release-candidate` label to a pull request. Use this for release policy,
-runbook, or packaging changes that do not otherwise touch release-relevant code
-paths.
+matches the GitHub runner host with `--version`.
 
 ## Tag
 
 Only after owner approval:
 
-   ```sh
-   git tag v0.1.0
-   git push origin v0.1.0
-   ```
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
 
 Watch release CI:
 
 ```sh
-gh run watch --repo hamardikan/lazyss
+gh run watch --repo hmrdkn-labs/lazyss
 ```
 
 Confirm:
@@ -234,13 +183,7 @@ Confirm:
 - The host-matching release-candidate archive can execute `lazyss --version`.
 - `checksums.txt` exists.
 - `DIST=/path/to/release-artifacts make release-artifacts-verify` passes,
-  including generated private-cask verification.
+  including generated formula verification.
 - Homebrew formula is published according to ADR 0002.
+- `brew install --formula hmrdkn-labs/tap/lazyss` works.
 - `lazyss --version` prints the release version.
-- Token-backed `brew install --formula hamardikan/tap/lazyss` works from the
-  operator machine, then `homebrew-private-evidence.json` validates with
-  `LAZYSS_REQUIRE_HOMEBREW_PRIVATE_EVIDENCE=1`.
-
-If the release workflow fails before GoReleaser with a readiness error, do not
-rerun blindly. Fix the failed prerequisite, verify `./scripts/release-readiness.sh`
-locally from `main`, and only then rerun the failed workflow.

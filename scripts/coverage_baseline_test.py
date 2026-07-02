@@ -25,7 +25,7 @@ class CoverageBaselineTest(unittest.TestCase):
             root = pathlib.Path(tmp)
             summary = root / "coverage.txt"
             baseline = root / "coverage.baseline"
-            summary.write_text("github.com/hamardikan/lazyss/internal/domain\t100.0%\ntotal:\t(statements)\t57.7%\n", encoding="utf-8")
+            summary.write_text("github.com/hmrdkn-labs/lazyss/internal/domain\t100.0%\ntotal:\t(statements)\t57.7%\n", encoding="utf-8")
             baseline.write_text("57.7\n", encoding="utf-8")
 
             events = self.module.verify_coverage(summary, baseline)
@@ -53,7 +53,7 @@ class CoverageBaselineTest(unittest.TestCase):
             root = pathlib.Path(tmp)
             summary = root / "coverage.txt"
             baseline = root / "coverage.baseline"
-            summary.write_text("github.com/hamardikan/lazyss/internal/domain\t100.0%\n", encoding="utf-8")
+            summary.write_text("github.com/hmrdkn-labs/lazyss/internal/domain\t100.0%\n", encoding="utf-8")
             baseline.write_text("57.7\n", encoding="utf-8")
 
             events = self.module.verify_coverage(summary, baseline)

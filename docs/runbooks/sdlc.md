@@ -11,7 +11,7 @@ proof remains strict.
 | Fast PR gate | pull request and `main` push | merge safety and branch protection | `ci-required` |
 | Release candidate | release-relevant PR, `main` push, label, or manual dispatch | artifact and install-path proof | `release-candidate-required` plus GoReleaser snapshot |
 | Release readiness | local `main` before tag, then tag workflow before publish | prove external state and live smoke evidence | `make release-preflight` exits `0` |
-| Release publish | approved semver tag | publish GitHub release artifacts and cask update | GoReleaser release success |
+| Release publish | approved semver tag | publish GitHub release artifacts and formula update | GoReleaser release success |
 | Post-release smoke | after install | prove operator install path | `lazyss --version`, `lazyss doctor`, one SSH path, one AWS SSM path |
 
 Local stage helpers:
@@ -94,11 +94,11 @@ local release-candidate mirror target.
 
 The GoReleaser snapshot job uploads the generated `dist/` directory as
 `goreleaser-snapshot-<sha>` with short retention. Use it to inspect archive
-names, checksums, and generated private download output before approving a tag.
-The snapshot gate also verifies that the generated private package uses the expected
-download strategy and archive checksums, and that archives contain the expected
-installable binaries. On the hosted release-candidate runner, the gate also
-extracts the host-matching archive and runs `lazyss --version`.
+names, checksums, and generated formula output before approving a tag. The
+snapshot gate also verifies that the generated formula uses public release URLs
+and archive checksums, and that archives contain the expected installable
+binaries. On the hosted release-candidate runner, the gate also extracts the
+host-matching archive and runs `lazyss --version`.
 
 When GoReleaser is installed locally, `make release-candidate-local` mirrors the
 hosted release-candidate proof by running the cross-platform build matrix,
@@ -139,9 +139,9 @@ claim to satisfy. Release issues should include:
 - release-candidate run URL
 - local release-readiness output
 - hosted `release-readiness-<tag>` artifact for tag runs
-- live smoke evidence file path or attached private artifact reference
+- live smoke evidence file path or attached release-issue artifact reference
 - final release workflow URL after approval
 
 Never include token values, SSH private keys, AWS credentials, AWS SSO cache
-contents, or full environment dumps in PRs, issues, runbooks, generated casks,
-or readiness reports.
+contents, or full environment dumps in PRs, issues, runbooks, generated
+formulae, or readiness reports.
