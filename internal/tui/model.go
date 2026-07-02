@@ -110,16 +110,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the current cockpit state.
 func (m Model) View() tea.View {
-	return tea.NewView(m.render())
+	v := tea.NewView(m.render())
+	v.AltScreen = true
+	return v
 }
 
 func (m Model) render() string {
 	var b strings.Builder
 	b.WriteString("Lazy Secure Shell\n")
-	if m.runtime != nil && (m.runtime.AWSProfile != "" || m.runtime.AWSRegion != "") {
-		fmt.Fprintf(&b, "aws profile: %s", awsProfileLabel(m.runtime.AWSProfile))
+	if m.shouldShowAWSOnboarding() {
+		fmt.Fprintf(&b, "AWS: %s", awsProfileSummary(m.runtime.AWSProfile))
 		if m.runtime.AWSRegion != "" {
-			fmt.Fprintf(&b, " region: %s", m.runtime.AWSRegion)
+			fmt.Fprintf(&b, " region %s", m.runtime.AWSRegion)
+		}
+		if strings.TrimSpace(m.runtime.AWSProfile) == "" {
+			b.WriteString(" - press P to choose, L to login")
+		} else {
+			b.WriteString(" - P change, L login")
 		}
 		b.WriteByte('\n')
 	}
@@ -145,6 +152,7 @@ func (m Model) render() string {
 			}
 			fmt.Fprintf(&b, "%s %s\n", cursor, profile)
 		}
+		b.WriteString("\nKeys: j/k move | Enter select | esc cancel | q quit\n")
 		return b.String()
 	}
 	if m.inputMode != "" {
@@ -152,6 +160,7 @@ func (m Model) render() string {
 	}
 	if len(m.visible) == 0 {
 		b.WriteString("No machines\n")
+		b.WriteString("\n" + m.footer())
 		return b.String()
 	}
 	for i, machine := range m.visible {
@@ -185,7 +194,20 @@ func (m Model) render() string {
 			fmt.Fprintf(&b, "  %s %s %s\n", event.EndedAt.Format("2006-01-02 15:04"), event.Method, outcome)
 		}
 	}
+	b.WriteString("\n" + m.footer())
 	return b.String()
+}
+
+func (m Model) shouldShowAWSOnboarding() bool {
+	if m.runtime == nil {
+		return false
+	}
+	source := m.runtime.Query.Source
+	return source == "" || source == "all" || source == "aws" || m.runtime.AWSProfile != "" || m.runtime.AWSRegion != ""
+}
+
+func (m Model) footer() string {
+	return "Keys: j/k move | Enter connect | g check | G check visible | P profile | L login | / search | r refresh | h details | q quit\n"
 }
 
 func (m Model) providerWarning(status domain.ProviderStatus) string {
@@ -214,6 +236,13 @@ func awsProfileLabel(profile string) string {
 		return "default"
 	}
 	return profile
+}
+
+func awsProfileSummary(profile string) string {
+	if strings.TrimSpace(profile) == "" {
+		return "no profile selected"
+	}
+	return profile + " profile"
 }
 
 func isAWSAuthMessage(message string) bool {
@@ -307,6 +336,8 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 func (m Model) handleProfileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
+	case "q", "ctrl+c":
+		return m, tea.Quit
 	case "esc":
 		m.inputMode = ""
 	case "j", "down":

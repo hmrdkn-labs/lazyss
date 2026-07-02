@@ -92,6 +92,57 @@ func TestModelRendersBoundedProviderDegradedWarnings(t *testing.T) {
 	}
 }
 
+func TestModelRenderShowsControlsAndAWSOnboarding(t *testing.T) {
+	m := NewModel(&Runtime{Query: app.InventoryQuery{Source: "all"}})
+	m.machines = []domain.Machine{{
+		ID:       "ssh:1:prod",
+		Name:     "prod",
+		Provider: domain.ProviderSSH,
+		Address:  "prod.example",
+		Methods:  []domain.AccessMethod{domain.AccessSSH},
+	}}
+	m.recompute()
+
+	got := m.render()
+	for _, want := range []string{
+		"AWS: no profile selected",
+		"P profile",
+		"L login",
+		"Enter connect",
+		"g check",
+		"/ search",
+		"q quit",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("render missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestModelViewUsesAltScreen(t *testing.T) {
+	view := NewModel(nil).View()
+	if !view.AltScreen {
+		t.Fatal("expected TUI to use alternate screen")
+	}
+}
+
+func TestModelProfilePickerShowsControls(t *testing.T) {
+	m := NewModel(&Runtime{Query: app.InventoryQuery{Source: "all"}})
+	m.handleProfilesMsg(profilesMsg{profiles: []string{"default", "hmrdkn-dev1"}})
+
+	got := m.render()
+	for _, want := range []string{
+		"AWS profiles",
+		"> default",
+		"Enter select",
+		"esc cancel",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("profile picker missing %q:\n%s", want, got)
+		}
+	}
+}
+
 func TestModelSelectsAWSProfilePersistsAndRefreshes(t *testing.T) {
 	prefs := &fakePreferences{}
 	selected := ""
