@@ -146,15 +146,15 @@ func awsProviderErrorMessage(err error) string {
 	return truncateRunes(err.Error(), 120)
 }
 
-func truncateRunes(s string, max int) string {
+func truncateRunes(s string, limit int) string {
 	runes := []rune(strings.TrimSpace(s))
-	if max <= 0 || len(runes) <= max {
+	if limit <= 0 || len(runes) <= limit {
 		return string(runes)
 	}
-	if max <= 3 {
-		return string(runes[:max])
+	if limit <= 3 {
+		return string(runes[:limit])
 	}
-	return string(runes[:max-3]) + "..."
+	return string(runes[:limit-3]) + "..."
 }
 
 type ssmNode struct {
