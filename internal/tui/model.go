@@ -76,6 +76,10 @@ type awsLoginMsg struct {
 	err error
 }
 
+type connectFinishedMsg struct {
+	err error
+}
+
 // NewModel creates a TUI model with an initial filtered view.
 func NewModel(runtime *Runtime) Model {
 	m := Model{runtime: runtime}
@@ -110,6 +114,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleProfileSelectedMsg(msg)
 	case awsLoginMsg:
 		return m.handleAWSLoginMsg(msg)
+	case connectFinishedMsg:
+		return m.handleConnectFinishedMsg(msg)
 	case tea.KeyPressMsg:
 		return m.handleKey(msg)
 	}
@@ -763,6 +769,19 @@ func (m Model) handleAWSLoginMsg(msg awsLoginMsg) (tea.Model, tea.Cmd) {
 	return m, m.fetchCmd(m.refreshSeq)
 }
 
+func (m Model) handleConnectFinishedMsg(msg connectFinishedMsg) (tea.Model, tea.Cmd) {
+	if msg.err != nil {
+		m.statusLine = msg.err.Error()
+	} else {
+		m.statusLine = "session ended"
+	}
+	if m.runtime == nil || m.runtime.Inventory == nil {
+		return m, nil
+	}
+	m.refreshSeq++
+	return m, m.fetchCmd(m.refreshSeq)
+}
+
 func (m *Model) applySearch(query string) {
 	m.search = query
 	m.recompute()
@@ -984,10 +1003,7 @@ func (m Model) connectSelectedCmd() tea.Cmd {
 	machine := m.visible[m.cursor]
 	method := machine.DefaultMethod()
 	return tea.Exec(connectExecCommand{connect: m.runtime.Connect, machine: machine, method: method}, func(err error) tea.Msg {
-		if err != nil {
-			return statusMsg(err.Error())
-		}
-		return statusMsg("session ended")
+		return connectFinishedMsg{err: err}
 	})
 }
 

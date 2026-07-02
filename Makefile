@@ -123,6 +123,10 @@ release-artifacts-verify:
 smoke-local:
 	./scripts/smoke-local.sh
 
+.PHONY: smoke-terminal-handoff
+smoke-terminal-handoff:
+	./scripts/smoke-terminal-handoff.sh
+
 .PHONY: smoke
 smoke: smoke-local
 

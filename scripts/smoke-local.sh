@@ -85,4 +85,6 @@ EOF
 
 cmp -s "$ssh_config" "$ssh_config.before" || fail "temporary SSH config was mutated"
 note "TUI rendered temp SSH inventory without mutating config"
+
+LAZYSS_BIN="$BIN" ./scripts/smoke-terminal-handoff.sh
 note "local smoke passed"

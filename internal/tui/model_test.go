@@ -416,6 +416,37 @@ func TestModelConnectUsesTerminalExecHandoff(t *testing.T) {
 	}
 }
 
+func TestModelRefreshesInventoryAfterSessionEnds(t *testing.T) {
+	provider := &queryCapturingProvider{machines: []domain.Machine{{
+		ID:       "ssh:1:prod",
+		Name:     "prod",
+		Provider: domain.ProviderSSH,
+		Methods:  []domain.AccessMethod{domain.AccessSSH},
+	}}}
+	runtime := &Runtime{
+		Inventory: &app.InventoryService{Providers: []app.InventoryProvider{provider}},
+		Query:     app.InventoryQuery{Source: "all"},
+	}
+	m := NewModel(runtime)
+
+	model, cmd := m.Update(connectFinishedMsg{})
+	m = model.(Model)
+	if m.statusLine != "session ended" {
+		t.Fatalf("status line = %q", m.statusLine)
+	}
+	if cmd == nil {
+		t.Fatalf("expected inventory refresh after connect")
+	}
+	model, _ = m.Update(cmd())
+	m = model.(Model)
+	if provider.query.Source != "all" {
+		t.Fatalf("query = %#v", provider.query)
+	}
+	if len(m.machines) != 1 || m.machines[0].Name != "prod" {
+		t.Fatalf("machines = %#v", m.machines)
+	}
+}
+
 type copyConnector struct{}
 
 func (copyConnector) Supports(domain.Machine, domain.AccessMethod) bool { return true }
