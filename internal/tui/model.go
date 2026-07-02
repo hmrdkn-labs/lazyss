@@ -9,6 +9,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/sahilm/fuzzy"
 
 	"github.com/hamardikan/lazyss/internal/app"
@@ -40,6 +41,8 @@ type Model struct {
 	visible       []domain.Machine
 	statuses      []domain.ProviderStatus
 	cursor        int
+	width         int
+	height        int
 	search        string
 	inputMode     string
 	details       bool
@@ -90,6 +93,9 @@ func (m Model) Init() tea.Cmd {
 // Update applies one Bubble Tea message.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
 	case machinesMsg:
 		m.handleMachinesMsg(msg)
 	case healthMsg:
@@ -116,86 +122,132 @@ func (m Model) View() tea.View {
 }
 
 func (m Model) render() string {
-	var b strings.Builder
-	b.WriteString("Lazy Secure Shell\n")
-	if m.shouldShowAWSOnboarding() {
-		fmt.Fprintf(&b, "AWS: %s", awsProfileSummary(m.runtime.AWSProfile))
-		if m.runtime.AWSRegion != "" {
-			fmt.Fprintf(&b, " region %s", m.runtime.AWSRegion)
-		}
-		if strings.TrimSpace(m.runtime.AWSProfile) == "" {
-			b.WriteString(" - press P to choose, L to login")
-		} else {
-			b.WriteString(" - P change, L login")
-		}
-		b.WriteByte('\n')
-	}
-	if m.statusLine != "" {
-		b.WriteString(m.statusLine + "\n")
-	}
-	if len(m.statuses) > 0 {
-		for _, status := range m.statuses {
-			if status.Status == domain.ProviderDegraded {
-				b.WriteString(m.providerWarning(status) + "\n")
-			}
-		}
-	}
 	if m.inputMode == "profile" {
-		b.WriteString("AWS profiles\n")
-		if len(m.profiles) == 0 {
-			b.WriteString("No profiles\n")
-		}
-		for i, profile := range m.profiles {
-			cursor := " "
-			if i == m.profileCursor {
-				cursor = ">"
-			}
-			fmt.Fprintf(&b, "%s %s\n", cursor, profile)
-		}
-		b.WriteString("\nKeys: j/k move | Enter select | esc cancel | q quit\n")
-		return b.String()
+		return m.renderProfilePicker()
+	}
+	return m.renderCockpit()
+}
+
+func (m Model) renderCockpit() string {
+	width, height := m.layoutSize()
+	title := m.titleBar()
+	meta := m.awsLine()
+	warnings := m.providerWarnings()
+	status := m.statusText()
+	bodyHeight := height - 7 - len(warnings)
+	if status != "" {
+		bodyHeight--
+	}
+	if bodyHeight < 8 {
+		bodyHeight = 8
+	}
+
+	var body string
+	if width >= 92 {
+		detailWidth := clampInt(width*38/100, 34, 54)
+		listWidth := width - detailWidth
+		body = lipglossJoinHorizontal(
+			panelActiveStyle.Width(listWidth-2).Height(bodyHeight).Render(m.machineList(listWidth-4, bodyHeight)),
+			panelStyle.Width(detailWidth-2).Height(bodyHeight).Render(m.detailPanel(detailWidth-4, bodyHeight)),
+		)
+	} else {
+		body = m.compactList(width, bodyHeight)
+	}
+
+	var b strings.Builder
+	b.WriteString(title + "\n")
+	if meta != "" {
+		b.WriteString(meta + "\n")
 	}
 	if m.inputMode != "" {
 		fmt.Fprintf(&b, "%s: %s\n", m.inputMode, m.search)
 	}
-	if len(m.visible) == 0 {
-		b.WriteString("No machines\n")
-		b.WriteString("\n" + m.footer())
-		return b.String()
+	if status != "" {
+		b.WriteString(status + "\n")
 	}
-	for i, machine := range m.visible {
-		cursor := " "
-		if i == m.cursor {
-			cursor = ">"
-		}
-		pin := " "
-		if machine.Pinned {
-			pin = "*"
-		}
-		method := machine.DefaultMethod()
-		fmt.Fprintf(&b, "%s%s %-4s %-20s %-24s %-14s %-24s %-20s\n",
-			cursor, pin, machine.Provider, machine.Name, machine.Address, method, machine.Health.Label, rel(machine.LastConnectedAt))
+	for _, warning := range warnings {
+		b.WriteString(warning + "\n")
 	}
-	if m.details && len(m.visible) > 0 {
-		machine := m.visible[m.cursor]
-		b.WriteString("\nDetails\n")
-		fmt.Fprintf(&b, "ID: %s\nProvider: %s\nNative: %s\nNote: %s\nConnections: %d\n",
-			machine.ID, machine.Provider, machine.NativeID, machine.Note, machine.ConnectionCount)
-		b.WriteString("Health history:\n")
-		for _, obs := range lastHealth(machine.HealthHistory, 5) {
-			fmt.Fprintf(&b, "  %s %s %s\n", obs.CheckedAt.Format("2006-01-02 15:04"), obs.Method, obs.Label)
-		}
-		b.WriteString("Session history:\n")
-		for _, event := range lastSessions(machine.SessionHistory, 5) {
-			outcome := "fail"
-			if event.Success {
-				outcome = "ok"
-			}
-			fmt.Fprintf(&b, "  %s %s %s\n", event.EndedAt.Format("2006-01-02 15:04"), event.Method, outcome)
-		}
-	}
+	b.WriteString(body)
 	b.WriteString("\n" + m.footer())
 	return b.String()
+}
+
+func (m Model) renderProfilePicker() string {
+	var b strings.Builder
+	b.WriteString(m.titleBar() + "\n")
+	if line := m.awsLine(); line != "" {
+		b.WriteString(line + "\n")
+	}
+	var content strings.Builder
+	content.WriteString(panelTitleStyle.Render("AWS profiles") + "\n")
+	if len(m.profiles) == 0 {
+		content.WriteString(dimStyle.Render("No profiles") + "\n")
+	}
+	for i, profile := range m.profiles {
+		cursor := " "
+		if i == m.profileCursor {
+			cursor = ">"
+		}
+		line := fmt.Sprintf("%s %s", cursor, profile)
+		if i == m.profileCursor {
+			line = selectedStyle.Render(displayPadRight(line, 32))
+		}
+		content.WriteString(line + "\n")
+	}
+	b.WriteString(panelActiveStyle.Width(42).Render(content.String()))
+	b.WriteString("\nKeys: j/k move | Enter select | esc cancel | q quit\n")
+	return b.String()
+}
+
+func (m Model) titleBar() string {
+	width, _ := m.layoutSize()
+	source := m.sourceLabel()
+	count := fmt.Sprintf("%d machines", len(m.visible))
+	left := titleStyle.Render("Lazy Secure Shell")
+	meta := metaStyle.Render(" " + source + " | " + count)
+	line := left + meta
+	if width > 0 && lipglossWidth(line) < width {
+		return line
+	}
+	return line
+}
+
+func (m Model) awsLine() string {
+	if !m.shouldShowAWSOnboarding() || m.runtime == nil {
+		return ""
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "AWS: %s", awsProfileSummary(m.runtime.AWSProfile))
+	if m.runtime.AWSRegion != "" {
+		fmt.Fprintf(&b, " region %s", m.runtime.AWSRegion)
+	}
+	if strings.TrimSpace(m.runtime.AWSProfile) == "" {
+		b.WriteString(" - press P to choose, L to login")
+	} else {
+		b.WriteString(" - P change, L login")
+	}
+	return b.String()
+}
+
+func (m Model) providerWarnings() []string {
+	var out []string
+	for _, status := range m.statuses {
+		if status.Status == domain.ProviderDegraded {
+			out = append(out, m.providerWarning(status))
+		}
+	}
+	return out
+}
+
+func (m Model) statusText() string {
+	if m.statusLine == "" {
+		return ""
+	}
+	if strings.Contains(strings.ToLower(m.statusLine), "failed") || strings.Contains(strings.ToLower(m.statusLine), "error") {
+		return badStyle.Render(m.statusLine)
+	}
+	return warnStyle.Render(m.statusLine)
 }
 
 func (m Model) shouldShowAWSOnboarding() bool {
@@ -208,6 +260,195 @@ func (m Model) shouldShowAWSOnboarding() bool {
 
 func (m Model) footer() string {
 	return "Keys: j/k move | Enter connect | g check | G check visible | P profile | L login | / search | r refresh | h details | q quit\n"
+}
+
+func (m Model) layoutSize() (int, int) {
+	width, height := m.width, m.height
+	if width <= 0 {
+		width = 120
+	}
+	if height <= 0 {
+		height = 32
+	}
+	return width, height
+}
+
+func (m Model) sourceLabel() string {
+	if m.runtime == nil || m.runtime.Query.Source == "" {
+		return "source all"
+	}
+	return "source " + m.runtime.Query.Source
+}
+
+func lipglossJoinHorizontal(left, right string) string {
+	return lipgloss.JoinHorizontal(lipgloss.Top, left, right)
+}
+
+func lipglossWidth(s string) int {
+	return lipgloss.Width(s)
+}
+
+func (m Model) machineList(width, height int) string {
+	header := panelTitleStyle.Render(fmt.Sprintf("Machines (%d)", len(m.visible)))
+	columns := faintStyle.Render(m.listHeader(width))
+	lines := []string{header, columns}
+	if len(m.visible) == 0 {
+		lines = append(lines, dimStyle.Render("No machines"))
+		return strings.Join(lines, "\n")
+	}
+	rows := height - 3
+	if rows < 1 {
+		rows = 1
+	}
+	start := 0
+	if m.cursor >= rows {
+		start = m.cursor - rows + 1
+	}
+	end := start + rows
+	if end > len(m.visible) {
+		end = len(m.visible)
+	}
+	for i := start; i < end; i++ {
+		lines = append(lines, m.machineRow(i, m.visible[i], width))
+	}
+	return strings.Join(lines, "\n")
+}
+
+func (m Model) listHeader(width int) string {
+	if width >= 98 {
+		return fmt.Sprintf("  %-8s %-22s %-26s %-15s %-24s %-16s", "Provider", "Name", "Address", "Method", "Health", "Last connected")
+	}
+	return fmt.Sprintf("  %-6s %-20s %-14s %-20s", "Provider", "Name", "Method", "Health")
+}
+
+func (m Model) machineRow(index int, machine domain.Machine, width int) string {
+	pin := " "
+	if machine.Pinned {
+		pin = "*"
+	}
+	name := nonempty(machine.Name, string(machine.ID))
+	health := nonempty(machine.Health.Label, "not checked")
+	line := ""
+	if width >= 98 {
+		line = fmt.Sprintf("%s %-8s %-22s %-26s %-15s %-24s %-16s",
+			pin,
+			machine.Provider,
+			displayFit(name, 22),
+			displayFit(nonempty(machine.Address, machine.NativeID), 26),
+			displayFit(string(machine.DefaultMethod()), 15),
+			displayFit(health, 24),
+			displayFit(rel(machine.LastConnectedAt), 16),
+		)
+	} else {
+		line = fmt.Sprintf("%s %-6s %-20s %-14s %-20s",
+			pin,
+			machine.Provider,
+			displayFit(name, 20),
+			displayFit(string(machine.DefaultMethod()), 14),
+			displayFit(health, 20),
+		)
+	}
+	line = displayPadRight(line, width)
+	if index == m.cursor {
+		return selectedStyle.Width(width).Render(line)
+	}
+	if machine.Health.Status == domain.HealthUp {
+		return goodStyle.Render(line)
+	}
+	if machine.Health.Status == domain.HealthDown {
+		return badStyle.Render(line)
+	}
+	return line
+}
+
+func (m Model) detailPanel(width, height int) string {
+	lines := []string{panelTitleStyle.Render("Details")}
+	if len(m.visible) == 0 {
+		lines = append(lines, dimStyle.Render("No selection"))
+		return strings.Join(lines, "\n")
+	}
+	machine := m.visible[m.cursor]
+	lines = append(lines,
+		displayFit(nonempty(machine.Name, string(machine.ID)), width),
+		faintStyle.Render(displayFit(string(machine.ID), width)),
+		"",
+		m.detailLine("Provider", string(machine.Provider), width),
+		m.detailLine("Native", machine.NativeID, width),
+		m.detailLine("Address", machine.Address, width),
+		m.detailLine("Method", string(machine.DefaultMethod()), width),
+		m.detailLine("Health", nonempty(machine.Health.Label, "not checked"), width),
+		m.detailLine("Last checked", rel(machine.LastCheckedAt), width),
+		m.detailLine("Last connected", rel(machine.LastConnectedAt), width),
+		m.detailLine("Connections", fmt.Sprintf("%d", machine.ConnectionCount), width),
+	)
+	if machine.Scope.Profile != "" || machine.Scope.Region != "" || machine.Scope.Account != "" {
+		lines = append(lines, "", panelTitleStyle.Render("Scope"))
+		lines = append(lines,
+			m.detailLine("Profile", machine.Scope.Profile, width),
+			m.detailLine("Region", machine.Scope.Region, width),
+			m.detailLine("Account", machine.Scope.Account, width),
+		)
+	}
+	if machine.Note != "" {
+		lines = append(lines, "", panelTitleStyle.Render("Note"), displayFit(machine.Note, width))
+	}
+	lines = append(lines, "", panelTitleStyle.Render("Recent health"))
+	health := lastHealth(machine.HealthHistory, 3)
+	if len(health) == 0 && machine.Health.Label != "" {
+		health = []domain.HealthObservation{machine.Health}
+	}
+	if len(health) == 0 {
+		lines = append(lines, dimStyle.Render("none"))
+	}
+	for _, obs := range health {
+		lines = append(lines, displayFit(fmt.Sprintf("%s %s", rel(obs.CheckedAt), obs.Label), width))
+	}
+	if len(machine.SessionHistory) > 0 {
+		lines = append(lines, "", panelTitleStyle.Render("Recent sessions"))
+		for _, event := range lastSessions(machine.SessionHistory, 3) {
+			outcome := "fail"
+			if event.Success {
+				outcome = "ok"
+			}
+			lines = append(lines, displayFit(fmt.Sprintf("%s %s %s", rel(event.EndedAt), event.Method, outcome), width))
+		}
+	}
+	if len(lines) > height {
+		lines = lines[:height]
+	}
+	return strings.Join(lines, "\n")
+}
+
+func (m Model) detailLine(key, value string, width int) string {
+	if value == "" {
+		value = "-"
+	}
+	keyWidth := 15
+	if width < 34 {
+		keyWidth = 12
+	}
+	return faintStyle.Render(displayPadRight(key, keyWidth)) + displayFit(value, width-keyWidth)
+}
+
+func (m Model) compactList(width, height int) string {
+	lines := []string{panelTitleStyle.Render(fmt.Sprintf("Machines (%d)", len(m.visible)))}
+	if len(m.visible) == 0 {
+		lines = append(lines, dimStyle.Render("No machines"))
+		return strings.Join(lines, "\n")
+	}
+	rows := height - 1
+	for i, machine := range m.visible {
+		if i >= rows {
+			break
+		}
+		prefix := "  "
+		if i == m.cursor {
+			prefix = "> "
+		}
+		line := prefix + string(machine.Provider) + " " + nonempty(machine.Name, string(machine.ID)) + " " + string(machine.DefaultMethod()) + " " + nonempty(machine.Health.Label, "not checked")
+		lines = append(lines, displayFit(line, width))
+	}
+	return strings.Join(lines, "\n")
 }
 
 func (m Model) providerWarning(status domain.ProviderStatus) string {
@@ -679,6 +920,13 @@ func rel(t time.Time) string {
 		return "never"
 	}
 	return t.Format("2006-01-02 15:04")
+}
+
+func nonempty(v, fallback string) string {
+	if strings.TrimSpace(v) == "" {
+		return fallback
+	}
+	return v
 }
 
 func lastHealth(items []domain.HealthObservation, n int) []domain.HealthObservation {
