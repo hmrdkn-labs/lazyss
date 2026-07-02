@@ -126,10 +126,12 @@ func TestModelEmptyStartupShowsSetupGuidance(t *testing.T) {
 	got := m.render()
 	for _, want := range []string{
 		"Setup",
+		"SSH + SSM cockpit",
 		"P profile",
 		"L login",
 		"s source",
 		"r refresh",
+		"lazyss doctor",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("startup guidance missing %q:\n%s", want, got)

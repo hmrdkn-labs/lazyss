@@ -1,10 +1,41 @@
 # Lazy Secure Shell
 
+```txt
+ _                     ____ ____
+| |    __ _ _____   _ / ___/ ___|
+| |   / _` |_  / | | |\___ \___ \
+| |__| (_| |/ /| |_| | ___) |__) |
+|_____\__,_/___|\__, ||____/____/
+                |___/
+Lazy Secure Shell
+SSH + SSM cockpit
+```
+
 `lazyss` is a terminal machine cockpit for direct SSH and AWS Systems Manager
 Session Manager. It discovers machines from read-only SSH config and AWS
 SSM/EC2 inventory, shows method-specific reachability, launches secure
 sessions, and stores local operator memory such as pins, notes, checks, and
 connection history.
+
+## Quick Start
+
+```sh
+make build
+./bin/lazyss version
+./bin/lazyss doctor
+./bin/lazyss
+```
+
+On first launch, use the setup hints in the cockpit:
+
+- `P` chooses an AWS profile from local AWS config.
+- `L` runs `aws sso login` for the selected profile.
+- `s` switches inventory source between all, SSH, and SSM.
+- `r` refreshes inventory after profile/login changes.
+- `f` opens structured filters with available tag suggestions.
+
+LazySS stores profile and region labels only. It does not store AWS tokens, SSO
+cache contents, passwords, private keys, or SSH config edits.
 
 ## Scope
 
@@ -29,6 +60,9 @@ After installing `lazyss`:
 
 ```sh
 lazyss
+lazyss version
+lazyss logo
+lazyss logo --text "Ops Access"
 lazyss doctor
 lazyss --source all
 lazyss --source ssh --ssh-config ~/.ssh/config
@@ -52,6 +86,77 @@ the SSH config, pass explicit hosts with `--write`; LazySS writes a
 
 ```sh
 lazyss ssh cleanup --ssh-config ~/.ssh/config --host ts-workstation-name --write
+```
+
+## Architecture
+
+LazySS uses pragmatic DDD boundaries. The domain model is provider-neutral, and
+all cloud/terminal behavior sits behind ports so SSH, AWS SSM, and later cloud
+variants can be added without rewriting the cockpit.
+
+```txt
+cmd/lazyss
+  CLI flags, version/logo commands, TUI entrypoint
+internal/domain
+  Machine, access method, health, overlays, session history
+internal/ports
+  InventoryProvider, Connector, HealthChecker, StateStore interfaces
+internal/app
+  Inventory aggregation, connect, and health orchestration
+internal/adapters/sshconfig
+  Read-only SSH config inventory, ssh argv, TCP checks, cleanup planning
+internal/adapters/awsssm
+  AWS SSM/EC2 inventory, aws ssm start-session argv, SSM health
+internal/adapters/statejson
+  Local 0600 JSON operator memory
+internal/tui
+  Bubble Tea cockpit over app use cases only
+internal/doctor
+  Local tool, AWS credential, region, and plugin readiness checks
+internal/brand
+  Product name, ASCII logo, and version report rendering
+```
+
+The main contexts are:
+
+- **Machine Inventory:** SSH config and AWS SSM/EC2 discovery.
+- **Access:** argv-only session command construction and terminal handoff.
+- **Health:** method-specific readiness observations.
+- **Operator Memory:** local pins, hide state, notes, preferred method, checks,
+  and connection history.
+- **Cockpit:** TUI rendering and keyboard flow over app-layer use cases.
+- **Preflight:** `lazyss doctor` checks for local dependencies and AWS setup.
+
+## Versioning
+
+Releases use SemVer tags such as `v0.1.0`. Local builds use `git describe`, so
+developer binaries show values such as `v0.1.0-12-gabcdef` or
+`v0.1.0-12-gabcdef-dirty`.
+
+```sh
+lazyss --version
+lazyss version
+```
+
+`--version` stays script-friendly and prints one line. `version` prints the
+product name, binary name, and resolved build version for human inspection.
+The Makefile injects the value with:
+
+```txt
+-X main.version=$(git describe --tags --always --dirty)
+```
+
+GoReleaser injects the tagged release version during release builds.
+
+## Branding
+
+`lazyss logo` prints the default ASCII mark used by the README and setup panel.
+`lazyss logo --text "<label>"` creates a compact ASCII banner for terminal
+notes, runbooks, demos, or internal docs without adding a graphics dependency.
+
+```sh
+lazyss logo
+lazyss logo --text "Ops Access"
 ```
 
 ## Install

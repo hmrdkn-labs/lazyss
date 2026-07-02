@@ -19,6 +19,7 @@ import (
 	"github.com/hamardikan/lazyss/internal/adapters/sshconfig"
 	"github.com/hamardikan/lazyss/internal/adapters/statejson"
 	"github.com/hamardikan/lazyss/internal/app"
+	"github.com/hamardikan/lazyss/internal/brand"
 	"github.com/hamardikan/lazyss/internal/doctor"
 	"github.com/hamardikan/lazyss/internal/domain"
 	"github.com/hamardikan/lazyss/internal/ports"
@@ -36,6 +37,7 @@ type cliConfig struct {
 	CleanupWrite   bool
 	CleanupCheck   bool
 	CleanupTimeout time.Duration
+	LogoText       string
 	Version        bool
 }
 
@@ -46,10 +48,14 @@ func main() {
 		os.Exit(2)
 	}
 	if cfg.Version {
-		fmt.Println("lazyss", version)
+		fmt.Println(brand.ShortVersion(version))
 		return
 	}
 	switch command {
+	case "version":
+		fmt.Print(brand.VersionReport(version))
+	case "logo":
+		fmt.Print(brand.Logo(cfg.LogoText))
 	case "doctor":
 		os.Exit(runDoctor(cfg))
 	case "ssh cleanup":
@@ -123,6 +129,7 @@ func parseFlagSegment(cfg *cliConfig, args []string) ([]string, error) {
 	fs.BoolVar(&cfg.CleanupWrite, "write", cfg.CleanupWrite, "write SSH cleanup changes")
 	fs.BoolVar(&cfg.CleanupCheck, "check", cfg.CleanupCheck, "check SSH host TCP reachability in cleanup report")
 	fs.DurationVar(&cfg.CleanupTimeout, "timeout", cfg.CleanupTimeout, "SSH cleanup reachability timeout")
+	fs.StringVar(&cfg.LogoText, "text", cfg.LogoText, "custom text for lazyss logo")
 	fs.BoolVar(&cfg.Version, "version", cfg.Version, "print version")
 	if err := fs.Parse(args); err != nil {
 		return nil, err
