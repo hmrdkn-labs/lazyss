@@ -143,7 +143,8 @@ func (f cockpitFilter) matches(machine domain.Machine) bool {
 		return false
 	}
 	for key, value := range f.Tags {
-		if machine.ProviderTags[key] != value {
+		tagValue, ok := providerTagValue(machine.ProviderTags, key)
+		if !ok || !strings.EqualFold(tagValue, value) {
 			return false
 		}
 	}
@@ -151,6 +152,15 @@ func (f cockpitFilter) matches(machine domain.Machine) bool {
 		return false
 	}
 	return true
+}
+
+func providerTagValue(tags map[string]string, key string) (string, bool) {
+	for candidate, value := range tags {
+		if strings.EqualFold(candidate, key) {
+			return value, true
+		}
+	}
+	return "", false
 }
 
 func machineHasMethod(machine domain.Machine, method domain.AccessMethod) bool {
@@ -193,6 +203,48 @@ func sortedProviderTags(tags map[string]string) []string {
 	out := make([]string, 0, len(keys))
 	for _, key := range keys {
 		out = append(out, key+"="+tags[key])
+	}
+	return out
+}
+
+func availableTagFiltersLine(machines []domain.Machine, width int) string {
+	tags := collectProviderTags(machines)
+	if len(tags) == 0 {
+		return ""
+	}
+	keys := make([]string, 0, len(tags))
+	for key := range tags {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		values := make([]string, 0, len(tags[key]))
+		for value := range tags[key] {
+			values = append(values, value)
+		}
+		sort.Strings(values)
+		if len(values) > 6 {
+			values = append(values[:6], "...")
+		}
+		parts = append(parts, key+"="+strings.Join(values, ","))
+	}
+	line := "Available tags: " + strings.Join(parts, " | ")
+	if width > 0 {
+		return displayFit(line, width)
+	}
+	return line
+}
+
+func collectProviderTags(machines []domain.Machine) map[string]map[string]struct{} {
+	out := map[string]map[string]struct{}{}
+	for _, machine := range machines {
+		for key, value := range machine.ProviderTags {
+			if _, ok := out[key]; !ok {
+				out[key] = map[string]struct{}{}
+			}
+			out[key][value] = struct{}{}
+		}
 	}
 	return out
 }

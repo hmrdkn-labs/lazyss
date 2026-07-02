@@ -171,6 +171,9 @@ func (m Model) renderCockpit() string {
 		fmt.Fprintf(&b, "%s: %s\n", m.inputMode, m.inputValue())
 		if m.inputMode == "filter" {
 			b.WriteString(m.availableFiltersLine() + "\n")
+			if line := availableTagFiltersLine(m.machines, width); line != "" {
+				b.WriteString(line + "\n")
+			}
 		}
 	}
 	if status != "" {
@@ -307,7 +310,7 @@ func (m Model) machineList(width, height int) string {
 	columns := faintStyle.Render(m.listHeader(width))
 	lines := []string{header, columns}
 	if len(m.visible) == 0 {
-		lines = append(lines, dimStyle.Render("No machines"))
+		lines = append(lines, m.emptyListLines(width)...)
 		return strings.Join(lines, "\n")
 	}
 	rows := height - 3
@@ -378,7 +381,7 @@ func (m Model) machineRow(index int, machine domain.Machine, width int) string {
 func (m Model) detailPanel(width, height int) string {
 	lines := []string{panelTitleStyle.Render("Details")}
 	if len(m.visible) == 0 {
-		lines = append(lines, dimStyle.Render("No selection"))
+		lines = append(lines, m.emptyDetailLines(width)...)
 		return strings.Join(lines, "\n")
 	}
 	machine := m.visible[m.cursor]
@@ -454,7 +457,7 @@ func (m Model) detailLine(key, value string, width int) string {
 func (m Model) compactList(width, height int) string {
 	lines := []string{panelTitleStyle.Render(fmt.Sprintf("Machines (%d)", len(m.visible)))}
 	if len(m.visible) == 0 {
-		lines = append(lines, dimStyle.Render("No machines"))
+		lines = append(lines, m.emptyListLines(width)...)
 		return strings.Join(lines, "\n")
 	}
 	rows := height - 1
@@ -481,6 +484,70 @@ func (m Model) inputValue() string {
 
 func (m Model) availableFiltersLine() string {
 	return "Available filters: tag:Key=Value | name:prefix | method:ssh|ssm | health:up|down|unknown | hidden:true|false | text"
+}
+
+func (m Model) emptyListLines(width int) []string {
+	if m.hasActiveFilter() {
+		lines := []string{
+			warnStyle.Render(displayFit("No matches", width)),
+			displayFit("Active: "+m.activeFilterLabel(), width),
+			displayFit("Press esc to clear, f to edit, r to refresh", width),
+		}
+		if line := availableTagFiltersLine(m.machines, width); line != "" {
+			lines = append(lines, displayFit(line, width))
+		}
+		return lines
+	}
+	lines := []string{
+		warnStyle.Render(displayFit("Setup", width)),
+		displayFit("No machines loaded yet.", width),
+		displayFit("P profile | L login | s source | r refresh", width),
+	}
+	if m.runtime != nil && strings.TrimSpace(m.runtime.AWSProfile) == "" && m.shouldShowAWSOnboarding() {
+		lines = append(lines, displayFit("Choose an AWS profile to load SSM machines.", width))
+	}
+	return lines
+}
+
+func (m Model) emptyDetailLines(width int) []string {
+	if m.hasActiveFilter() {
+		lines := []string{
+			warnStyle.Render(displayFit("No matches", width)),
+			m.detailLine("Filter", m.activeFilterLabel(), width),
+			m.detailLine("Clear", "esc", width),
+			m.detailLine("Edit", "f", width),
+		}
+		if line := availableTagFiltersLine(m.machines, width); line != "" {
+			lines = append(lines, "", panelTitleStyle.Render("Available tags"), displayFit(strings.TrimPrefix(line, "Available tags: "), width))
+		}
+		return lines
+	}
+	return []string{
+		panelTitleStyle.Render("Setup"),
+		m.detailLine("AWS profile", "P", width),
+		m.detailLine("AWS login", "L", width),
+		m.detailLine("Source", "s", width),
+		m.detailLine("Refresh", "r", width),
+		m.detailLine("Filter", "f", width),
+	}
+}
+
+func (m Model) hasActiveFilter() bool {
+	return m.search != "" || !m.filter.empty()
+}
+
+func (m Model) activeFilterLabel() string {
+	var parts []string
+	if m.filter.Raw != "" {
+		parts = append(parts, m.filter.Raw)
+	}
+	if m.search != "" {
+		parts = append(parts, "search:"+m.search)
+	}
+	if len(parts) == 0 {
+		return "none"
+	}
+	return strings.Join(parts, " ")
 }
 
 func (m Model) providerWarning(status domain.ProviderStatus) string {
@@ -570,6 +637,9 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "q", "ctrl+c":
 		return m, tea.Quit
+	case "esc":
+		m.clearSearchAndFilter()
+		return m, nil
 	case "r":
 		m.refreshSeq++
 		return m, m.fetchCmd(m.refreshSeq)
@@ -680,8 +750,8 @@ func (m Model) submitFilter() (tea.Model, tea.Cmd) {
 	m.inputMode = ""
 	m.filter = filter
 	if m.runtime != nil {
-		m.runtime.Query.Tags = filter.queryTags()
-		m.runtime.Query.NamePrefix = filter.NamePrefix
+		m.runtime.Query.Tags = nil
+		m.runtime.Query.NamePrefix = ""
 		if filter.Hidden != "" {
 			m.runtime.Query.ShowHidden = filter.Hidden == "true"
 		}
@@ -792,6 +862,21 @@ func (m Model) handleConnectFinishedMsg(msg connectFinishedMsg) (tea.Model, tea.
 
 func (m *Model) applySearch(query string) {
 	m.search = query
+	m.recompute()
+}
+
+func (m *Model) clearSearchAndFilter() {
+	if m.search == "" && m.filterText == "" && m.filter.empty() {
+		return
+	}
+	m.search = ""
+	m.filterText = ""
+	m.filter = cockpitFilter{}
+	if m.runtime != nil {
+		m.runtime.Query.Tags = nil
+		m.runtime.Query.NamePrefix = ""
+	}
+	m.statusLine = "filter cleared"
 	m.recompute()
 }
 

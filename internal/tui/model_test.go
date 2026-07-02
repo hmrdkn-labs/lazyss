@@ -121,8 +121,41 @@ func TestModelRenderShowsControlsAndAWSOnboarding(t *testing.T) {
 	}
 }
 
+func TestModelEmptyStartupShowsSetupGuidance(t *testing.T) {
+	m := NewModel(&Runtime{Query: app.InventoryQuery{Source: "all"}})
+	got := m.render()
+	for _, want := range []string{
+		"Setup",
+		"P profile",
+		"L login",
+		"s source",
+		"r refresh",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("startup guidance missing %q:\n%s", want, got)
+		}
+	}
+}
+
 func TestModelFilterModeShowsAvailableFilters(t *testing.T) {
 	m := NewModel(&Runtime{Query: app.InventoryQuery{Source: "all"}})
+	m.machines = []domain.Machine{
+		{
+			ID:           "aws:ssm:1:r:i-1",
+			Name:         "api",
+			Provider:     domain.ProviderAWS,
+			Methods:      []domain.AccessMethod{domain.AccessAWSSSMShell},
+			ProviderTags: map[string]string{"Group": "g1", "Environment": "dev"},
+		},
+		{
+			ID:           "aws:ssm:1:r:i-2",
+			Name:         "maps",
+			Provider:     domain.ProviderAWS,
+			Methods:      []domain.AccessMethod{domain.AccessAWSSSMShell},
+			ProviderTags: map[string]string{"Group": "g2", "Environment": "prod"},
+		},
+	}
+	m.recompute()
 	model, _ := m.Update(keyPress("f"))
 	m = model.(Model)
 
@@ -135,6 +168,9 @@ func TestModelFilterModeShowsAvailableFilters(t *testing.T) {
 		"method:ssh|ssm",
 		"health:up|down|unknown",
 		"hidden:true|false",
+		"Available tags",
+		"Group=g1,g2",
+		"Environment=dev,prod",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("filter view missing %q:\n%s", want, got)
@@ -152,6 +188,17 @@ func TestParseFilterExpression(t *testing.T) {
 	}
 	if filter.NamePrefix != "procal" || filter.Method != string(domain.AccessAWSSSMShell) || filter.Health != "up" || filter.Hidden != "false" || filter.Text != "api" {
 		t.Fatalf("filter = %#v", filter)
+	}
+}
+
+func TestFilterMatchesTagsCaseInsensitively(t *testing.T) {
+	filter, err := parseFilterExpression("tag:group=G1")
+	if err != nil {
+		t.Fatalf("parse filter: %v", err)
+	}
+	machine := domain.Machine{ProviderTags: map[string]string{"Group": "g1"}}
+	if !filter.matches(machine) {
+		t.Fatalf("filter should match tag key/value case-insensitively")
 	}
 }
 
@@ -190,11 +237,71 @@ func TestModelAppliesStructuredFilterAndRefreshes(t *testing.T) {
 	}
 	model, _ = m.Update(cmd())
 	m = model.(Model)
-	if provider.query.Tags["Use"] != "maps" || provider.query.NamePrefix != "procal" {
-		t.Fatalf("query = %#v", provider.query)
+	if len(provider.query.Tags) != 0 || provider.query.NamePrefix != "" {
+		t.Fatalf("structured TUI filters should stay client-side, query = %#v", provider.query)
 	}
 	if len(m.visible) != 1 || m.visible[0].Name != "procal-g1-dev-maps" {
 		t.Fatalf("visible = %#v", m.visible)
+	}
+}
+
+func TestModelNoFilterMatchesShowsAvailableValues(t *testing.T) {
+	provider := &queryCapturingProvider{machines: []domain.Machine{
+		{
+			ID:           "aws:ssm:123:ap-southeast-3:i-1",
+			Name:         "procal-g1-dev-maps",
+			Provider:     domain.ProviderAWS,
+			Methods:      []domain.AccessMethod{domain.AccessAWSSSMShell},
+			ProviderTags: map[string]string{"Group": "g1", "Use": "maps"},
+		},
+		{
+			ID:           "aws:ssm:123:ap-southeast-3:i-2",
+			Name:         "procal-g2-dev-api",
+			Provider:     domain.ProviderAWS,
+			Methods:      []domain.AccessMethod{domain.AccessAWSSSMShell},
+			ProviderTags: map[string]string{"Group": "g2", "Use": "api"},
+		},
+	}}
+	runtime := &Runtime{
+		Inventory: &app.InventoryService{Providers: []app.InventoryProvider{provider}},
+		Query:     app.InventoryQuery{Source: "aws"},
+	}
+	m := NewModel(runtime)
+	m.filterText = "tag:Group=group6"
+	model, cmd := m.submitFilter()
+	m = model.(Model)
+	model, _ = m.Update(cmd())
+	m = model.(Model)
+
+	if len(m.visible) != 0 || len(m.machines) != 2 {
+		t.Fatalf("visible=%#v machines=%#v", m.visible, m.machines)
+	}
+	got := m.render()
+	for _, want := range []string{"No matches", "tag:Group=group6", "Available tags", "Group=g1,g2"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("empty filter view missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestModelEscClearsSearchAndFilter(t *testing.T) {
+	m := NewModel(&Runtime{Query: app.InventoryQuery{Source: "aws"}})
+	m.machines = []domain.Machine{
+		{ID: "1", Name: "alpha", ProviderTags: map[string]string{"Group": "g1"}},
+		{ID: "2", Name: "beta", ProviderTags: map[string]string{"Group": "g2"}},
+	}
+	m.filterText = "tag:Group=missing"
+	model, _ := m.submitFilter()
+	m = model.(Model)
+	m.applySearch("zzz")
+	if len(m.visible) != 0 {
+		t.Fatalf("setup should have no visible machines")
+	}
+
+	model, _ = m.Update(keyPress("esc"))
+	m = model.(Model)
+	if m.filter.Raw != "" || m.filterText != "" || m.search != "" || len(m.visible) != 2 {
+		t.Fatalf("clear failed filter=%#v text=%q search=%q visible=%#v", m.filter, m.filterText, m.search, m.visible)
 	}
 }
 
@@ -503,6 +610,8 @@ func keyPress(s string) tea.KeyPressMsg {
 		return tea.KeyPressMsg(tea.Key{Code: tea.KeyDown})
 	case "up":
 		return tea.KeyPressMsg(tea.Key{Code: tea.KeyUp})
+	case "esc":
+		return tea.KeyPressMsg(tea.Key{Code: tea.KeyEsc})
 	}
 	runes := []rune(s)
 	return tea.KeyPressMsg(tea.Key{Text: s, Code: runes[0]})
