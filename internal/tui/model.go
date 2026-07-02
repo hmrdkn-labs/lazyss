@@ -13,6 +13,7 @@ import (
 	"github.com/sahilm/fuzzy"
 
 	"github.com/hamardikan/lazyss/internal/app"
+	"github.com/hamardikan/lazyss/internal/brand"
 	"github.com/hamardikan/lazyss/internal/domain"
 	"github.com/hamardikan/lazyss/internal/ports"
 )
@@ -218,7 +219,7 @@ func (m Model) titleBar() string {
 	width, _ := m.layoutSize()
 	source := m.sourceLabel()
 	count := fmt.Sprintf("%d machines", len(m.visible))
-	left := titleStyle.Render("Lazy Secure Shell")
+	left := titleStyle.Render(brand.Name)
 	meta := metaStyle.Render(" " + source + " | " + count)
 	line := left + meta
 	if width > 0 && lipglossWidth(line) < width {
@@ -522,14 +523,21 @@ func (m Model) emptyDetailLines(width int) []string {
 		}
 		return lines
 	}
-	return []string{
+	lines := make([]string, 0, 16)
+	for _, line := range brand.LogoLines() {
+		lines = append(lines, faintStyle.Render(displayFit(line, width)))
+	}
+	lines = append(lines,
+		"",
 		panelTitleStyle.Render("Setup"),
 		m.detailLine("AWS profile", "P", width),
 		m.detailLine("AWS login", "L", width),
 		m.detailLine("Source", "s", width),
 		m.detailLine("Refresh", "r", width),
 		m.detailLine("Filter", "f", width),
-	}
+		m.detailLine("Doctor", "lazyss doctor", width),
+	)
+	return lines
 }
 
 func (m Model) hasActiveFilter() bool {

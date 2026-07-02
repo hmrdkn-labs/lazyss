@@ -39,6 +39,26 @@ func TestParseArgsAcceptsSSHCleanupCommand(t *testing.T) {
 	}
 }
 
+func TestParseArgsAcceptsLogoCommand(t *testing.T) {
+	cfg, cmd, err := parseArgs([]string{"logo", "--text", "Ops Access"})
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if cmd != "logo" || cfg.LogoText != "Ops Access" {
+		t.Fatalf("cfg=%#v cmd=%q", cfg, cmd)
+	}
+}
+
+func TestParseArgsAcceptsVersionCommand(t *testing.T) {
+	_, cmd, err := parseArgs([]string{"version"})
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if cmd != "version" {
+		t.Fatalf("cmd = %q", cmd)
+	}
+}
+
 func TestResolveAWSConfigUsesCLIOverrideBeforePreferences(t *testing.T) {
 	prefs := domain.OperatorPreferences{AWSProfile: "persisted", AWSRegion: "ap-southeast-1"}
 	cfg := resolveAWSConfig(cliConfig{AWSProfile: "flagged", AWSRegion: "us-east-1"}, prefs)
