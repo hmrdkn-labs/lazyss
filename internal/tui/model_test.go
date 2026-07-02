@@ -394,6 +394,28 @@ func TestModelRunsAWSLoginForSelectedProfileAndRefreshes(t *testing.T) {
 	}
 }
 
+func TestModelConnectUsesTerminalExecHandoff(t *testing.T) {
+	runtime := &Runtime{
+		Connect: &app.ConnectService{Connectors: []ports.Connector{copyConnector{}}},
+	}
+	m := NewModel(runtime)
+	m.machines = []domain.Machine{{
+		ID:       "ssh:1:prod",
+		Name:     "prod",
+		NativeID: "prod",
+		Methods:  []domain.AccessMethod{domain.AccessSSH},
+	}}
+	m.recompute()
+
+	_, cmd := m.Update(keyPress("enter"))
+	if cmd == nil {
+		t.Fatalf("expected connect command")
+	}
+	if got := reflect.TypeOf(cmd()).String(); !strings.Contains(got, "execMsg") {
+		t.Fatalf("expected Bubble Tea exec handoff, got %s", got)
+	}
+}
+
 type copyConnector struct{}
 
 func (copyConnector) Supports(domain.Machine, domain.AccessMethod) bool { return true }
