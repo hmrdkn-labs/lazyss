@@ -9,6 +9,7 @@ import (
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	ssmtypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
+	smithy "github.com/aws/smithy-go"
 	"github.com/hamardikan/lazyss/internal/app"
 	"github.com/hamardikan/lazyss/internal/domain"
 )
@@ -75,11 +76,38 @@ func TestInventoryPassesEC2Filters(t *testing.T) {
 	}
 }
 
+func TestInventorySummarizesAWSAuthErrors(t *testing.T) {
+	provider := NewInventory("123456789012", "ap-southeast-1", fakeSSM{
+		err: &smithy.OperationError{
+			ServiceID:     "SSM",
+			OperationName: "DescribeInstanceInformation",
+			Err: &smithy.GenericAPIError{
+				Code:    "UnrecognizedClientException",
+				Message: "The security token included in the request is invalid.",
+			},
+		},
+	}, fakeEC2{out: &ec2.DescribeInstancesOutput{}})
+	_, status, err := provider.ListMachines(context.Background(), app.InventoryQuery{})
+	if err == nil {
+		t.Fatalf("expected inventory error")
+	}
+	if status.Status != domain.ProviderDegraded {
+		t.Fatalf("status = %#v", status)
+	}
+	if status.Message != "auth failed; refresh AWS credentials (UnrecognizedClientException)" {
+		t.Fatalf("message = %q", status.Message)
+	}
+}
+
 type fakeSSM struct {
 	pages []*ssm.DescribeInstanceInformationOutput
+	err   error
 }
 
 func (f fakeSSM) DescribeInstanceInformation(_ context.Context, in *ssm.DescribeInstanceInformationInput, _ ...func(*ssm.Options)) (*ssm.DescribeInstanceInformationOutput, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
 	if in.NextToken == nil {
 		return f.pages[0], nil
 	}

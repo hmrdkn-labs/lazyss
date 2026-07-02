@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	ssmtypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
+	smithy "github.com/aws/smithy-go"
 	"github.com/hamardikan/lazyss/internal/app"
 	"github.com/hamardikan/lazyss/internal/domain"
 	"github.com/hamardikan/lazyss/internal/ports"
@@ -81,11 +82,11 @@ func (i Inventory) ListMachines(ctx context.Context, q app.InventoryQuery) ([]do
 	}
 	ssmNodes, err := i.fetchSSM(ctx)
 	if err != nil {
-		return nil, domain.ProviderStatus{Name: "aws", Status: domain.ProviderDegraded, Message: err.Error()}, err
+		return nil, domain.ProviderStatus{Name: "aws", Status: domain.ProviderDegraded, Message: awsProviderErrorMessage(err)}, err
 	}
 	ec2Nodes, err := i.fetchEC2(ctx, q)
 	if err != nil {
-		return nil, domain.ProviderStatus{Name: "aws", Status: domain.ProviderDegraded, Message: err.Error()}, err
+		return nil, domain.ProviderStatus{Name: "aws", Status: domain.ProviderDegraded, Message: awsProviderErrorMessage(err)}, err
 	}
 	ec2ByID := map[string]ec2Node{}
 	for _, e := range ec2Nodes {
@@ -120,6 +121,40 @@ func (i Inventory) ListMachines(ctx context.Context, q app.InventoryQuery) ([]do
 	}
 	domain.SortMachines(out)
 	return out, domain.ProviderStatus{Name: "aws", Status: domain.ProviderHealthy}, nil
+}
+
+func awsProviderErrorMessage(err error) string {
+	var apiErr smithy.APIError
+	if errors.As(err, &apiErr) {
+		code := strings.TrimSpace(apiErr.ErrorCode())
+		switch code {
+		case "ExpiredToken", "ExpiredTokenException", "InvalidClientTokenId", "SignatureDoesNotMatch", "UnrecognizedClientException":
+			return "auth failed; refresh AWS credentials (" + code + ")"
+		}
+		msg := strings.TrimSpace(apiErr.ErrorMessage())
+		if msg == "" {
+			msg = "api request failed"
+		}
+		if code != "" {
+			msg = code + ": " + msg
+		}
+		return truncateRunes(msg, 120)
+	}
+	if err == nil {
+		return ""
+	}
+	return truncateRunes(err.Error(), 120)
+}
+
+func truncateRunes(s string, max int) string {
+	runes := []rune(strings.TrimSpace(s))
+	if max <= 0 || len(runes) <= max {
+		return string(runes)
+	}
+	if max <= 3 {
+		return string(runes[:max])
+	}
+	return string(runes[:max-3]) + "..."
 }
 
 type ssmNode struct {

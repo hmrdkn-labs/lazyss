@@ -14,6 +14,8 @@ import (
 	"github.com/hamardikan/lazyss/internal/domain"
 )
 
+const maxProviderWarningRunes = 78
+
 // Runtime wires the TUI to app-layer services and clipboard support.
 type Runtime struct {
 	Inventory *app.InventoryService
@@ -89,7 +91,7 @@ func (m Model) render() string {
 	if len(m.statuses) > 0 {
 		for _, status := range m.statuses {
 			if status.Status == domain.ProviderDegraded {
-				fmt.Fprintf(&b, "source %s degraded: %s\n", status.Name, status.Message)
+				b.WriteString(providerWarning(status) + "\n")
 			}
 		}
 	}
@@ -132,6 +134,43 @@ func (m Model) render() string {
 		}
 	}
 	return b.String()
+}
+
+func providerWarning(status domain.ProviderStatus) string {
+	message := compactProviderMessage(status.Message)
+	if message == "" {
+		message = "provider unavailable"
+	}
+	line := fmt.Sprintf("source %s degraded: %s", status.Name, message)
+	if len([]rune(line)) > maxProviderWarningRunes {
+		if idx := strings.LastIndex(message, " ("); idx > 0 {
+			line = fmt.Sprintf("source %s degraded: %s", status.Name, strings.TrimSpace(message[:idx]))
+		}
+	}
+	return truncateRunes(line, maxProviderWarningRunes)
+}
+
+func compactProviderMessage(message string) string {
+	message = strings.TrimSpace(message)
+	if idx := strings.LastIndex(message, "api error "); idx >= 0 {
+		message = strings.TrimSpace(strings.TrimPrefix(message[idx:], "api error "))
+	}
+	if idx := strings.Index(message, "RequestID:"); idx >= 0 {
+		message = strings.TrimSpace(message[:idx])
+		message = strings.TrimRight(message, ",")
+	}
+	return message
+}
+
+func truncateRunes(s string, max int) string {
+	runes := []rune(strings.TrimSpace(s))
+	if max <= 0 || len(runes) <= max {
+		return string(runes)
+	}
+	if max <= 3 {
+		return string(runes[:max])
+	}
+	return string(runes[:max-3]) + "..."
 }
 
 func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {

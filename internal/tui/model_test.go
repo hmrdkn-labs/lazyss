@@ -72,6 +72,21 @@ func TestModelDetailHistoryAndCopyCommand(t *testing.T) {
 	}
 }
 
+func TestModelRendersBoundedProviderDegradedWarnings(t *testing.T) {
+	m := NewModel(nil)
+	raw := "operation error SSM: DescribeInstanceInformation, https response error StatusCode: 400, RequestID: 6d6fec41-b934-4298-82fe-a479f2250bd5, api error UnrecognizedClientException: The security token included in the request is invalid"
+	m.statuses = []domain.ProviderStatus{{Name: "aws", Status: domain.ProviderDegraded, Message: raw}}
+	got := m.render()
+	if strings.Contains(got, "RequestID") {
+		t.Fatalf("render leaked raw AWS request details: %s", got)
+	}
+	for _, line := range strings.Split(got, "\n") {
+		if strings.HasPrefix(line, "source aws degraded:") && len(line) > maxProviderWarningRunes {
+			t.Fatalf("provider warning too long: %d %q", len(line), line)
+		}
+	}
+}
+
 type copyConnector struct{}
 
 func (copyConnector) Supports(domain.Machine, domain.AccessMethod) bool { return true }
