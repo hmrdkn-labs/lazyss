@@ -26,12 +26,11 @@ func (m Model) handleInputKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			m.applySearch(m.search[:len(m.search)-1])
 		}
 	default:
-		key := msg.String()
-		if len([]rune(key)) == 1 {
+		if msg.Text != "" { // Text carries printable input incl. space; msg.String() names space "space"
 			if m.inputKind == "filter" {
-				m.filterText += key
+				m.filterText += msg.Text
 			} else {
-				m.applySearch(m.search + key)
+				m.applySearch(m.search + msg.Text)
 			}
 		}
 	}
