@@ -28,6 +28,21 @@ func TestModelSearchClampAndStaleRefresh(t *testing.T) {
 	}
 }
 
+func TestModelSearchAcceptsSpace(t *testing.T) {
+	m := NewModel(nil)
+	m.machines = []domain.Machine{{ID: "1", Name: "a b"}}
+	m.recompute()
+	model, _ := m.Update(keyPress("/"))
+	m = model.(Model)
+	for _, k := range []string{"a", " ", "b"} {
+		model, _ = m.Update(keyPress(k))
+		m = model.(Model)
+	}
+	if m.search != "a b" {
+		t.Fatalf("space dropped from search entry: search=%q", m.search)
+	}
+}
+
 func TestModelCycleMethodAndApplyHealth(t *testing.T) {
 	m := NewModel(nil)
 	m.machines = []domain.Machine{{ID: "1", Name: "alpha", Methods: []domain.AccessMethod{domain.AccessSSH, domain.AccessAWSSSMShell}}}
