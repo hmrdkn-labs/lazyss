@@ -17,10 +17,7 @@ func (m Model) renderCockpit() string {
 	meta := m.awsLine()
 	warnings := m.providerWarnings()
 	status := m.statusText()
-	bodyHeight := height - 7 - len(warnings)
-	if status != "" {
-		bodyHeight--
-	}
+	bodyHeight := height - 8 - len(warnings) // -8 reserves title, footer, and the always-present status row
 	if bodyHeight < 8 {
 		bodyHeight = 8
 	}
@@ -31,13 +28,13 @@ func (m Model) renderCockpit() string {
 		detailWidth := clampInt(width*38/100, 34, 54)
 		listWidth := width - detailWidth
 		body = lipglossJoinHorizontal(
-			panelActiveStyle.Width(listWidth-2).Height(bodyHeight).Render(m.machineList(listWidth-4, bodyHeight)),
-			panelStyle.Width(detailWidth-2).Height(bodyHeight).Render(m.detailPanel(detailWidth-4, bodyHeight)),
+			panelActiveStyle.Width(listWidth-2).Height(bodyHeight).Render(fitLines(m.machineList(listWidth-4, bodyHeight), bodyHeight)),
+			panelStyle.Width(detailWidth-2).Height(bodyHeight).Render(fitLines(m.detailPanel(detailWidth-4, bodyHeight), bodyHeight)),
 		)
 	case width >= 92:
-		body = panelActiveStyle.Width(width - 2).Height(bodyHeight).Render(m.machineList(width-4, bodyHeight))
+		body = panelActiveStyle.Width(width - 2).Height(bodyHeight).Render(fitLines(m.machineList(width-4, bodyHeight), bodyHeight))
 	default:
-		body = m.compactList(width, bodyHeight)
+		body = fitLines(m.compactList(width, bodyHeight), bodyHeight)
 	}
 
 	var b strings.Builder
@@ -54,9 +51,7 @@ func (m Model) renderCockpit() string {
 			}
 		}
 	}
-	if status != "" {
-		b.WriteString(status + "\n")
-	}
+	b.WriteString(status + "\n") // always emit; blank when idle so the layout never jumps
 	for _, warning := range warnings {
 		b.WriteString(warning + "\n")
 	}
