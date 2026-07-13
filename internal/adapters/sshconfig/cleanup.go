@@ -8,54 +8,19 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hmrdkn-labs/lazyss/internal/ports"
 )
 
-// CleanupAction is the recommended cleanup action for one SSH host block.
-type CleanupAction string
-
-const (
-	// CleanupKeep leaves an SSH host visible and unchanged.
-	CleanupKeep CleanupAction = "keep"
-	// CleanupHide recommends hiding an SSH host from the LazySS cockpit.
-	CleanupHide CleanupAction = "hide"
-	// CleanupDeleteCandidate recommends optional explicit removal from SSH config.
-	CleanupDeleteCandidate CleanupAction = "delete-candidate"
-)
-
-// CleanupOptions controls cleanup planning.
-type CleanupOptions struct {
-	Check   bool
-	Timeout time.Duration
+// Cleaner plans and applies cleanup for one SSH config path, implementing
+// ports.CleanupPlanner.
+type Cleaner struct {
+	path string
 }
 
-// CleanupItem describes one SSH host cleanup recommendation.
-type CleanupItem struct {
-	Host      string
-	HostName  string
-	User      string
-	Port      int
-	Action    CleanupAction
-	Reason    string
-	Protected bool
-	Check     string
-	CheckErr  string
-}
-
-// CleanupPlan contains all cleanup recommendations for an SSH config.
-type CleanupPlan struct {
-	Items []CleanupItem
-}
-
-// CleanupApplyOptions controls destructive cleanup.
-type CleanupApplyOptions struct {
-	Hosts []string
-	Now   time.Time
-}
-
-// CleanupApplyResult reports the result of destructive cleanup.
-type CleanupApplyResult struct {
-	BackupPath   string
-	RemovedHosts []string
+// NewCleaner creates an SSH config cleanup adapter bound to a config path.
+func NewCleaner(path string) Cleaner {
+	return Cleaner{path: path}
 }
 
 type configHostBlock struct {
@@ -65,41 +30,41 @@ type configHostBlock struct {
 }
 
 // PlanCleanup classifies concrete SSH Host blocks without mutating config.
-func PlanCleanup(path string, opts CleanupOptions) (CleanupPlan, error) {
-	data, err := os.ReadFile(path)
+func (c Cleaner) PlanCleanup(opts ports.CleanupOptions) (ports.CleanupPlan, error) {
+	data, err := os.ReadFile(c.path)
 	if err != nil {
-		return CleanupPlan{}, err
+		return ports.CleanupPlan{}, err
 	}
 	if opts.Timeout <= 0 {
 		opts.Timeout = 3 * time.Second
 	}
 	blocks := parseConfigHostBlocks(string(data))
 	seenTargets := map[string]string{}
-	items := make([]CleanupItem, 0, len(blocks))
+	items := make([]ports.CleanupItem, 0, len(blocks))
 	for _, block := range blocks {
 		if block.alias == "" || strings.ContainsAny(block.alias, "*?") {
 			continue
 		}
-		item := CleanupItem{
+		item := ports.CleanupItem{
 			Host:     block.alias,
 			HostName: block.hostname,
 			User:     block.user,
 			Port:     nonzeroPort(block.port),
-			Action:   CleanupKeep,
+			Action:   ports.CleanupKeep,
 			Reason:   "machine",
 		}
 		switch {
 		case block.isSCMIdentity():
-			item.Action = CleanupKeep
+			item.Action = ports.CleanupKeep
 			item.Reason = "scm identity"
 			item.Protected = true
 		case block.isPortForwardAlias():
-			item.Action = CleanupHide
+			item.Action = ports.CleanupHide
 			item.Reason = "port forward alias"
 		default:
 			key := cleanupTargetKey(block)
 			if first, ok := seenTargets[key]; ok {
-				item.Action = CleanupDeleteCandidate
+				item.Action = ports.CleanupDeleteCandidate
 				item.Reason = "duplicate target"
 				item.HostName = nonemptyString(item.HostName, first)
 			} else {
@@ -114,7 +79,7 @@ func PlanCleanup(path string, opts CleanupOptions) (CleanupPlan, error) {
 	sort.SliceStable(items, func(i, j int) bool {
 		return items[i].Host < items[j].Host
 	})
-	return CleanupPlan{Items: items}, nil
+	return ports.CleanupPlan{Items: items}, nil
 }
 
 func tcpCheck(host string, port int, timeout time.Duration) (string, string) {
@@ -127,13 +92,13 @@ func tcpCheck(host string, port int, timeout time.Duration) (string, string) {
 }
 
 // ApplyCleanup removes selected non-protected Host blocks after creating a backup.
-func ApplyCleanup(path string, opts CleanupApplyOptions) (CleanupApplyResult, error) {
+func (c Cleaner) ApplyCleanup(opts ports.CleanupApplyOptions) (ports.CleanupApplyResult, error) {
 	if len(opts.Hosts) == 0 {
-		return CleanupApplyResult{}, fmt.Errorf("at least one --host is required with --write")
+		return ports.CleanupApplyResult{}, fmt.Errorf("at least one --host is required with --write")
 	}
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(c.path)
 	if err != nil {
-		return CleanupApplyResult{}, err
+		return ports.CleanupApplyResult{}, err
 	}
 	blocks := parseConfigHostBlocks(string(data))
 	selected := map[string]bool{}
@@ -149,10 +114,10 @@ func ApplyCleanup(path string, opts CleanupApplyOptions) (CleanupApplyResult, er
 	for host := range selected {
 		block, ok := found[host]
 		if !ok {
-			return CleanupApplyResult{}, fmt.Errorf("host %q not found", host)
+			return ports.CleanupApplyResult{}, fmt.Errorf("host %q not found", host)
 		}
 		if block.isSCMIdentity() {
-			return CleanupApplyResult{}, fmt.Errorf("host %q is protected scm identity", host)
+			return ports.CleanupApplyResult{}, fmt.Errorf("host %q is protected scm identity", host)
 		}
 	}
 
@@ -160,9 +125,9 @@ func ApplyCleanup(path string, opts CleanupApplyOptions) (CleanupApplyResult, er
 	if now.IsZero() {
 		now = time.Now()
 	}
-	backupPath := fmt.Sprintf("%s.lazyss-backup-%s", path, now.Format("20060102-150405"))
+	backupPath := fmt.Sprintf("%s.lazyss-backup-%s", c.path, now.Format("20060102-150405"))
 	if err := os.WriteFile(backupPath, data, 0o600); err != nil {
-		return CleanupApplyResult{}, err
+		return ports.CleanupApplyResult{}, err
 	}
 
 	lines := splitLinesPreserve(string(data))
@@ -179,18 +144,18 @@ func ApplyCleanup(path string, opts CleanupApplyOptions) (CleanupApplyResult, er
 		}
 	}
 	mode := os.FileMode(0o600)
-	if info, err := os.Stat(path); err == nil {
+	if info, err := os.Stat(c.path); err == nil {
 		mode = info.Mode().Perm()
 	}
-	if err := os.WriteFile(path, []byte(out.String()), mode); err != nil {
-		return CleanupApplyResult{}, err
+	if err := os.WriteFile(c.path, []byte(out.String()), mode); err != nil {
+		return ports.CleanupApplyResult{}, err
 	}
 	removed := make([]string, 0, len(found))
 	for host := range found {
 		removed = append(removed, host)
 	}
 	sort.Strings(removed)
-	return CleanupApplyResult{BackupPath: backupPath, RemovedHosts: removed}, nil
+	return ports.CleanupApplyResult{BackupPath: backupPath, RemovedHosts: removed}, nil
 }
 
 func parseConfigHostBlocks(data string) []configHostBlock {

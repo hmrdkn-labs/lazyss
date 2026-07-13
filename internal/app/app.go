@@ -197,6 +197,22 @@ func (s HealthService) checkerFor(machine domain.Machine, method domain.AccessMe
 	return nil
 }
 
+// CleanupService plans and applies SSH config cleanup through a planner port.
+type CleanupService struct {
+	Planner ports.CleanupPlanner
+}
+
+// Plan returns cleanup recommendations without mutating the config.
+func (s CleanupService) Plan(opts ports.CleanupOptions) (ports.CleanupPlan, error) {
+	return s.Planner.PlanCleanup(opts)
+}
+
+// Apply removes the allow-listed hosts; the planner backs up the config and
+// refuses to touch protected hosts.
+func (s CleanupService) Apply(opts ports.CleanupApplyOptions) (ports.CleanupApplyResult, error) {
+	return s.Planner.ApplyCleanup(opts)
+}
+
 func now(clock ports.Clock) time.Time {
 	if clock == nil {
 		return time.Now()

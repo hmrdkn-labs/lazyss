@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/hmrdkn-labs/lazyss/internal/ports"
 )
 
 func TestPlanCleanupClassifiesSCMForwardDuplicateAndMachines(t *testing.T) {
@@ -38,18 +40,18 @@ Host prod
 		t.Fatal(err)
 	}
 
-	plan, err := PlanCleanup(path, CleanupOptions{})
+	plan, err := NewCleaner(path).PlanCleanup(ports.CleanupOptions{})
 	if err != nil {
 		t.Fatalf("plan: %v", err)
 	}
-	got := map[string]CleanupItem{}
+	got := map[string]ports.CleanupItem{}
 	for _, item := range plan.Items {
 		got[item.Host] = item
 	}
-	assertCleanupItem(t, got["github-work"], CleanupKeep, "scm identity")
-	assertCleanupItem(t, got["llm-api"], CleanupHide, "port forward alias")
-	assertCleanupItem(t, got["ts-workstation-name"], CleanupDeleteCandidate, "duplicate target")
-	assertCleanupItem(t, got["prod"], CleanupKeep, "machine")
+	assertCleanupItem(t, got["github-work"], ports.CleanupKeep, "scm identity")
+	assertCleanupItem(t, got["llm-api"], ports.CleanupHide, "port forward alias")
+	assertCleanupItem(t, got["ts-workstation-name"], ports.CleanupDeleteCandidate, "duplicate target")
+	assertCleanupItem(t, got["prod"], ports.CleanupKeep, "machine")
 }
 
 func TestApplyCleanupRemovesSelectedHostWithBackupAndKeepsProtectedHosts(t *testing.T) {
@@ -78,7 +80,7 @@ Host keep
 		t.Fatal(err)
 	}
 
-	_, err := ApplyCleanup(path, CleanupApplyOptions{
+	_, err := NewCleaner(path).ApplyCleanup(ports.CleanupApplyOptions{
 		Hosts: []string{"stale", "github-work"},
 		Now:   time.Date(2026, 7, 2, 10, 0, 0, 0, time.UTC),
 	})
@@ -96,7 +98,7 @@ Host keep
 		t.Fatalf("protected selection should not mutate config:\n%s", unchanged)
 	}
 
-	result, err := ApplyCleanup(path, CleanupApplyOptions{
+	result, err := NewCleaner(path).ApplyCleanup(ports.CleanupApplyOptions{
 		Hosts: []string{"stale"},
 		Now:   time.Date(2026, 7, 2, 10, 0, 0, 0, time.UTC),
 	})
@@ -131,7 +133,7 @@ Host keep
 	}
 }
 
-func assertCleanupItem(t *testing.T, item CleanupItem, action CleanupAction, reason string) {
+func assertCleanupItem(t *testing.T, item ports.CleanupItem, action ports.CleanupAction, reason string) {
 	t.Helper()
 	if item.Action != action || item.Reason != reason {
 		t.Fatalf("%s action=%q reason=%q, want %q %q", item.Host, item.Action, item.Reason, action, reason)
