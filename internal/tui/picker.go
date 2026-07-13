@@ -10,6 +10,10 @@ import (
 	"github.com/hmrdkn-labs/lazyss/internal/domain"
 )
 
+// profilePickerRows caps how many profiles the fixed picker box shows at once;
+// longer lists scroll around the cursor.
+const profilePickerRows = 10
+
 func (m Model) renderProfilePicker() string {
 	var b strings.Builder
 	b.WriteString(m.titleBar() + "\n")
@@ -21,16 +25,20 @@ func (m Model) renderProfilePicker() string {
 	if len(m.profiles) == 0 {
 		content.WriteString(dimStyle.Render("No profiles") + "\n")
 	}
-	for i, profile := range m.profiles {
+	start, end := windowRange(m.profileCursor, len(m.profiles), profilePickerRows)
+	for i := start; i < end; i++ {
 		cursor := " "
 		if i == m.profileCursor {
 			cursor = ">"
 		}
-		line := fmt.Sprintf("%s %s", cursor, profile)
+		line := fmt.Sprintf("%s %s", cursor, m.profiles[i])
 		if i == m.profileCursor {
 			line = selectedStyle.Render(displayPadRight(line, 32))
 		}
 		content.WriteString(line + "\n")
+	}
+	if len(m.profiles) > profilePickerRows {
+		content.WriteString(dimStyle.Render(fmt.Sprintf("%d-%d of %d", start+1, end, len(m.profiles))) + "\n")
 	}
 	b.WriteString(panelActiveStyle.Width(42).Render(content.String()))
 	b.WriteString("\nKeys: j/k move | Enter select | esc cancel | q quit\n")

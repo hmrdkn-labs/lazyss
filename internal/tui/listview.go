@@ -35,21 +35,26 @@ func (m Model) compactList(width, height int) string {
 	return strings.Join(lines, "\n")
 }
 
-// window returns the [start,end) range of visible machines that fit rows lines
-// while keeping the cursor on screen.
-func (m Model) window(rows int) (int, int) {
+// windowRange returns the [start,end) slice of a total-length list that fits
+// rows lines while keeping cursor on screen.
+func windowRange(cursor, total, rows int) (int, int) {
 	if rows < 1 {
 		rows = 1
 	}
 	start := 0
-	if m.cursor >= rows {
-		start = m.cursor - rows + 1
+	if cursor >= rows {
+		start = cursor - rows + 1
 	}
 	end := start + rows
-	if end > len(m.visible) {
-		end = len(m.visible)
+	if end > total {
+		end = total
 	}
 	return start, end
+}
+
+// window keeps the cockpit list cursor visible within rows lines.
+func (m Model) window(rows int) (int, int) {
+	return windowRange(m.cursor, len(m.visible), rows)
 }
 
 func (m Model) emptyListLines(width int) []string {

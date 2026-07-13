@@ -70,6 +70,9 @@ func (m Model) row(index int, machine domain.Machine, c listColumns) string {
 		pin = "*"
 	}
 	glyph, label := healthGlyph(machine.Health.Status)
+	if _, ok := m.inflight[machine.ID]; ok {
+		glyph, label = "…", "checking"
+	}
 	cells := []string{
 		marker,
 		pin,

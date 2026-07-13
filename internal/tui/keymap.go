@@ -73,10 +73,10 @@ var cockpitKeys = []keyEntry{
 		return m, m.copySelectedCmd()
 	}},
 	{keys: []string{"g"}, label: "g", desc: "check", help: "health check selected", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
-		return m, m.checkSelectedCmd()
+		return m.checkSelected()
 	}},
 	{keys: []string{"G"}, label: "G", desc: "check all", help: "health check visible", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
-		return m, m.checkVisibleCmd()
+		return m.checkVisible()
 	}},
 	{keys: []string{"v"}, label: "v", desc: "history", help: "view full session/health history", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
 		if len(m.visible) == 0 {
