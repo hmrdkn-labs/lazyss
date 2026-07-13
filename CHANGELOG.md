@@ -18,6 +18,23 @@ All notable LazySS changes are recorded here.
 - Branch protection, SDLC, smoke, security, quality gate, release, and Homebrew
   runbooks.
 - MIT license posture for public launch.
+- Cockpit key help overlay (`?`) and a footer key registry that is the single
+  source for dispatch, footer, and help wording, including `m` method cycling
+  and `c` copy connect command.
+- Detail panel toggle (`h`), overlay editor (`e`) for note, tags, and preferred
+  method, and a full session and health history view (`v`).
+- Guarded in-cockpit SSH config cleanup (`C`) with dry-run plan, protected SCM
+  identity hosts, duplicate-target delete candidates, and confirm-to-write.
+- Streaming bounded health checks (`g` selected, `G` all visible) and a
+  windowed AWS profile picker.
+- Proportional list columns with a visible `›` cursor, shape-based health
+  glyphs, aligned split panels, and a reserved status line.
+- tmux-driven cockpit smoke test (`make smoke-tui`) with no AWS dependency.
+
+### Fixed
+
+- Search (`/`) and filter (`f`) text entry dropped the space key under Bubble
+  Tea v2; typed text now uses the key's printable text.
 
 ## v0.1.0
 

@@ -33,6 +33,8 @@ On first launch, use the setup hints in the cockpit:
 - `s` switches inventory source between all, SSH, and SSM.
 - `r` refreshes inventory after profile/login changes.
 - `f` opens structured filters with available tag suggestions.
+- `m` cycles the access method for the selected machine.
+- `?` opens the full key help overlay; `esc` closes any overlay.
 
 LazySS stores profile and region labels only. It does not store AWS tokens, SSO
 cache contents, passwords, private keys, or SSH config edits.
@@ -77,6 +79,14 @@ and region labels in local state; it never stores AWS credentials or SSO cache
 contents.
 Use `x` to hide or unhide a selected machine locally, and `u` to toggle hidden
 machines in the current cockpit view.
+
+The footer lists every cockpit key, and `?` opens the same list as a help
+overlay. Use `m` to cycle a machine's access method and `c` to copy its connect
+command. `g` runs a health check for the selected machine and `G` streams
+bounded checks across all visible machines, updating rows as results arrive.
+`h` toggles the detail panel, `e` opens an overlay to edit the note, tags, and
+preferred method, and `v` shows the full session and health history. `C` opens
+the guarded SSH config cleanup below.
 
 SSH cleanup is dry-run by default. It hides SCM identity aliases such as GitHub
 or Bitbucket from the machine cockpit, recommends port-forward aliases for
@@ -203,6 +213,7 @@ go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out | tail -1
 go build ./cmd/lazyss
 make smoke-local
+make smoke-tui
 ```
 
 ## Release Status
