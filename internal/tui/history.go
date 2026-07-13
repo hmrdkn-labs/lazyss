@@ -44,6 +44,11 @@ func (m Model) historyViewport() int {
 }
 
 func (m Model) renderHistory() string {
+	// An async inventory/health update can empty the visible set while the
+	// history view is open; fall back to the cockpit rather than indexing.
+	if len(m.visible) == 0 {
+		return m.renderCockpit()
+	}
 	machine := m.visible[m.cursor]
 	width, _ := m.layoutSize()
 	vp := m.historyViewport()
@@ -70,6 +75,11 @@ func historyMaxOffset(total, viewport int) int {
 }
 
 func (m Model) handleHistoryKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	if len(m.visible) == 0 {
+		m.mode = modeCockpit
+		m.historyOffset = 0
+		return m, nil
+	}
 	machine := m.visible[m.cursor]
 	max := historyMaxOffset(len(historyLines(machine, 0)), m.historyViewport())
 	switch msg.String() {
