@@ -46,7 +46,7 @@ func TestHistorySurvivesVisibleEmptiedWhileOpen(t *testing.T) {
 // TestNoPanicsAtTinySizes drives View() and a stream of keypresses across every
 // mode at degenerate terminal sizes; any slice-bounds or negative-width defect
 // surfaces as a panic here.
-func TestNoPanicsAtTinySizes(t *testing.T) {
+func TestNoPanicsAtTinySizes(_ *testing.T) {
 	sizes := []struct{ w, h int }{
 		{1, 1}, {20, 5}, {40, 10}, {79, 14}, {80, 15}, {92, 8}, {120, 3},
 	}

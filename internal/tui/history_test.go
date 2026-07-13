@@ -52,8 +52,8 @@ func TestHistoryScrollClampsAtBounds(t *testing.T) {
 	m.height = 8
 	vp := m.historyViewport()
 	total := len(historyLines(m.visible[m.cursor], 0))
-	max := historyMaxOffset(total, vp)
-	if max == 0 {
+	maxOffset := historyMaxOffset(total, vp)
+	if maxOffset == 0 {
 		t.Fatalf("expected scrollable content, total=%d vp=%d", total, vp)
 	}
 
@@ -61,8 +61,8 @@ func TestHistoryScrollClampsAtBounds(t *testing.T) {
 		model, _ := m.Update(keyPress("j"))
 		m = model.(Model)
 	}
-	if m.historyOffset != max {
-		t.Fatalf("scroll down clamp: offset=%d want %d", m.historyOffset, max)
+	if m.historyOffset != maxOffset {
+		t.Fatalf("scroll down clamp: offset=%d want %d", m.historyOffset, maxOffset)
 	}
 
 	for range total + 10 {
