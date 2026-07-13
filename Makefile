@@ -131,6 +131,10 @@ smoke-local:
 smoke-terminal-handoff:
 	./scripts/smoke-terminal-handoff.sh
 
+.PHONY: smoke-tui
+smoke-tui: build
+	./scripts/smoke-tui.sh
+
 .PHONY: smoke
 smoke: smoke-local
 
