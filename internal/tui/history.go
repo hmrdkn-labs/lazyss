@@ -81,19 +81,19 @@ func (m Model) handleHistoryKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	machine := m.visible[m.cursor]
-	max := historyMaxOffset(len(historyLines(machine, 0)), m.historyViewport())
+	maxOffset := historyMaxOffset(len(historyLines(machine, 0)), m.historyViewport())
 	switch msg.String() {
 	case "esc":
 		m.mode = modeCockpit
 		m.historyOffset = 0
 	case "j", "down":
-		m.historyOffset = clampInt(m.historyOffset+1, 0, max)
+		m.historyOffset = clampInt(m.historyOffset+1, 0, maxOffset)
 	case "k", "up":
-		m.historyOffset = clampInt(m.historyOffset-1, 0, max)
+		m.historyOffset = clampInt(m.historyOffset-1, 0, maxOffset)
 	case "pgdown", "pgdn":
-		m.historyOffset = clampInt(m.historyOffset+m.historyViewport(), 0, max)
+		m.historyOffset = clampInt(m.historyOffset+m.historyViewport(), 0, maxOffset)
 	case "pgup":
-		m.historyOffset = clampInt(m.historyOffset-m.historyViewport(), 0, max)
+		m.historyOffset = clampInt(m.historyOffset-m.historyViewport(), 0, maxOffset)
 	}
 	return m, nil
 }
