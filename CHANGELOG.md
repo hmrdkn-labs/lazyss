@@ -2,7 +2,7 @@
 
 All notable LazySS changes are recorded here.
 
-## Unreleased
+## v0.2.0
 
 ### Added
 
