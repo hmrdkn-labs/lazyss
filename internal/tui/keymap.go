@@ -7,8 +7,8 @@ import (
 )
 
 // keyEntry is one row of the cockpit key table, the single source for cockpit
-// key dispatch, the footer, and the help overlay. Future keys e, v and C are
-// deliberately left unregistered so later steps can claim them without conflict.
+// key dispatch, the footer, and the help overlay. Key v remains unregistered
+// so a later step can claim it without conflict.
 type keyEntry struct {
 	keys   []string // keys tea reports that trigger this action
 	label  string   // key as shown to the operator (e.g. "j/k", "Enter")
@@ -95,6 +95,9 @@ var cockpitKeys = []keyEntry{
 	{keys: []string{"r"}, label: "r", desc: "refresh", help: "reload inventory", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
 		m.refreshSeq++
 		return m, m.fetchCmd(m.refreshSeq)
+	}},
+	{keys: []string{"C"}, label: "C", desc: "cleanup", help: "ssh config cleanup", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
+		return m.openCleanup()
 	}},
 	{keys: []string{"?"}, label: "?", desc: "help", help: "toggle this help", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
 		m.mode = modeHelp

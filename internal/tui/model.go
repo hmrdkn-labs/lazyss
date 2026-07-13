@@ -23,6 +23,7 @@ type Runtime struct {
 	Inventory     *app.InventoryService
 	Connect       *app.ConnectService
 	Health        *app.HealthService
+	Cleanup       *app.CleanupService
 	Query         app.InventoryQuery
 	Copy          func(string) error
 	Preferences   ports.PreferenceStore
@@ -54,6 +55,7 @@ type Model struct {
 	statusLine    string
 	historyOffset int
 	editor        editorState
+	cleanup       cleanupState
 }
 
 type machinesMsg struct {
