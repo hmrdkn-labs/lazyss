@@ -56,6 +56,9 @@ type Model struct {
 	historyOffset int
 	editor        editorState
 	cleanup       cleanupState
+	inflight      map[domain.MachineID]struct{} // machines with a health check in flight, rendered with a checking glyph
+	checkTotal    int                           // machines in the current streamed check batch
+	checkDone     int                           // observations received so far in the current batch
 }
 
 type machinesMsg struct {
@@ -87,6 +90,14 @@ type connectFinishedMsg struct {
 type healthMsg domain.HealthObservation
 type statusMsg string
 
+// healthStreamMsg carries one observation off the G-triggered stream. ok is
+// false when the channel closes, signalling the batch is complete.
+type healthStreamMsg struct {
+	obs domain.HealthObservation
+	ch  <-chan domain.HealthObservation
+	ok  bool
+}
+
 // NewModel creates a TUI model with the detail panel shown and an initial filtered view.
 func NewModel(runtime *Runtime) Model {
 	m := Model{runtime: runtime, details: true}
@@ -113,6 +124,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.handleMachinesMsg(msg)
 	case healthMsg:
 		m.applyHealth(domain.HealthObservation(msg))
+	case healthStreamMsg:
+		return m.handleHealthStream(msg)
 	case statusMsg:
 		m.statusLine = string(msg)
 	case profilesMsg:
@@ -246,6 +259,7 @@ func (m *Model) cycleMethod() {
 }
 
 func (m *Model) applyHealth(obs domain.HealthObservation) {
+	delete(m.inflight, obs.MachineID)
 	for i := range m.machines {
 		if m.machines[i].ID == obs.MachineID {
 			m.machines[i].Health = obs
@@ -331,30 +345,67 @@ func (m *Model) replaceMachine(machine domain.Machine) {
 	}
 }
 
-func (m Model) checkSelectedCmd() tea.Cmd {
+// checkSelected marks the selected machine in flight and checks it; the
+// resulting healthMsg clears the marker via applyHealth.
+func (m Model) checkSelected() (tea.Model, tea.Cmd) {
 	if m.runtime == nil || m.runtime.Health == nil || len(m.visible) == 0 {
-		return nil
+		return m, nil
 	}
 	machine := m.visible[m.cursor]
 	method := machine.DefaultMethod()
-	return func() tea.Msg {
-		obs := m.runtime.Health.CheckSelected(context.Background(), machine, method)
-		return healthMsg(obs)
+	m.markInflight(machine.ID)
+	return m, func() tea.Msg {
+		return healthMsg(m.runtime.Health.CheckSelected(context.Background(), machine, method))
 	}
 }
 
-func (m Model) checkVisibleCmd() tea.Cmd {
+// checkVisible streams a bounded health check over every visible machine,
+// marking each in flight up front so rows show the checking glyph until their
+// observation arrives. The app layer owns the concurrency bound.
+func (m Model) checkVisible() (tea.Model, tea.Cmd) {
 	if m.runtime == nil || m.runtime.Health == nil || len(m.visible) == 0 {
-		return nil
+		return m, nil
 	}
 	machines := append([]domain.Machine(nil), m.visible...)
-	return func() tea.Msg {
-		for _, machine := range machines {
-			_ = m.runtime.Health.CheckSelected(context.Background(), machine, machine.DefaultMethod())
-		}
-		result, _ := m.runtime.Inventory.List(context.Background(), m.runtime.Query)
-		return machinesMsg{seq: m.refreshSeq, machines: result.Machines, statuses: result.Statuses}
+	m.inflight = make(map[domain.MachineID]struct{}, len(machines))
+	for _, machine := range machines {
+		m.inflight[machine.ID] = struct{}{}
 	}
+	m.checkTotal = len(machines)
+	m.checkDone = 0
+	m.statusLine = fmt.Sprintf("checking %d/%d", 0, m.checkTotal)
+	ch := make(chan domain.HealthObservation)
+	go m.runtime.Health.CheckVisibleStream(context.Background(), machines, ch)
+	return m, waitHealth(ch)
+}
+
+func (m *Model) markInflight(id domain.MachineID) {
+	if m.inflight == nil {
+		m.inflight = make(map[domain.MachineID]struct{}, 1)
+	}
+	m.inflight[id] = struct{}{}
+}
+
+// waitHealth reads the next streamed observation; each received message pumps
+// the next read so the UI stays responsive between observations.
+func waitHealth(ch <-chan domain.HealthObservation) tea.Cmd {
+	return func() tea.Msg {
+		obs, ok := <-ch
+		return healthStreamMsg{obs: obs, ch: ch, ok: ok}
+	}
+}
+
+func (m Model) handleHealthStream(msg healthStreamMsg) (tea.Model, tea.Cmd) {
+	if !msg.ok {
+		m.inflight = nil
+		m.checkTotal, m.checkDone = 0, 0
+		m.statusLine = ""
+		return m, nil
+	}
+	m.applyHealth(msg.obs)
+	m.checkDone++
+	m.statusLine = fmt.Sprintf("checking %d/%d", m.checkDone, m.checkTotal)
+	return m, waitHealth(msg.ch)
 }
 
 func (m Model) awsLoginCmd() tea.Cmd {

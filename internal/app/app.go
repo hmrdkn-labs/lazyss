@@ -188,6 +188,37 @@ func (s HealthService) CheckVisible(ctx context.Context, machines []domain.Machi
 	return out
 }
 
+// CheckVisibleStream checks machines with the same concurrency bound as
+// CheckVisible but sends each observation to out as it completes, letting the
+// caller render results incrementally. Each machine is checked with its own
+// default method, and out is closed once every machine has been observed.
+func (s HealthService) CheckVisibleStream(ctx context.Context, machines []domain.Machine, out chan<- domain.HealthObservation) {
+	limit := s.MaxConcurrent
+	if limit <= 0 {
+		limit = 1
+	}
+	sem := make(chan struct{}, limit)
+	var wg sync.WaitGroup
+	for _, machine := range machines {
+		machine := machine
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			method := machine.DefaultMethod()
+			select {
+			case sem <- struct{}{}:
+				defer func() { <-sem }()
+			case <-ctx.Done():
+				out <- domain.NewHealthObservation(machine.ID, method, domain.HealthUnknown, "cancelled", 0, time.Now())
+				return
+			}
+			out <- s.CheckSelected(ctx, machine, method)
+		}()
+	}
+	wg.Wait()
+	close(out)
+}
+
 func (s HealthService) checkerFor(machine domain.Machine, method domain.AccessMethod) HealthChecker {
 	for _, checker := range s.Checkers {
 		if checker.Supports(machine, method) {

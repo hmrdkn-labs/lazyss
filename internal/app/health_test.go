@@ -27,6 +27,37 @@ func TestHealthChecksVisibleWithConcurrencyCap(t *testing.T) {
 	}
 }
 
+func TestCheckVisibleStreamRespectsBoundAndStreamsAll(t *testing.T) {
+	store := newMemoryStore()
+	checker := &recordingChecker{delay: 10 * time.Millisecond}
+	svc := HealthService{Checkers: []HealthChecker{checker}, Store: store, MaxConcurrent: 2}
+	machines := []domain.Machine{
+		{ID: "ssh:a", Methods: []domain.AccessMethod{domain.AccessSSH}},
+		{ID: "ssh:b", Methods: []domain.AccessMethod{domain.AccessSSH}},
+		{ID: "ssh:c", Methods: []domain.AccessMethod{domain.AccessSSH}},
+		{ID: "ssh:d", Methods: []domain.AccessMethod{domain.AccessSSH}},
+		{ID: "ssh:e", Methods: []domain.AccessMethod{domain.AccessSSH}},
+	}
+	ch := make(chan domain.HealthObservation)
+	go svc.CheckVisibleStream(context.Background(), machines, ch)
+
+	seen := map[domain.MachineID]bool{}
+	for obs := range ch {
+		seen[obs.MachineID] = true
+	}
+	if len(seen) != len(machines) {
+		t.Fatalf("observed %d machines, want %d", len(seen), len(machines))
+	}
+	for _, m := range machines {
+		if !seen[m.ID] {
+			t.Fatalf("machine %s never observed", m.ID)
+		}
+	}
+	if checker.maxSeen > 2 {
+		t.Fatalf("max concurrency = %d, want <= 2", checker.maxSeen)
+	}
+}
+
 type recordingChecker struct {
 	mu      sync.Mutex
 	delay   time.Duration
