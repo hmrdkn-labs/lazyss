@@ -234,8 +234,8 @@ func TestModelAppliesStructuredFilterAndRefreshes(t *testing.T) {
 		t.Fatalf("expected refresh command")
 	}
 	m = model.(Model)
-	if m.inputMode != "" {
-		t.Fatalf("filter mode should close, got %q", m.inputMode)
+	if m.mode != modeCockpit {
+		t.Fatalf("filter mode should close, got %v", m.mode)
 	}
 	model, _ = m.Update(cmd())
 	m = model.(Model)
@@ -478,8 +478,8 @@ func TestModelSelectsAWSProfilePersistsAndRefreshes(t *testing.T) {
 	}
 	model, _ = model.Update(cmd())
 	m = model.(Model)
-	if m.inputMode != "profile" || len(m.profiles) != 2 {
-		t.Fatalf("profile mode not opened: mode=%q profiles=%#v", m.inputMode, m.profiles)
+	if m.mode != modeProfilePicker || len(m.profiles) != 2 {
+		t.Fatalf("profile mode not opened: mode=%v profiles=%#v", m.mode, m.profiles)
 	}
 	model, _ = m.Update(keyPress("down"))
 	m = model.(Model)
