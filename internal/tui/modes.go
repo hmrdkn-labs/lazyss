@@ -12,6 +12,7 @@ const (
 	modeHelp
 	modeHistory
 	modeEditor
+	modeCleanup
 )
 
 func (m Model) render() string {
@@ -22,6 +23,8 @@ func (m Model) render() string {
 		return m.renderHistory()
 	case modeEditor:
 		return m.renderEditor()
+	case modeCleanup:
+		return m.renderCleanup()
 	case modeHelp:
 		return m.renderHelp()
 	default:
@@ -41,6 +44,8 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m.handleHistoryKey(msg)
 	case modeEditor:
 		return m.handleEditorKey(msg)
+	case modeCleanup:
+		return m.handleCleanupKey(msg)
 	default:
 		return m.handleCockpitKey(msg)
 	}

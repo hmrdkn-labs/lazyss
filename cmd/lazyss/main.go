@@ -156,10 +156,15 @@ func runTUI(cfg cliConfig) int {
 		sshconfig.NewChecker(nil, nil, 3*time.Second),
 		awsssm.Checker{},
 	}
+	var cleanup *app.CleanupService
+	if effectiveCfg.SSHConfig != "" {
+		cleanup = &app.CleanupService{Planner: sshconfig.NewCleaner(effectiveCfg.SSHConfig)}
+	}
 	runtime := &tui.Runtime{
 		Inventory:   &app.InventoryService{Providers: providers, Store: store},
 		Connect:     &app.ConnectService{Connectors: connectors, Store: store},
 		Health:      &app.HealthService{Checkers: checkers, Store: store, MaxConcurrent: 8},
+		Cleanup:     cleanup,
 		Query:       app.InventoryQuery{Source: effectiveCfg.Source},
 		Copy:        clipboard.WriteAll,
 		Preferences: store,
