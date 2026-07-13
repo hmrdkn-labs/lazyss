@@ -3,19 +3,41 @@ package tui
 import (
 	"fmt"
 	"strings"
-
-	"github.com/hmrdkn-labs/lazyss/internal/domain"
 )
 
 func (m Model) machineList(width, height int) string {
+	cols := allocColumns(width)
 	header := panelTitleStyle.Render(fmt.Sprintf("Machines (%d)", len(m.visible)))
-	columns := faintStyle.Render(m.listHeader(width))
-	lines := []string{header, columns}
+	lines := []string{header, faintStyle.Render(cols.header())}
 	if len(m.visible) == 0 {
 		lines = append(lines, m.emptyListLines(width)...)
 		return strings.Join(lines, "\n")
 	}
-	rows := height - 3
+	start, end := m.window(height - 3)
+	for i := start; i < end; i++ {
+		lines = append(lines, m.row(i, m.visible[i], cols))
+	}
+	return strings.Join(lines, "\n")
+}
+
+func (m Model) compactList(width, height int) string {
+	cols := allocColumns(width)
+	lines := []string{panelTitleStyle.Render(fmt.Sprintf("Machines (%d)", len(m.visible)))}
+	if len(m.visible) == 0 {
+		lines = append(lines, m.emptyListLines(width)...)
+		return strings.Join(lines, "\n")
+	}
+	lines = append(lines, faintStyle.Render(cols.header()))
+	start, end := m.window(height - 2)
+	for i := start; i < end; i++ {
+		lines = append(lines, m.row(i, m.visible[i], cols))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// window returns the [start,end) range of visible machines that fit rows lines
+// while keeping the cursor on screen.
+func (m Model) window(rows int) (int, int) {
 	if rows < 1 {
 		rows = 1
 	}
@@ -27,78 +49,7 @@ func (m Model) machineList(width, height int) string {
 	if end > len(m.visible) {
 		end = len(m.visible)
 	}
-	for i := start; i < end; i++ {
-		lines = append(lines, m.machineRow(i, m.visible[i], width))
-	}
-	return strings.Join(lines, "\n")
-}
-
-func (m Model) listHeader(width int) string {
-	if width >= 98 {
-		return fmt.Sprintf("  %-8s %-22s %-26s %-15s %-24s %-16s", "Provider", "Name", "Address", "Method", "Health", "Last connected")
-	}
-	return fmt.Sprintf("  %-6s %-20s %-14s %-20s", "Provider", "Name", "Method", "Health")
-}
-
-func (m Model) machineRow(index int, machine domain.Machine, width int) string {
-	pin := " "
-	if machine.Pinned {
-		pin = "*"
-	}
-	name := nonempty(machine.Name, string(machine.ID))
-	health := nonempty(machine.Health.Label, "not checked")
-	line := ""
-	if width >= 98 {
-		line = fmt.Sprintf("%s %-8s %-22s %-26s %-15s %-24s %-16s",
-			pin,
-			machine.Provider,
-			displayFit(name, 22),
-			displayFit(nonempty(machine.Address, machine.NativeID), 26),
-			displayFit(string(machine.DefaultMethod()), 15),
-			displayFit(health, 24),
-			displayFit(rel(machine.LastConnectedAt), 16),
-		)
-	} else {
-		line = fmt.Sprintf("%s %-6s %-20s %-14s %-20s",
-			pin,
-			machine.Provider,
-			displayFit(name, 20),
-			displayFit(string(machine.DefaultMethod()), 14),
-			displayFit(health, 20),
-		)
-	}
-	line = displayPadRight(line, width)
-	if index == m.cursor {
-		return selectedStyle.Width(width).Render(line)
-	}
-	if machine.Health.Status == domain.HealthUp {
-		return goodStyle.Render(line)
-	}
-	if machine.Health.Status == domain.HealthDown {
-		return badStyle.Render(line)
-	}
-	return line
-}
-
-func (m Model) compactList(width, height int) string {
-	lines := []string{panelTitleStyle.Render(fmt.Sprintf("Machines (%d)", len(m.visible)))}
-	if len(m.visible) == 0 {
-		lines = append(lines, m.emptyListLines(width)...)
-		return strings.Join(lines, "\n")
-	}
-	rows := height - 1
-	for i, machine := range m.visible {
-		if i >= rows {
-			break
-		}
-		prefix := "  "
-		if i == m.cursor {
-			prefix = "> "
-		}
-		line := prefix + string(machine.Provider) + " " + nonempty(machine.Name, string(machine.ID)) + " " + string(machine.DefaultMethod()) + " " + nonempty(machine.Health.Label, "not checked")
-		lines = append(lines, displayFit(line, width))
-	}
-	return strings.Join(lines, "\n")
+	return start, end
 }
 
 func (m Model) emptyListLines(width int) []string {
