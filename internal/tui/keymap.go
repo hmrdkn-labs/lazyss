@@ -66,6 +66,9 @@ var cockpitKeys = []keyEntry{
 		m.details = !m.details
 		return m, nil
 	}},
+	{keys: []string{"e"}, label: "e", desc: "edit", help: "edit note, tags, preferred method", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
+		return m.openEditor()
+	}},
 	{keys: []string{"c"}, label: "c", desc: "copy", help: "copy connect command", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
 		return m, m.copySelectedCmd()
 	}},
@@ -74,6 +77,14 @@ var cockpitKeys = []keyEntry{
 	}},
 	{keys: []string{"G"}, label: "G", desc: "check all", help: "health check visible", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
 		return m, m.checkVisibleCmd()
+	}},
+	{keys: []string{"v"}, label: "v", desc: "history", help: "view full session/health history", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
+		if len(m.visible) == 0 {
+			return m, nil
+		}
+		m.mode = modeHistory
+		m.historyOffset = 0
+		return m, nil
 	}},
 	{keys: []string{"P"}, label: "P", desc: "profile", help: "choose AWS profile", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
 		return m, m.listProfilesCmd()

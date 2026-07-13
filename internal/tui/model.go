@@ -52,6 +52,8 @@ type Model struct {
 	profileCursor int
 	refreshSeq    int
 	statusLine    string
+	historyOffset int
+	editor        editorState
 }
 
 type machinesMsg struct {
