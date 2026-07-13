@@ -10,12 +10,18 @@ const (
 	modeInput
 	modeProfilePicker
 	modeHelp
+	modeHistory
+	modeEditor
 )
 
 func (m Model) render() string {
 	switch m.mode {
 	case modeProfilePicker:
 		return m.renderProfilePicker()
+	case modeHistory:
+		return m.renderHistory()
+	case modeEditor:
+		return m.renderEditor()
 	case modeHelp:
 		return m.renderHelp()
 	default:
@@ -31,6 +37,10 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m.handleInputKey(msg)
 	case modeHelp:
 		return m.handleHelpKey(msg)
+	case modeHistory:
+		return m.handleHistoryKey(msg)
+	case modeEditor:
+		return m.handleEditorKey(msg)
 	default:
 		return m.handleCockpitKey(msg)
 	}
