@@ -71,6 +71,60 @@ type PreferenceStore interface {
 	SavePreferences(ctx context.Context, prefs domain.OperatorPreferences) error
 }
 
+// CleanupAction is the recommended cleanup action for one SSH host block.
+type CleanupAction string
+
+const (
+	// CleanupKeep leaves an SSH host visible and unchanged.
+	CleanupKeep CleanupAction = "keep"
+	// CleanupHide recommends hiding an SSH host from the LazySS cockpit.
+	CleanupHide CleanupAction = "hide"
+	// CleanupDeleteCandidate recommends optional explicit removal from SSH config.
+	CleanupDeleteCandidate CleanupAction = "delete-candidate"
+)
+
+// CleanupOptions controls cleanup planning.
+type CleanupOptions struct {
+	Check   bool
+	Timeout time.Duration
+}
+
+// CleanupItem describes one SSH host cleanup recommendation.
+type CleanupItem struct {
+	Host      string
+	HostName  string
+	User      string
+	Port      int
+	Action    CleanupAction
+	Reason    string
+	Protected bool
+	Check     string
+	CheckErr  string
+}
+
+// CleanupPlan contains all cleanup recommendations for an SSH config.
+type CleanupPlan struct {
+	Items []CleanupItem
+}
+
+// CleanupApplyOptions controls destructive cleanup.
+type CleanupApplyOptions struct {
+	Hosts []string
+	Now   time.Time
+}
+
+// CleanupApplyResult reports the result of destructive cleanup.
+type CleanupApplyResult struct {
+	BackupPath   string
+	RemovedHosts []string
+}
+
+// CleanupPlanner plans and applies cleanup for a single SSH config path.
+type CleanupPlanner interface {
+	PlanCleanup(opts CleanupOptions) (CleanupPlan, error)
+	ApplyCleanup(opts CleanupApplyOptions) (CleanupApplyResult, error)
+}
+
 // AWSProfileProvider lists configured AWS profile names without credentials.
 type AWSProfileProvider interface {
 	ListProfiles(ctx context.Context) ([]string, error)

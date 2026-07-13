@@ -253,8 +253,9 @@ func runSSHCleanup(cfg cliConfig) int {
 		fmt.Fprintln(os.Stderr, "ssh cleanup: --ssh-config is required")
 		return 2
 	}
+	svc := app.CleanupService{Planner: sshconfig.NewCleaner(cfg.SSHConfig)}
 	if cfg.CleanupWrite {
-		result, err := sshconfig.ApplyCleanup(cfg.SSHConfig, sshconfig.CleanupApplyOptions{Hosts: cfg.CleanupHosts})
+		result, err := svc.Apply(ports.CleanupApplyOptions{Hosts: cfg.CleanupHosts})
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "ssh cleanup:", err)
 			return 1
@@ -272,7 +273,7 @@ func runSSHCleanup(cfg cliConfig) int {
 		return 0
 	}
 
-	plan, err := sshconfig.PlanCleanup(cfg.SSHConfig, sshconfig.CleanupOptions{Check: cfg.CleanupCheck, Timeout: cfg.CleanupTimeout})
+	plan, err := svc.Plan(ports.CleanupOptions{Check: cfg.CleanupCheck, Timeout: cfg.CleanupTimeout})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "ssh cleanup:", err)
 		return 1
@@ -299,7 +300,7 @@ func runSSHCleanup(cfg cliConfig) int {
 	return 0
 }
 
-func cleanupTarget(item sshconfig.CleanupItem) string {
+func cleanupTarget(item ports.CleanupItem) string {
 	if item.HostName == "" {
 		return "-"
 	}
