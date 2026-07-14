@@ -6,12 +6,12 @@ require (
 	charm.land/bubbletea/v2 v2.0.7
 	charm.land/lipgloss/v2 v2.0.3
 	github.com/atotto/clipboard v0.1.4
-	github.com/aws/aws-sdk-go-v2 v1.42.0
+	github.com/aws/aws-sdk-go-v2 v1.42.1
 	github.com/aws/aws-sdk-go-v2/config v1.32.26
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.310.0
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.69.4
 	github.com/aws/aws-sdk-go-v2/service/sts v1.43.4
-	github.com/aws/smithy-go v1.27.1
+	github.com/aws/smithy-go v1.27.3
 	github.com/sahilm/fuzzy v0.1.3
 )
 
