@@ -43,7 +43,7 @@ coverage.baseline: 57.7%
 Current Go toolchain baseline:
 
 ```txt
-go.mod: go 1.25.11
+go.mod: go 1.26.10
 ```
 
 Keep the patch-level Go version current when `govulncheck` reports standard
