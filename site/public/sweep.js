@@ -1,11 +1,11 @@
-// The only script. Two jobs: a Copy button beside the install command, and "print": a replay of the recorded
+// The only script. Two jobs: a Copy button beside the install command, and a replay of the recorded
 // sweep at its real timings. The page is complete without either (the finished frame is in the HTML), and the
 // replay is not offered under prefers-reduced-motion.
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // --- Copy ---------------------------------------------------------------
-  const install = document.getElementById('install');
+  const install = document.getElementById('cmdrow');
   const cmd = document.getElementById('brew');
   if (install && cmd) {
     const btn = document.createElement('button');
@@ -42,7 +42,7 @@
 
   const listing = document.getElementById('listing');
 
-  // --- Print --------------------------------------------------------------
+  // --- Replay --------------------------------------------------------------
   if (reduce || !listing) return;
 
   const wide = matchMedia('(min-width: 1280px)');
@@ -64,7 +64,7 @@
   status.className = 'vh';
   status.setAttribute('role', 'status');
   bar.append(button, clock, status);
-  listing.after(bar);
+  listing.append(bar);
 
   const secs = (ms) => (ms / 1000).toFixed(1);
   const load = async () => (data ??= await (await fetch('/data/replay.json')).json());
@@ -93,13 +93,13 @@
     clearInterval(tick);
     timers = [];
   }
-  // both recordings, the margin notes and the list under the capture, complete: the page as it is without script
+  // both recordings complete: the page as it is without script
   function restore(d) {
     for (const k of ['100', '60']) {
       const tx = lines(k);
       for (const f of d[k].frames) apply(tx, f, false);
     }
-    for (const el of listing.querySelectorAll('.pending, .strike')) el.classList.remove('pending', 'strike');
+    for (const el of listing.querySelectorAll('.strike')) el.classList.remove('strike');
     clock.textContent = `Run length ${secs(d[key()].run_ms)} s`;
   }
 
@@ -117,17 +117,6 @@
     const t0 = performance.now() + lead;
     clock.textContent = `0.0 s of ${secs(d[key()].run_ms)} s`;
     for (const f of frames.slice(1)) timers.push(setTimeout(() => apply(tx, f, true), lead + f.t));
-    // the times print when their rows land: the margin notes (wide) or the list under the capture (narrow)
-    const times = [...listing.querySelectorAll(wide.matches ? '.scroll-100 .note[data-ms]' : '.order li[data-ms]')];
-    for (const el of times) {
-      el.classList.add('pending');
-      el.classList.remove('strike');
-      timers.push(setTimeout(() => {
-        el.classList.remove('pending');
-        void el.offsetWidth;
-        el.classList.add('strike');
-      }, lead + Number(el.dataset.ms)));
-    }
     tick = setInterval(() => {
       if (mine !== gen) return;
       const t = Math.min(Math.max(performance.now() - t0, 0), runMs);

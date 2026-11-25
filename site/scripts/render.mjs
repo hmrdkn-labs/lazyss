@@ -18,8 +18,9 @@ const day = (iso) => {
   return Number.isNaN(d.getTime()) ? null : `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 };
 
-// Terminal colours become the page palette by hue, whatever palette the terminal used. Green (healthy) prints as
-// plain ink: the ribbon is red for exceptions only. Status stays a word as well as a colour.
+// Terminal colours keep their hue on the navy stage: sky frames, green up, red down, grey for the quiet text.
+// Status stays a word as well as a colour. Dim greys (#586069 in the capture is 2.9:1 on the stage) print as
+// the lighter AA grey of the stage, see style.css.
 function fgClass(hex) {
   const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex ?? '');
   if (!m) return '';
@@ -77,31 +78,11 @@ const secs = (ms) => `+${(ms / 1000).toFixed(1)} s`;
 
 function figure(key) {
   const s = sizes[key];
-  const lines = s.rows[s.last].map((html, i) => {
-    const h = s.hosts.get(i);
-    if (!h) return `<div class="ln" data-i="${i}"><span class="tx">${html}</span></div>`;
-    const note = h.t_ms == null ? '' : `<span class="note" aria-hidden="true" data-ms="${h.t_ms}">${secs(h.t_ms)}</span>`;
-    return `<div class="ln host" data-i="${i}">${note}<span class="tx">${html}</span></div>`;
-  });
+  const lines = s.rows[s.last].map((html, i) => `<div class="ln" data-i="${i}"><span class="tx">${html}</span></div>`);
   return `<div class="scroll scroll-${key}" tabindex="0" role="region" aria-label="Recorded sweep, ${key} columns, scrolls sideways">
-<div class="paper"><span class="strip" aria-hidden="true"></span>
 <div class="cap" data-cols="${s.cols}" data-rows="${s.rows[0].length}">
 ${lines.join('')}
-</div></div></div>`;
-}
-
-// under 1280 px: the hosts in the order their results came back (times from the 60-column recording it sits under)
-function order() {
-  const s = sizes[60];
-  const bad = (i) => sweep.sizes['60'].frames[s.last].lines[i].some((x) => fgClass(x.fg) === 'bad');
-  const items = [...s.hosts.entries()]
-    .map(([i, h]) => ({ i, ...h }))
-    .sort((a, b) => (a.t_ms ?? 0) - (b.t_ms ?? 0) || a.i - b.i)
-    .map((h) => `<li data-ms="${h.t_ms ?? 0}"><span class="t">${secs(h.t_ms ?? 0)}</span><span class="a">${esc(h.name)}</span><span class="r${bad(h.i) ? ' c-bad' : ''}">${esc(h.health)}</span></li>`);
-  return `<div class="order"><h3 class="label">In the order they came back</h3>
-<ol>
-${items.join('\n')}
-</ol></div>`;
+</div></div>`;
 }
 
 const run = { 100: sizes[100].frames[sizes[100].last].t_ms, 60: sizes[60].frames[sizes[60].last].t_ms };
@@ -113,9 +94,8 @@ const results = finalHosts.map((h) => `${h.name}, ${h.health}`).join('; ');
 
 const sweepBlock = `${figure('100')}
 ${figure('60')}
-${order()}
 <p class="vh">Final frame of the recorded sweep, one result per host: ${esc(results)}.</p>
-<figcaption>Recording of lazyss ${version}, captured ${day(sweep.captured_at)}: ${hostCount} hosts from a synthetic SSH config, SSH checks only. The results are real TCP checks against throwaway listeners, closed ports and unreachable test addresses, and the sweep took <span class="w100">${(run[100] / 1000).toFixed(1)}</span><span class="w60">${(run[60] / 1000).toFixed(1)}</span> s. The times beside each host are when its result first showed on screen in the recording, not the check’s own latency. A recording, not a live feed. Terminal colours are redrawn in the page’s two inks; the text is as the terminal printed it.</figcaption>`;
+<figcaption>Recording of lazyss ${version}, captured ${day(sweep.captured_at)}: ${hostCount} hosts from a synthetic SSH config, SSH checks only. The results are real TCP checks against throwaway listeners, closed ports and unreachable test addresses, and the sweep took <span class="w100">${(run[100] / 1000).toFixed(1)}</span><span class="w60">${(run[60] / 1000).toFixed(1)}</span> s. A recording, not a live feed.</figcaption>`;
 
 // the frames sweep.js replays: the first in full, then only the lines that changed
 const replay = {};
@@ -129,7 +109,7 @@ for (const k of ['100', '60']) {
   replay[k] = { rows: s.rows[0].length, run_ms: run[k], frames };
 }
 
-const dl = (rows) => rows.map(([k, v, d]) => `<div><dt>${k}</dt><dd>${v}${d ? ` <span class="when">${d}</span>` : ''}</dd></div>`).join('\n');
+const dl = (rows) => rows.map(([k, v, d]) => `<div><dt>${k}</dt><dd>${v}${d ? `<span class="when">${d}</span>` : ''}</dd></div>`).join('\n');
 const ND = 'No data';
 const snap = day(signals.generated_at) ?? ND;
 const r = signals.release, f = signals.formula, c = signals.ci, l = signals.license;
@@ -145,7 +125,7 @@ ${dl([
 
 const sha = execFileSync('git', ['-C', root, 'rev-parse', '--short', 'HEAD']).toString().trim();
 const built = day(new Date().toISOString());
-const footBlock = `<p>Maintained ${built}. Built from <a href="https://github.com/hmrdkn-labs/lazyss/commit/${sha}"><code>${sha}</code></a>.</p>`;
+const footBlock = `<p>Built ${built} from <a href="https://github.com/hmrdkn-labs/lazyss/commit/${sha}"><code>${sha}</code></a>.${l ? ` ${esc(l)} licence.` : ''}</p>`;
 
 let html = readFileSync(`${root}/public/index.html`, 'utf8');
 for (const [name, body] of [['sweep', sweepBlock], ['signals', signalsBlock], ['build', footBlock]]) {
