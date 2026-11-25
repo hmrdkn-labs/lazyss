@@ -32,8 +32,8 @@ The `G` health sweep (research §3), rendered from `data/sweep.json`: real frame
 from `bin/lazyss --source ssh` against a synthetic SSH config in a temp `HOME`
 (`site/scripts/capture-sweep.sh`). Text and SVG, not an image, not a window.
 
-- Desktop: the 100-column capture. Phone (<700 px): the 60-column capture in a box that scrolls
-  sideways with a visible scrollbar; text is never scaled down.
+- Desktop (≥1280 px): the 100-column capture. Narrower: the 60-column capture in a box that
+  scrolls sideways with a visible scrollbar; text is never scaled down.
 - **Signature motion:** "print". When the reader presses "Run the sweep again" (and once on first view
   with motion allowed), frames advance at their real `t_ms` offsets; a line that changes gets a
   short ink-darken (opacity 0.55 → 1, 180 ms), like a fresh strike of the ribbon. No typing cursor.
@@ -41,9 +41,12 @@ from `bin/lazyss --source ssh` against a synthetic SSH config in a temp `HOME`
 - **Static fallback:** the finished frame is pre-rendered into `index.html` at build time. With
   JavaScript off or `prefers-reduced-motion: reduce`, that is what shows; the replay button is not
   rendered.
-- **Micro-interactions (3):** (1) focus or hover a host line: the margin shows when its result came
-  back ("+1.2 s"), from the frame data; (2) "Copy" beside the brew command says "Copied" for 2 s,
-  with a live region; (3) the replay control shows elapsed time against the real run length.
+- **Micro-interactions (3):** (1) each host's result time ("+0.3 s") prints in the margin at
+  ≥1280 px, or in a list "In the order they came back" under the 60-column capture, as that row's
+  result lands in the replay; static text, not a control (review round 1 removed interactive host
+  rows: 20 px targets, and a note that disagreed with the replayed frame); (2) "Copy" beside the
+  brew command says "Copied" for 2 s, with a live region; (3) the replay control shows elapsed time
+  against the real run length.
 
 ## Page outline
 
@@ -70,12 +73,13 @@ Status: OK = checked against the source (evidence in
 | 3 | Latest release v0.2.0, 13 July 2026 | `gh release list --repo hmrdkn-labs/lazyss` | Release page | OK (snapshot) |
 | 4 | MIT licence | `gh api repos/hmrdkn-labs/lazyss --jq .license.spdx_id` | LICENSE | OK (snapshot) |
 | 5 | CI on main: success, 13 July 2026 | `gh run list --branch main --event push --limit 1` | Actions tab | OK (snapshot) |
-| 6 | `g` checks the selected host; `G` checks every visible host, up to eight at once, rows update as results arrive | README 85; CHANGELOG 28; `cmd/lazyss/main.go:166` (limit 8); `internal/app/app.go:195` (stream) | The recorded sweep on the page | OK (EVIDENCE 1) |
+| 6 | `g` checks the selected host; `G` checks every visible host, rows update as results arrive. "At most eight checks run at once, and each TCP connection attempt gives up after three seconds." | README 85; CHANGELOG 28; `cmd/lazyss/main.go:166` (limit 8); `sshconfig.go:298-306` (3 s dial); `internal/app/app.go:195` (stream). No overall sweep deadline and `ssh -G` has no timeout, so the page does not say "bounded" | The recorded sweep on the page | OK (EVIDENCE 1) |
 | 7 | SSH check: `ssh -G` then one TCP connect, 3 s timeout, no login. SSM check: the agent ping status from the inventory load, no new call | `internal/adapters/sshconfig/sshconfig.go:228-314`; `internal/adapters/awsssm/awsssm.go:325-341` | Read the adapters | OK (EVIDENCE 2) |
-| 8 | Stores profile and region labels only; lazyss never reads or stores AWS credentials or the SSO cache (the AWS SDK signs calls with your usual chain when an AWS source is on) | README 39–40, 78–79; source search, no `os.Getenv`; `awsssm.go:55-72` | Search the source | OK (EVIDENCE 3) |
-| 9 | Cleanup is a dry run; `--write` needs named hosts and writes `config.lazyss-backup-<timestamp>` first; SCM identity hosts refuse writes | README 91–98; `cleanup.go:128`; synthetic run, `cmp` unchanged | Run on a copy | OK (EVIDENCE 4) |
+| 8 | "lazyss does not read or keep" your AWS credentials; the AWS SDK finds them the standard way. The state file holds profile and region, pins, notes, tags and check and session history; never AWS credentials, the SSO cache or private keys | README 39–40, 78–79; source search, no `os.Getenv`; `awsssm.go:55-72`; `statejson/state.go`, `domain.go:91-103` (fields) | Search the source | OK (EVIDENCE 3) |
+| 9 | Cleanup is a dry run; `--check` also tries a TCP connection to each host; `--write` with `--host` saves `<config>.lazyss-backup-<timestamp>` first, writes only duplicate targets and refuses protected identities such as github.com | README 91–98; `cleanup.go:128`; synthetic run: `cmp` unchanged, `--check` dialled hosts, protected write exit 1 | Run on a copy | OK (EVIDENCE 4) |
 | 10 | Release archives ship with `checksums.txt` | README 183–185; release assets | Release page | OK |
 | 11 | Capture caption: date, version, 10 hosts, "synthetic SSH config", SSH only | `data/sweep.json` | The JSON in the repo | OK |
+| 12 | "Snapshot taken <date>. The build reads GitHub once; this page never calls it." | `site/scripts/build.sh` (gh calls at build); CSP `connect-src` absent in `_headers` | Read the build script and `_headers` | OK |
 
 ## Real vs missing
 
@@ -86,8 +90,78 @@ Status: OK = checked against the source (evidence in
 
 ## Self-critique
 
-(Filled after the first full set of shots.)
+"Would a design-literate engineer guess this was AI-generated? Why not?"
+
+Mostly no. The centre of the page is not an illustration but the program's own output, printed in
+two ribbon inks on paper colour, with the tractor strip as the only ornament. Section heads are
+listing line numbers (10, 20, …) in the margin, not cards; rules are hairlines; there is one
+button style, square, ruled. The replay uses the recorded timings, so the two timeouts land late
+(3.3 s) the way they did on the Mac, which a generated mock would not bother to do.
+
+What still smelled after round 1, and what was done:
+- At 375 px the Health column sat off-screen behind a 115 px gutter. Gutter cut to a 12 px strip,
+  and under 1280 px a plain list "In the order they came back" (time, host, result) sits under the
+  capture, so the result is readable without scrolling the box.
+- Hover/tap notes on host lines were 20 px targets and disagreed with the replayed frame (review
+  round 1). Host lines are no longer controls; result times print as static margin annotations.
+- "A sweep is bounded" implied an overall deadline that does not exist. Now names the two real
+  limits.
+- An Oxford comma in "What it reads". Rewritten.
+- The 100-column run's first frame landed at +0.3 s with eight results at once, so the margin reads
+  "+0.3 s" eight times. Kept: it is what the recording shows, and the caption says the times are
+  when results showed on screen.
+- Remaining risk: the run of short dry sentences in sections 20–50 reads as a house rhythm.
+  Kept, because every sentence there carries a checked fact.
 
 ## PLAYBOOK §8 checklist
 
-(Filled with evidence before review.)
+Evidence: `site/scripts/verify.mjs` run 2026-11-25 and shots in
+`~/workspace/sandbox/showcase-scan/build/lazyss/shots/`.
+
+Copy
+- [x] First line says what and for whom: h1 "A terminal cockpit for your SSH and SSM hosts."
+- [x] Meta and og description name the project in one line (`index.html` head).
+- [x] One role list / contact order: n/a (project page; footer links repo and hamardikan.com only).
+- [x] Team size and denominators: n/a (one maintainer; host count "10" carries its denominator).
+- [x] No ⚠️, [confirm], TBD, XX: `rg -n '⚠|\[confirm\]|TBD|XX' site/public` empty.
+- [x] Voice: read aloud; no exclamation marks; curly quotes; no Oxford comma.
+- [x] Claims table all OK (above).
+
+Claims and data
+- [x] Numbers carry unit and window: "10 hosts", "3.3 s", "eight checks", "three seconds"; signals
+  carry dates.
+- [x] Live numbers dated: each signal has "published"/"checked" date and a snapshot date.
+- [x] No placeholders or empty sections.
+
+Accessibility and phone
+- [x] Skip link first (keyboard shot), one h1, `lang="en"` (verify.mjs asserts).
+- [x] Contrast AA light and dark: axe zero violations in both schemes.
+- [x] Zero console errors, no failed requests (verify.mjs).
+- [x] No horizontal scroll at 320, 375, 820 (verify.mjs `scrollWidth <= innerWidth`).
+- [x] Touch copy: "Tap or point at a line"; tap shows the result line (verify.mjs touch test).
+- [x] Things a thumb can press before first scroll at 375: skip link (hidden until focus), Copy,
+  "Release notes for v0.2.0". Three.
+- [x] Reduced motion: finished frame, no replay control (shot). No loop; the replay runs once,
+  3.3 s plus a 0.7 s lead, under the 5 s pause threshold.
+- [x] JS off: page complete, finished frame pre-rendered (`1440-js-off.png`).
+
+Visuals
+- [x] One signature object from a real artifact, static fallback in HTML.
+- [x] Nothing from the banned list: no gradients, glow, cards, chips, window chrome, cursor, emoji;
+  fonts IBM Plex Mono and Source Serif 4.
+- [x] Self-critique answered (above).
+
+Privacy
+- [x] No IPs, ports, internal hostnames, account IDs or paths: `rg` over `site/public` and
+  `site/data` finds none (capture EVIDENCE leak check; verify.mjs grep).
+- [x] No "ADI", no CV link, no contribution splits.
+
+Deploy
+- [x] Root-absolute URLs for internal links and assets.
+- [x] No `_redirects`.
+- [x] CSP allows only `'self'` (`_headers`); no console CSP errors under `wrangler dev`.
+- [x] `/assets/*` immutable; font files carry weight in the name, rename on change.
+- [x] No layout shift: capture height reserved by fixed rows in CSS; fonts preloaded.
+- [ ] Live copy checked after deploy (see REPORT.md).
+
+Lighthouse (mobile, local server): performance 100, accessibility 100, best practices 100, SEO 100.
