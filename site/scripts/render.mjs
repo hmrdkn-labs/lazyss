@@ -80,11 +80,8 @@ function figure(key) {
   const lines = s.rows[s.last].map((html, i) => {
     const h = s.hosts.get(i);
     if (!h) return `<div class="ln" data-i="${i}"><span class="tx">${html}</span></div>`;
-    const id = `n${key}-${i}`;
-    const note = h.t_ms == null ? '' : `<span class="note" id="${id}" aria-hidden="true">${secs(h.t_ms)}</span>`;
-    const desc = h.t_ms == null ? '' : ` aria-describedby="${id}"`;
-    const t = h.t_ms == null ? '' : ` data-t="${(h.t_ms / 1000).toFixed(1)}"`;
-    return `<div class="ln host" data-i="${i}" data-host="${esc(h.name)}" data-health="${esc(h.health)}"${t} tabindex="0"${desc}>${note}<span class="tx">${html}</span></div>`;
+    const note = h.t_ms == null ? '' : `<span class="note" aria-hidden="true" data-ms="${h.t_ms}">${secs(h.t_ms)}</span>`;
+    return `<div class="ln host" data-i="${i}">${note}<span class="tx">${html}</span></div>`;
   });
   return `<div class="scroll scroll-${key}" tabindex="0" role="region" aria-label="Recorded sweep, ${key} columns, scrolls sideways">
 <div class="paper"><span class="strip" aria-hidden="true"></span>
@@ -93,7 +90,21 @@ ${lines.join('')}
 </div></div></div>`;
 }
 
-const runMs = Math.max(sizes[100].frames[sizes[100].last].t_ms, sizes[60].frames[sizes[60].last].t_ms);
+// under 1280 px: the hosts in the order their results came back (times from the 60-column recording it sits under)
+function order() {
+  const s = sizes[60];
+  const bad = (i) => sweep.sizes['60'].frames[s.last].lines[i].some((x) => fgClass(x.fg) === 'bad');
+  const items = [...s.hosts.entries()]
+    .map(([i, h]) => ({ i, ...h }))
+    .sort((a, b) => (a.t_ms ?? 0) - (b.t_ms ?? 0) || a.i - b.i)
+    .map((h) => `<li data-ms="${h.t_ms ?? 0}"><span class="t">${secs(h.t_ms ?? 0)}</span><span class="a">${esc(h.name)}</span><span class="r${bad(h.i) ? ' c-bad' : ''}">${esc(h.health)}</span></li>`);
+  return `<div class="order"><h3 class="label">In the order they came back</h3>
+<ol>
+${items.join('\n')}
+</ol></div>`;
+}
+
+const run = { 100: sizes[100].frames[sizes[100].last].t_ms, 60: sizes[60].frames[sizes[60].last].t_ms };
 const version = (/\d+\.\d+\.\d+/.exec(sweep.lazyss_version) ?? [])[0];
 if (!version) throw new Error(`cannot read a version from ${JSON.stringify(sweep.lazyss_version)}`);
 if (!/synthetic/i.test(sweep.inventory)) throw new Error('sweep.json inventory does not say synthetic');
@@ -102,11 +113,12 @@ const results = finalHosts.map((h) => `${h.name}, ${h.health}`).join('; ');
 
 const sweepBlock = `${figure('100')}
 ${figure('60')}
+${order()}
 <p class="vh">Final frame of the recorded sweep, one result per host: ${esc(results)}.</p>
-<figcaption>Recording of lazyss ${version}, captured ${day(sweep.captured_at)}: ${hostCount} hosts from a synthetic SSH config, SSH checks only. The results are real TCP checks against throwaway listeners, closed ports and unreachable test addresses, and the sweep took ${(runMs / 1000).toFixed(1)} s. A recording, not a live feed. Terminal colours are redrawn in the page’s two inks; the text is as the terminal printed it.</figcaption>`;
+<figcaption>Recording of lazyss ${version}, captured ${day(sweep.captured_at)}: ${hostCount} hosts from a synthetic SSH config, SSH checks only. The results are real TCP checks against throwaway listeners, closed ports and unreachable test addresses, and the sweep took <span class="w100">${(run[100] / 1000).toFixed(1)}</span><span class="w60">${(run[60] / 1000).toFixed(1)}</span> s. The times beside each host are when its result first showed on screen in the recording, not the check’s own latency. A recording, not a live feed. Terminal colours are redrawn in the page’s two inks; the text is as the terminal printed it.</figcaption>`;
 
 // the frames sweep.js replays: the first in full, then only the lines that changed
-const replay = { run_ms: runMs };
+const replay = {};
 for (const k of ['100', '60']) {
   const s = sizes[k];
   const frames = s.rows.map((rows, n) => {
@@ -114,7 +126,7 @@ for (const k of ['100', '60']) {
     rows.forEach((h, i) => { if (n === 0 || h !== s.rows[n - 1][i]) c[i] = h; });
     return { t: s.frames[n].t_ms, c };
   });
-  replay[k] = { rows: s.rows[0].length, frames };
+  replay[k] = { rows: s.rows[0].length, run_ms: run[k], frames };
 }
 
 const dl = (rows) => rows.map(([k, v, d]) => `<div><dt>${k}</dt><dd>${v}${d ? ` <span class="when">${d}</span>` : ''}</dd></div>`).join('\n');
@@ -145,4 +157,4 @@ const tmp = `${root}/public/.index.html.tmp`;
 writeFileSync(tmp, html);
 renameSync(tmp, `${root}/public/index.html`);
 writeFileSync(`${root}/public/data/replay.json`, JSON.stringify(replay));
-console.log(`rendered ${hostCount} hosts, run ${(runMs / 1000).toFixed(1)} s, replay.json ${JSON.stringify(replay).length} B`);
+console.log(`rendered ${hostCount} hosts, run ${(run[100] / 1000).toFixed(1)} s (100) and ${(run[60] / 1000).toFixed(1)} s (60), replay.json ${JSON.stringify(replay).length} B`);

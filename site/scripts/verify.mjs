@@ -53,6 +53,16 @@ try {
       const h1 = await page.locator('h1').count();
       check(h1 === 1, `${label}: ${h1} h1`);
       check(await page.locator('.replay').count() === 0, `${label}: no replay control under reduced motion`);
+      if (w === 1440) {
+        const notes = await page.locator('.scroll-100 .note').evaluateAll((n) => n.map((e) => [getComputedStyle(e).visibility !== 'hidden' && e.offsetParent !== null, e.textContent]));
+        check(notes.length >= 8 && notes.every(([v, t]) => v && /^\+\d\.\d s$/.test(t)), `${label}: ${notes.length} margin notes visible, e.g. ${notes[2]?.[1]}`);
+        check(!(await page.locator('.order').isVisible()), `${label}: the order list is not shown beside the margin notes`);
+      } else {
+        const li = await page.locator('.order li').evaluateAll((n) => n.map((e) => e.innerText.replace(/\s+/g, ' ')));
+        check(li.length >= 8 && li.every((t) => /^\+\d\.\d s \S+ (up|down)/.test(t)), `${label}: order list has ${li.length} lines, e.g. "${li[0]}"`);
+        const times = li.map((t) => parseFloat(t.slice(1)));
+        check(times.every((t, i) => i === 0 || t >= times[i - 1]), `${label}: order list is in the order results came back`);
+      }
       await ctx.close();
     }
   }
@@ -107,7 +117,7 @@ try {
     await ctx.close();
   }
 
-  // motion on: first view plays by itself; the replay control reruns it; margin note on a host line
+  // motion on: first view plays by itself; the replay control reruns it
   {
     const { ctx, page } = await open({ viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference', recordVideo: { dir: `${shots}/.video`, size: { width: 1440, height: 900 } } }, 'motion');
     await page.waitForTimeout(1700);
@@ -121,17 +131,16 @@ try {
     const idle = await page.locator('.scroll-100 .host').nth(1).innerText();
     check(/unchecked|never/.test(idle) && !/down/.test(idle), `motion: replay restarts from the idle list (${idle.trim().slice(0, 40)}…)`);
     await page.waitForTimeout(5200);
-    // keyboard pass: Tab to a host line, then to Copy
-    await page.mouse.move(5, 5);
+    // replay: margin notes are blank until their rows land, then all print
+    await page.getByRole('button', { name: 'Run the sweep again' }).click();
+    await page.waitForTimeout(500);
+    const pend = await page.locator('.scroll-100 .note.pending').count();
+    check(pend >= 8, `replay: ${pend} margin notes still empty before the first result lands`);
+    await page.waitForTimeout(5200);
+    check(await page.locator('.scroll-100 .note.pending').count() === 0, 'replay: every margin note has printed by the end');
+    check(await page.locator('.host[tabindex]').count() === 0, 'host lines are not interactive');
     await page.locator('.scroll-100').focus();
-    for (let i = 0; i < 12 && !(await page.evaluate(() => document.activeElement.classList.contains('host'))); i++) await page.keyboard.press('Tab');
-    check(await page.evaluate(() => document.activeElement.classList.contains('host')), 'Tab reaches a host line');
-    await page.keyboard.press('Tab');
-    await page.waitForTimeout(150);
-    const note = await page.locator('.scroll-100 .host:focus .note').innerText();
-    check(/^\+\d+\.\d s$/.test(note), `margin note on a focused host line: ${note}`);
-    await page.locator('.scroll-100').scrollIntoViewIfNeeded();
-    await page.screenshot({ path: `${shots}/1440-keyboard-host.png` });
+    await page.screenshot({ path: `${shots}/1440-keyboard-scroll.png` });
     await page.evaluate(() => scrollTo(0, 0));
     await page.getByRole('button', { name: 'Copy install command' }).focus();
     await page.screenshot({ path: `${shots}/1440-keyboard-copy.png` });
@@ -155,9 +164,8 @@ try {
     await page.waitForTimeout(6500);
     check(await page.getByRole('button', { name: 'Run the sweep again' }).isVisible(), `${w}: replay bar is visible when motion is allowed`);
     if (touch) {
-      await page.locator('.scroll-60 .host').nth(5).tap();
-      const note = await page.locator('.hostnote').innerText();
-      check(/^db-replica: down, result at \+\d\.\d s$/.test(note), `375: tapping a host line shows "${note}" under the capture`);
+      check(await page.locator('.order li.pending').count() === 0 && await page.locator('.order li').first().isVisible(), '375: the order list has printed after the replay');
+      check(await page.locator('.note').first().isHidden(), '375: no margin notes on the phone');
     }
     await page.screenshot({ path: `${shots}/${w}x${h}-motion-full.png`, fullPage: true });
     await ctx.close();

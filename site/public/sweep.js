@@ -40,20 +40,7 @@
     });
   }
 
-  // --- Host note under the capture (phones: no margin to put it in) -------------
   const listing = document.getElementById('listing');
-  if (listing) {
-    const hostnote = document.createElement('p');
-    hostnote.className = 'hostnote';
-    (listing.querySelector('figcaption') ?? listing.lastElementChild).before(hostnote);
-    const show = (e) => {
-      const h = e.target.closest?.('.host');
-      if (h && h.dataset.t) hostnote.textContent = `${h.dataset.host}: ${h.dataset.health}, result at +${h.dataset.t} s`;
-    };
-    listing.addEventListener('focusin', show);
-    listing.addEventListener('click', show);
-    listing.addEventListener('mouseover', show);
-  }
 
   // --- Print --------------------------------------------------------------
   if (reduce || !listing) return;
@@ -108,22 +95,34 @@
     status.textContent = '';
     const tx = lines();
     const frames = d[key()].frames;
+    const runMs = d[key()].run_ms;
     apply(tx, frames[0], false);
     const t0 = performance.now() + lead;
-    clock.textContent = `0.0 s of ${secs(d.run_ms)} s`;
+    clock.textContent = `0.0 s of ${secs(d[key()].run_ms)} s`;
     for (const f of frames.slice(1)) timers.push(setTimeout(() => apply(tx, f, true), lead + f.t));
+    // the times print when their rows land: the margin notes (wide) or the list under the capture (narrow)
+    const times = [...listing.querySelectorAll(wide.matches ? '.scroll-100 .note[data-ms]' : '.order li[data-ms]')];
+    for (const el of times) {
+      el.classList.add('pending');
+      el.classList.remove('strike');
+      timers.push(setTimeout(() => {
+        el.classList.remove('pending');
+        void el.offsetWidth;
+        el.classList.add('strike');
+      }, lead + Number(el.dataset.ms)));
+    }
     tick = setInterval(() => {
-      const t = Math.min(Math.max(performance.now() - t0, 0), d.run_ms);
-      clock.textContent = `${secs(t)} s of ${secs(d.run_ms)} s`;
-      if (t >= d.run_ms) {
+      const t = Math.min(Math.max(performance.now() - t0, 0), runMs);
+      clock.textContent = `${secs(t)} s of ${secs(runMs)} s`;
+      if (t >= runMs) {
         clearInterval(tick);
-        clock.textContent = `Run length ${secs(d.run_ms)} s`;
+        clock.textContent = `Run length ${secs(runMs)} s`;
         status.textContent = 'Sweep finished';
       }
     }, 100);
   }
 
-  load().then((d) => { clock.textContent = `Run length ${secs(d.run_ms)} s`; }, () => { bar.remove(); });
+  load().then((d) => { clock.textContent = `Run length ${secs(d[key()].run_ms)} s`; }, () => { bar.remove(); });
   button.addEventListener('click', play);
 
   // once, on first view
