@@ -6,9 +6,8 @@
 <title>lazyss: a terminal cockpit for SSH and SSM hosts</title>
 <meta name="description" content="lazyss shows which of your SSH and AWS SSM hosts answer, over which access method, from one terminal screen. Install with Homebrew.">
 <link rel="canonical" href="https://lazyss.hamardikan.com/">
-<meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#f5f2ea" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1b1a18" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#eef2f4">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="lazyss">
 <meta property="og:title" content="lazyss: a terminal cockpit for SSH and SSM hosts">
@@ -17,124 +16,126 @@
 <meta property="og:image" content="https://lazyss.hamardikan.com/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="A recorded lazyss sweep: ten hosts, each with its result.">
+<meta property="og:image:alt" content="lazyss: a terminal cockpit for your SSH and SSM hosts.">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="preload" href="/assets/plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/assets/source-serif-4-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/mona-sans-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style.css">
 <script src="/sweep.js" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 
-<header class="row top">
-  <p class="mark"><span class="wordmark">lazyss</span><span class="sub">Lazy Secure Shell</span></p>
-  <div class="lede">
-    <h1>A terminal cockpit for your SSH and SSM hosts.</h1>
-    <p>lazyss shows which hosts answer, over which access method, from one screen. Cleanup is a dry run unless you pass <code>--write</code>.</p>
-    <p class="label" id="install-label">Install with Homebrew</p>
-    <div class="install" id="install">
-      <pre class="cmd"><code id="brew">brew install --formula hmrdkn-labs/tap/lazyss</code></pre>
-    </div>
-    <p class="aside">Or download a release archive; each release ships with <code>checksums.txt</code>. <a href="https://github.com/hmrdkn-labs/lazyss/releases/tag/v0.2.0">Release notes for v0.2.0</a>.</p>
-  </div>
+<header class="top">
+  <a class="wordmark" href="/">lazyss</a>
+  <nav aria-label="Page">
+    <a href="#how">How it works</a>
+    <a href="#install">Install</a>
+    <a href="https://github.com/hmrdkn-labs/lazyss">GitHub</a>
+  </nav>
 </header>
 
 <main id="main">
-  <section class="row" aria-labelledby="h-sweep">
-    <h2 id="h-sweep"><span class="n">10</span>The sweep</h2>
-    <div>
-      <p class="intro">Press <kbd>G</kbd> and lazyss checks every visible host. A line prints as its check finishes.</p>
-      <figure class="listing" id="listing">
+  <section class="hero" data-hero aria-labelledby="h-hero">
+    <h1 id="h-hero">A terminal cockpit for your SSH and SSM hosts.</h1>
+    <p>See which hosts answer, over which access method, from one screen. Cleanup changes nothing until you pass <code>--write</code>.</p>
+    <a class="btn" href="#install">Install with Homebrew</a>
+  </section>
+
+  <section class="stage" aria-label="Recorded sweep">
+    <figure class="listing" id="listing" data-recording>
 <!-- sweep:start -->
 <div class="scroll scroll-100" tabindex="0" role="region" aria-label="Recorded sweep, 100 columns, scrolls sideways">
-<div class="paper"><span class="strip" aria-hidden="true"></span>
 <div class="cap" data-cols="100" data-rows="24">
-<div class="ln" data-i="0"><span class="tx"><span class="hl"> </span><span class="b hl">Lazy Secure Shell</span><span class="hl"> </span><span class="c-dim"> source ssh | 10 machines</span></span></div><div class="ln" data-i="1"><span class="tx"></span></div><div class="ln" data-i="2"><span class="tx"><span class="c-acc">╭────────────────────────────────────────────────────────────────────────────────────────────────╮</span></span></div><div class="ln" data-i="3"><span class="tx"><span class="c-acc">│</span><span class="b c-acc">Machines (10)</span>                                                                                   <span class="c-acc">│</span></span></div><div class="ln" data-i="4"><span class="tx"><span class="c-acc">│</span><span class="c-dim">    Prv Name</span>                                          <span class="c-dim">Method        Health      Last conn       </span><span class="c-acc">│</span></span></div><div class="ln host" data-i="5"><span class="note" aria-hidden="true" data-ms="332">+0.3 s</span><span class="tx"><span class="c-acc">│</span><span class="b hl">›   ssh api</span><span class="hl">                                           </span><span class="b hl">ssh           <span class="g">●</span> up        never           </span><span class="c-acc">│</span></span></div><div class="ln host" data-i="6"><span class="note" aria-hidden="true" data-ms="332">+0.3 s</span><span class="tx"><span class="c-acc">│</span><span class="c-bad">    ssh bastion-old</span>                                   <span class="c-bad">ssh           × down      never           </span><span class="c-acc">│</span></span></div><div class="ln host" data-i="7"><span class="note" aria-hidden="true" data-ms="3320">+3.3 s</span><span class="tx"><span class="c-acc">│</span><span class="c-bad">    ssh build</span>                                         <span class="c-bad">ssh           × down      never           </span><span class="c-acc">│</span></span></div><div class="ln host" data-i="8"><span class="note" aria-hidden="true" data-ms="332">+0.3 s</span><span class="tx"><span class="c-acc">│</span><span class="c-bad">    ssh cache</span>                                         <span class="c-bad">ssh           × down      never           </span><span class="c-acc">│</span></span></div><div class="ln host" data-i="9"><span class="note" aria-hidden="true" data-ms="332">+0.3 s</span><span class="tx"><span class="c-acc">│</span><span class="c-ok">    ssh db-primary</span>                                    <span class="c-ok">ssh           <span class="g">●</span> up        never           </span><span class="c-acc">│</span></span></div><div class="ln host" data-i="10"><span class="note" aria-hidden="true" data-ms="332">+0.3 s</span><span class="tx"><span class="c-acc">│</span><span class="c-bad">    ssh db-replica</span>                                    <span class="c-bad">ssh           × down      never           </span><span class="c-acc">│</span></span></div><div class="ln host" data-i="11"><span class="note" aria-hidden="true" data-ms="3320">+3.3 s</span><span class="tx"><span class="c-acc">│</span><span class="c-bad">    ssh jump</span>                                          <span class="c-bad">ssh           × down      never           </span><span class="c-acc">│</span></span></div><div class="ln host" data-i="12"><span class="note" aria-hidden="true" data-ms="332">+0.3 s</span><span class="tx"><span class="c-acc">│</span><span class="c-ok">    ssh queue</span>                                         <span class="c-ok">ssh           <span class="g">●</span> up        never           </span><span class="c-acc">│</span></span></div><div class="ln host" data-i="13"><span class="note" aria-hidden="true" data-ms="332">+0.3 s</span><span class="tx"><span class="c-acc">│</span><span class="c-ok">    ssh web-1</span>                                         <span class="c-ok">ssh           <span class="g">●</span> up        never           </span><span class="c-acc">│</span></span></div><div class="ln host" data-i="14"><span class="note" aria-hidden="true" data-ms="332">+0.3 s</span><span class="tx"><span class="c-acc">│</span><span class="c-ok">    ssh web-2</span>                                         <span class="c-ok">ssh           <span class="g">●</span> up        never           </span><span class="c-acc">│</span></span></div><div class="ln" data-i="15"><span class="tx"><span class="c-acc">│</span>                                                                                                <span class="c-acc">│</span></span></div><div class="ln" data-i="16"><span class="tx"><span class="c-acc">│</span>                                                                                                <span class="c-acc">│</span></span></div><div class="ln" data-i="17"><span class="tx"><span class="c-acc">│</span>                                                                                                <span class="c-acc">│</span></span></div><div class="ln" data-i="18"><span class="tx"><span class="c-acc">│</span>                                                                                                <span class="c-acc">│</span></span></div><div class="ln" data-i="19"><span class="tx"><span class="c-acc">╰────────────────────────────────────────────────────────────────────────────────────────────────╯</span></span></div><div class="ln" data-i="20"><span class="tx">j/k move | Enter connect | s source | m method | / search | f filter | p pin | x hide</span></div><div class="ln" data-i="21"><span class="tx">u show hidden | h detail | e edit | c copy | g check | G check all | v history | P profile | L login</span></div><div class="ln" data-i="22"><span class="tx">r refresh | C cleanup | ? help | q quit</span></div><div class="ln" data-i="23"><span class="tx"></span></div>
-</div></div></div>
+<div class="ln" data-i="0"><span class="tx"><span class="hl"> </span><span class="b hl">Lazy Secure Shell</span><span class="hl"> </span><span class="c-dim"> source ssh | 10 machines</span></span></div><div class="ln" data-i="1"><span class="tx"></span></div><div class="ln" data-i="2"><span class="tx"><span class="c-acc">╭────────────────────────────────────────────────────────────────────────────────────────────────╮</span></span></div><div class="ln" data-i="3"><span class="tx"><span class="c-acc">│</span><span class="b c-acc">Machines (10)</span>                                                                                   <span class="c-acc">│</span></span></div><div class="ln" data-i="4"><span class="tx"><span class="c-acc">│</span><span class="c-dim">    Prv Name</span>                                          <span class="c-dim">Method        Health      Last conn       </span><span class="c-acc">│</span></span></div><div class="ln" data-i="5"><span class="tx"><span class="c-acc">│</span><span class="b hl">›   ssh api</span><span class="hl">                                           </span><span class="b hl">ssh           <span class="g">●</span> up        never           </span><span class="c-acc">│</span></span></div><div class="ln" data-i="6"><span class="tx"><span class="c-acc">│</span><span class="c-bad">    ssh bastion-old</span>                                   <span class="c-bad">ssh           × down      never           </span><span class="c-acc">│</span></span></div><div class="ln" data-i="7"><span class="tx"><span class="c-acc">│</span><span class="c-bad">    ssh build</span>                                         <span class="c-bad">ssh           × down      never           </span><span class="c-acc">│</span></span></div><div class="ln" data-i="8"><span class="tx"><span class="c-acc">│</span><span class="c-bad">    ssh cache</span>                                         <span class="c-bad">ssh           × down      never           </span><span class="c-acc">│</span></span></div><div class="ln" data-i="9"><span class="tx"><span class="c-acc">│</span><span class="c-ok">    ssh db-primary</span>                                    <span class="c-ok">ssh           <span class="g">●</span> up        never           </span><span class="c-acc">│</span></span></div><div class="ln" data-i="10"><span class="tx"><span class="c-acc">│</span><span class="c-bad">    ssh db-replica</span>                                    <span class="c-bad">ssh           × down      never           </span><span class="c-acc">│</span></span></div><div class="ln" data-i="11"><span class="tx"><span class="c-acc">│</span><span class="c-bad">    ssh jump</span>                                          <span class="c-bad">ssh           × down      never           </span><span class="c-acc">│</span></span></div><div class="ln" data-i="12"><span class="tx"><span class="c-acc">│</span><span class="c-ok">    ssh queue</span>                                         <span class="c-ok">ssh           <span class="g">●</span> up        never           </span><span class="c-acc">│</span></span></div><div class="ln" data-i="13"><span class="tx"><span class="c-acc">│</span><span class="c-ok">    ssh web-1</span>                                         <span class="c-ok">ssh           <span class="g">●</span> up        never           </span><span class="c-acc">│</span></span></div><div class="ln" data-i="14"><span class="tx"><span class="c-acc">│</span><span class="c-ok">    ssh web-2</span>                                         <span class="c-ok">ssh           <span class="g">●</span> up        never           </span><span class="c-acc">│</span></span></div><div class="ln" data-i="15"><span class="tx"><span class="c-acc">│</span>                                                                                                <span class="c-acc">│</span></span></div><div class="ln" data-i="16"><span class="tx"><span class="c-acc">│</span>                                                                                                <span class="c-acc">│</span></span></div><div class="ln" data-i="17"><span class="tx"><span class="c-acc">│</span>                                                                                                <span class="c-acc">│</span></span></div><div class="ln" data-i="18"><span class="tx"><span class="c-acc">│</span>                                                                                                <span class="c-acc">│</span></span></div><div class="ln" data-i="19"><span class="tx"><span class="c-acc">╰────────────────────────────────────────────────────────────────────────────────────────────────╯</span></span></div><div class="ln" data-i="20"><span class="tx">j/k move | Enter connect | s source | m method | / search | f filter | p pin | x hide</span></div><div class="ln" data-i="21"><span class="tx">u show hidden | h detail | e edit | c copy | g check | G check all | v history | P profile | L login</span></div><div class="ln" data-i="22"><span class="tx">r refresh | C cleanup | ? help | q quit</span></div><div class="ln" data-i="23"><span class="tx"></span></div>
+</div></div>
 <div class="scroll scroll-60" tabindex="0" role="region" aria-label="Recorded sweep, 60 columns, scrolls sideways">
-<div class="paper"><span class="strip" aria-hidden="true"></span>
 <div class="cap" data-cols="60" data-rows="24">
-<div class="ln" data-i="0"><span class="tx"><span class="hl"> </span><span class="b hl">Lazy Secure Shell</span><span class="hl"> </span><span class="c-dim"> source ssh | 10 machines</span></span></div><div class="ln" data-i="1"><span class="tx"></span></div><div class="ln" data-i="2"><span class="tx"><span class="b c-acc">Machines (10)</span></span></div><div class="ln" data-i="3"><span class="tx"><span class="c-dim">    Prv Name</span>                       <span class="c-dim">Method        Health</span></span></div><div class="ln host" data-i="4"><span class="note" aria-hidden="true" data-ms="48">+0.0 s</span><span class="tx"><span class="b hl">›   ssh api</span><span class="hl">                        </span><span class="b hl">ssh           <span class="g">●</span> up</span></span></div><div class="ln host" data-i="5"><span class="note" aria-hidden="true" data-ms="48">+0.0 s</span><span class="tx"><span class="c-bad">    ssh bastion-old</span>                <span class="c-bad">ssh           × down</span></span></div><div class="ln host" data-i="6"><span class="note" aria-hidden="true" data-ms="3070">+3.1 s</span><span class="tx"><span class="c-bad">    ssh build</span>                      <span class="c-bad">ssh           × down</span></span></div><div class="ln host" data-i="7"><span class="note" aria-hidden="true" data-ms="48">+0.0 s</span><span class="tx"><span class="c-bad">    ssh cache</span>                      <span class="c-bad">ssh           × down</span></span></div><div class="ln host" data-i="8"><span class="note" aria-hidden="true" data-ms="48">+0.0 s</span><span class="tx"><span class="c-ok">    ssh db-primary</span>                 <span class="c-ok">ssh           <span class="g">●</span> up</span></span></div><div class="ln host" data-i="9"><span class="note" aria-hidden="true" data-ms="48">+0.0 s</span><span class="tx"><span class="c-bad">    ssh db-replica</span>                 <span class="c-bad">ssh           × down</span></span></div><div class="ln host" data-i="10"><span class="note" aria-hidden="true" data-ms="3070">+3.1 s</span><span class="tx"><span class="c-bad">    ssh jump</span>                       <span class="c-bad">ssh           × down</span></span></div><div class="ln host" data-i="11"><span class="note" aria-hidden="true" data-ms="72">+0.1 s</span><span class="tx"><span class="c-ok">    ssh queue</span>                      <span class="c-ok">ssh           <span class="g">●</span> up</span></span></div><div class="ln host" data-i="12"><span class="note" aria-hidden="true" data-ms="72">+0.1 s</span><span class="tx"><span class="c-ok">    ssh web-1</span>                      <span class="c-ok">ssh           <span class="g">●</span> up</span></span></div><div class="ln host" data-i="13"><span class="note" aria-hidden="true" data-ms="48">+0.0 s</span><span class="tx"><span class="c-ok">    ssh web-2</span>                      <span class="c-ok">ssh           <span class="g">●</span> up</span></span></div><div class="ln" data-i="14"><span class="tx"></span></div><div class="ln" data-i="15"><span class="tx"></span></div><div class="ln" data-i="16"><span class="tx"></span></div><div class="ln" data-i="17"><span class="tx"></span></div><div class="ln" data-i="18"><span class="tx">j/k move | Enter connect | s source | m method | / search</span></div><div class="ln" data-i="19"><span class="tx">f filter | p pin | x hide | u show hidden | h detail</span></div><div class="ln" data-i="20"><span class="tx">e edit | c copy | g check | G check all | v history</span></div><div class="ln" data-i="21"><span class="tx">P profile | L login | r refresh | C cleanup | ? help</span></div><div class="ln" data-i="22"><span class="tx">q quit</span></div><div class="ln" data-i="23"><span class="tx"></span></div>
-</div></div></div>
-<div class="order"><h3 class="label">In the order they came back</h3>
-<ol>
-<li data-ms="48"><span class="t">+0.0 s</span><span class="a">api</span><span class="r">up</span></li>
-<li data-ms="48"><span class="t">+0.0 s</span><span class="a">bastion-old</span><span class="r c-bad">down</span></li>
-<li data-ms="48"><span class="t">+0.0 s</span><span class="a">cache</span><span class="r c-bad">down</span></li>
-<li data-ms="48"><span class="t">+0.0 s</span><span class="a">db-primary</span><span class="r">up</span></li>
-<li data-ms="48"><span class="t">+0.0 s</span><span class="a">db-replica</span><span class="r c-bad">down</span></li>
-<li data-ms="48"><span class="t">+0.0 s</span><span class="a">web-2</span><span class="r">up</span></li>
-<li data-ms="72"><span class="t">+0.1 s</span><span class="a">queue</span><span class="r">up</span></li>
-<li data-ms="72"><span class="t">+0.1 s</span><span class="a">web-1</span><span class="r">up</span></li>
-<li data-ms="3070"><span class="t">+3.1 s</span><span class="a">build</span><span class="r c-bad">down</span></li>
-<li data-ms="3070"><span class="t">+3.1 s</span><span class="a">jump</span><span class="r c-bad">down</span></li>
-</ol></div>
+<div class="ln" data-i="0"><span class="tx"><span class="hl"> </span><span class="b hl">Lazy Secure Shell</span><span class="hl"> </span><span class="c-dim"> source ssh | 10 machines</span></span></div><div class="ln" data-i="1"><span class="tx"></span></div><div class="ln" data-i="2"><span class="tx"><span class="b c-acc">Machines (10)</span></span></div><div class="ln" data-i="3"><span class="tx"><span class="c-dim">    Prv Name</span>                       <span class="c-dim">Method        Health</span></span></div><div class="ln" data-i="4"><span class="tx"><span class="b hl">›   ssh api</span><span class="hl">                        </span><span class="b hl">ssh           <span class="g">●</span> up</span></span></div><div class="ln" data-i="5"><span class="tx"><span class="c-bad">    ssh bastion-old</span>                <span class="c-bad">ssh           × down</span></span></div><div class="ln" data-i="6"><span class="tx"><span class="c-bad">    ssh build</span>                      <span class="c-bad">ssh           × down</span></span></div><div class="ln" data-i="7"><span class="tx"><span class="c-bad">    ssh cache</span>                      <span class="c-bad">ssh           × down</span></span></div><div class="ln" data-i="8"><span class="tx"><span class="c-ok">    ssh db-primary</span>                 <span class="c-ok">ssh           <span class="g">●</span> up</span></span></div><div class="ln" data-i="9"><span class="tx"><span class="c-bad">    ssh db-replica</span>                 <span class="c-bad">ssh           × down</span></span></div><div class="ln" data-i="10"><span class="tx"><span class="c-bad">    ssh jump</span>                       <span class="c-bad">ssh           × down</span></span></div><div class="ln" data-i="11"><span class="tx"><span class="c-ok">    ssh queue</span>                      <span class="c-ok">ssh           <span class="g">●</span> up</span></span></div><div class="ln" data-i="12"><span class="tx"><span class="c-ok">    ssh web-1</span>                      <span class="c-ok">ssh           <span class="g">●</span> up</span></span></div><div class="ln" data-i="13"><span class="tx"><span class="c-ok">    ssh web-2</span>                      <span class="c-ok">ssh           <span class="g">●</span> up</span></span></div><div class="ln" data-i="14"><span class="tx"></span></div><div class="ln" data-i="15"><span class="tx"></span></div><div class="ln" data-i="16"><span class="tx"></span></div><div class="ln" data-i="17"><span class="tx"></span></div><div class="ln" data-i="18"><span class="tx">j/k move | Enter connect | s source | m method | / search</span></div><div class="ln" data-i="19"><span class="tx">f filter | p pin | x hide | u show hidden | h detail</span></div><div class="ln" data-i="20"><span class="tx">e edit | c copy | g check | G check all | v history</span></div><div class="ln" data-i="21"><span class="tx">P profile | L login | r refresh | C cleanup | ? help</span></div><div class="ln" data-i="22"><span class="tx">q quit</span></div><div class="ln" data-i="23"><span class="tx"></span></div>
+</div></div>
 <p class="vh">Final frame of the recorded sweep, one result per host: api, up; bastion-old, down; build, down; cache, down; db-primary, up; db-replica, down; jump, down; queue, up; web-1, up; web-2, up.</p>
-<figcaption>Recording of lazyss 0.2.0, captured 25 November 2026: 10 hosts from a synthetic SSH config, SSH checks only. The results are real TCP checks against throwaway listeners, closed ports and unreachable test addresses, and the sweep took <span class="w100">3.3</span><span class="w60">3.1</span> s. The times beside each host are when its result first showed on screen in the recording, not the check’s own latency. A recording, not a live feed. Terminal colours are redrawn in the page’s two inks; the text is as the terminal printed it.</figcaption>
+<figcaption>Recording of lazyss 0.2.0, captured 25 November 2026: 10 hosts from a synthetic SSH config, SSH checks only. The results are real TCP checks against throwaway listeners, closed ports and unreachable test addresses, and the sweep took <span class="w100">3.3</span><span class="w60">3.1</span> s. A recording, not a live feed.</figcaption>
 <!-- sweep:end -->
-      </figure>
+    </figure>
+  </section>
+
+  <section class="split" id="how" aria-labelledby="h-reach">
+    <div class="text">
+      <h2 id="h-reach">See every host’s reach at once</h2>
+      <p>Each host shows whether it answers, and over which access method: SSH, or AWS Systems Manager (SSM). Press <kbd>g</kbd> to check the selected host and <kbd>G</kbd> to check every visible host. Each row updates as its result arrives.</p>
+      <p>An SSH check runs <code>ssh -G</code>, then makes one TCP connection that gives up after three seconds. Up means the port accepted it, not that you can log in. An SSM check makes no new call: it reports the SSM agent’s ping status from the last inventory load. The recording above is SSH only.</p>
+      <p>At most eight checks run at once.</p>
+    </div>
+    <div class="media">
+      <picture>
+        <source type="image/avif" srcset="/assets/reach-640.avif 640w, /assets/reach-1200.avif 1200w" sizes="(min-width: 900px) 40vw, 92vw">
+        <source type="image/webp" srcset="/assets/reach-640.webp 640w, /assets/reach-1200.webp 1200w" sizes="(min-width: 900px) 40vw, 92vw">
+        <img src="/assets/reach-1200.webp" width="1200" height="800" loading="lazy" decoding="async" alt="Illustration: ten identical aluminium blocks in a row on pale stone, a navy and a blue cable touching each, most with a green dot and a few with a red one.">
+      </picture>
     </div>
   </section>
 
-  <section class="row" aria-labelledby="h-checks">
-    <h2 id="h-checks"><span class="n">20</span>What it checks</h2>
-    <div class="prose">
-      <p>Each host shows whether it answers, and over which access method: SSH, or AWS Systems Manager (SSM). Press <kbd>g</kbd> to check the selected host. Press <kbd>G</kbd> to check every visible host; each row updates as its result arrives.</p>
-      <p>At most eight checks run at once, and each TCP connection attempt gives up after three seconds.</p>
-      <p>An SSH check is one TCP connection to the host’s SSH port, closed at once. Up means the port accepted it, not that you can log in. An SSM check makes no new call: it reports the SSM agent’s ping status from the last inventory load. The recording above is SSH only.</p>
-    </div>
-  </section>
-
-  <section class="row" aria-labelledby="h-reads">
-    <h2 id="h-reads"><span class="n">30</span>What it reads</h2>
-    <div class="prose">
-      <p>It reads your SSH config and does not edit it, except in cleanup with <code>--write</code>. For AWS hosts it asks AWS for inventory through the AWS SDK, which finds your credentials the standard way; lazyss does not read or keep them.</p>
+  <section class="split flip band" aria-labelledby="h-creds">
+    <div class="text">
+      <h2 id="h-creds">Your credentials stay where they are</h2>
+      <p>lazyss does not read or keep your AWS credentials. For AWS hosts it asks AWS for inventory through the AWS SDK, which finds your credentials the standard way.</p>
       <p>Its own state file holds the profile and region you chose, your pins, notes and tags, and the history of checks and sessions. It never stores AWS credentials, the SSO cache or private keys.</p>
     </div>
+    <div class="media">
+      <picture>
+        <source type="image/avif" srcset="/assets/credentials-640.avif 640w, /assets/credentials-1080.avif 1080w" sizes="(min-width: 900px) 36vw, 70vw">
+        <source type="image/webp" srcset="/assets/credentials-640.webp 640w, /assets/credentials-1080.webp 1080w" sizes="(min-width: 900px) 36vw, 70vw">
+        <img src="/assets/credentials-1080.webp" width="1080" height="1440" loading="lazy" decoding="async" alt="Illustration: a rail of blank aluminium name tags in front of a closed navy steel lockbox.">
+      </picture>
+    </div>
   </section>
 
-  <section class="row" aria-labelledby="h-cleanup">
-    <h2 id="h-cleanup"><span class="n">40</span>Cleanup</h2>
-    <div class="prose">
-      <p>Cleanup is a dry run. <code>lazyss ssh cleanup</code> prints a plan and changes nothing; add <code>--check</code> and it also tries a TCP connection to each host.</p>
+  <section class="split" aria-labelledby="h-cleanup">
+    <div class="text">
+      <h2 id="h-cleanup">Cleanup shows you the change first</h2>
+      <p>lazyss reads your SSH config and does not edit it, except in cleanup with <code>--write</code>. Cleanup is a dry run: <code>lazyss ssh cleanup</code> prints a plan and changes nothing. Add <code>--check</code> and it also tries a TCP connection to each host.</p>
       <p>Pass <code>--write</code> with <code>--host</code> and a name, and lazyss first saves a backup beside the config, named with <code>.lazyss-backup</code> and a timestamp. It writes only duplicate targets, and refuses protected identities such as github.com.</p>
     </div>
-  </section>
-
-  <section class="row" aria-labelledby="h-install">
-    <h2 id="h-install"><span class="n">50</span>Install</h2>
-    <div class="prose">
-      <p>The Homebrew formula is the primary install path on macOS and Linux. The command is at the top of this page.</p>
-      <p>Or download the archive for your system from <a href="https://github.com/hmrdkn-labs/lazyss/releases/tag/v0.2.0">the v0.2.0 release</a>. Each release includes <code>checksums.txt</code>: verify the archive against it, then put <code>lazyss</code> on your <code>PATH</code>.</p>
+    <div class="media">
+      <picture>
+        <source type="image/avif" srcset="/assets/cleanup-640.avif 640w, /assets/cleanup-1280.avif 1280w" sizes="(min-width: 900px) 40vw, 92vw">
+        <source type="image/webp" srcset="/assets/cleanup-640.webp 640w, /assets/cleanup-1280.webp 1280w" sizes="(min-width: 900px) 40vw, 92vw">
+        <img src="/assets/cleanup-1280.webp" width="1280" height="853" loading="lazy" decoding="async" alt="Illustration: a steel tray of blank white cards with two cards lifted above it, and a sealed clear sleeve holding a copy of the stack beside it.">
+      </picture>
     </div>
   </section>
 
-  <section class="row" aria-labelledby="h-signals">
-    <h2 id="h-signals"><span class="n">60</span>Signals</h2>
-    <div>
+  <section class="install" id="install" aria-labelledby="h-install">
+    <h2 id="h-install">Install</h2>
+    <p>The Homebrew formula is the primary install path on macOS and Linux.</p>
+    <div class="cmdrow" id="cmdrow">
+      <pre class="cmd"><code id="brew">brew install --formula hmrdkn-labs/tap/lazyss</code></pre>
+    </div>
+    <p>Or download the archive for your system from <a href="https://github.com/hmrdkn-labs/lazyss/releases/tag/v0.2.0">the v0.2.0 release</a>. Each release includes <code>checksums.txt</code>: verify the archive against it, then put <code>lazyss</code> on your <code>PATH</code>.</p>
+  </section>
+
+  <section class="signals-wrap band" aria-labelledby="h-signals">
+    <h2 id="h-signals">Where the project stands</h2>
 <!-- signals:start -->
 <dl class="signals">
-<div><dt>Latest release</dt><dd><a href="https://github.com/hmrdkn-labs/lazyss/releases/tag/v0.2.0">v0.2.0</a> <span class="when">published 13 July 2026</span></dd></div>
-<div><dt>Formula in the tap</dt><dd>0.2.0 <span class="when">checked 25 November 2026</span></dd></div>
-<div><dt>CI on main</dt><dd><a href="https://github.com/hmrdkn-labs/lazyss/actions/runs/45644649941">success</a> <span class="when">last push run 25 November 2026</span></dd></div>
-<div><dt>Licence</dt><dd>MIT <span class="when">checked 25 November 2026</span></dd></div>
+<div><dt>Latest release</dt><dd><a href="https://github.com/hmrdkn-labs/lazyss/releases/tag/v0.2.0">v0.2.0</a><span class="when">published 13 July 2026</span></dd></div>
+<div><dt>Formula in the tap</dt><dd>0.2.0<span class="when">checked 25 November 2026</span></dd></div>
+<div><dt>CI on main</dt><dd><a href="https://github.com/hmrdkn-labs/lazyss/actions/runs/45644649941">success</a><span class="when">last push run 25 November 2026</span></dd></div>
+<div><dt>Licence</dt><dd>MIT<span class="when">checked 25 November 2026</span></dd></div>
 </dl>
 <p class="snapshot">Snapshot taken 25 November 2026. The build reads GitHub once; this page never calls it.</p>
 <!-- signals:end -->
-    </div>
   </section>
 </main>
 
-<footer class="row foot">
-  <p class="mark"><span class="wordmark">lazyss</span></p>
+<footer>
+  <a class="wordmark" href="/">lazyss</a>
   <div>
 <!-- build:start -->
-<p>Maintained 25 November 2026. Built from <a href="https://github.com/hmrdkn-labs/lazyss/commit/39635b1"><code>39635b1</code></a>.</p>
+<p>Built 25 November 2026 from <a href="https://github.com/hmrdkn-labs/lazyss/commit/c369467"><code>c369467</code></a>. MIT licence.</p>
 <!-- build:end -->
-    <p><a href="https://github.com/hmrdkn-labs/lazyss">Source on GitHub</a> · <a href="https://hamardikan.com/">hamardikan.com</a></p>
+    <p><a href="https://github.com/hmrdkn-labs/lazyss">Source on GitHub</a> and <a href="https://hamardikan.com/">hamardikan.com</a></p>
   </div>
 </footer>
 </body>

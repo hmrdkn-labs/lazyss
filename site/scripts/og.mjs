@@ -1,4 +1,4 @@
-// Draws public/og.png (1200×630) from the real rendered sweep, and public/apple-touch-icon.png from favicon.svg.
+// Draws public/og.png (1200×630): the headline over the top of the real rendered sweep, and public/apple-touch-icon.png from favicon.svg.
 // Needs the site served locally and Playwright, which is not a dependency of this repo:
 //   npm i --prefix ~/.cache/lazyss-pw playwright && npx --prefix ~/.cache/lazyss-pw playwright install chromium
 //   python3 -m http.server 8791 -d public & NODE_PATH=~/.cache/lazyss-pw/node_modules node scripts/og.mjs [http://127.0.0.1:8791]
@@ -12,31 +12,27 @@ const out = new URL('../public/', import.meta.url).pathname;
 
 const browser = await chromium.launch();
 try {
-  const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, colorScheme: 'light', reducedMotion: 'reduce' });
+  const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, reducedMotion: 'reduce' });
   await page.goto(`${base}/`, { waitUntil: 'networkidle' });
   await page.setViewportSize({ width: 1400, height: 900 }); // the 100-column capture
   await page.evaluate(() => document.fonts.ready);
-  const html = await page.evaluate(() => {
-    const cap = document.querySelector('.scroll-100').cloneNode(true);
-    cap.querySelectorAll('.note').forEach((n) => n.remove());
-    cap.removeAttribute('tabindex');
-    cap.querySelectorAll('[tabindex]').forEach((n) => n.removeAttribute('tabindex'));
-    return cap.outerHTML;
-  });
+  const html = await page.evaluate(() => document.querySelector('.scroll-100').outerHTML);
   await page.setViewportSize({ width: 1200, height: 630 });
   await page.evaluate((cap) => {
     document.body.innerHTML = `
-      <div id="og" style="position:fixed;inset:0;padding:44px 52px 0;overflow:hidden">
-        <div style="display:flex;align-items:baseline;justify-content:space-between">
-          <p class="mark" style="margin:0"><span class="wordmark" style="font-size:22px">lazyss</span></p>
-          <p class="label" style="margin:0">lazyss.hamardikan.com</p>
+      <div style="position:fixed;inset:0;overflow:hidden;background:var(--bg)">
+        <div style="padding:40px 56px 0">
+          <span class="wordmark" style="font-size:28px">lazyss</span>
+          <h1 style="margin:22px 0 0;max-width:none;font-size:80px;text-align:left;text-wrap:wrap">A terminal cockpit for your SSH and SSM hosts.</h1>
         </div>
-        <h1 style="font-size:46px;margin:14px 0 22px;max-width:none">A terminal cockpit for your SSH and SSM hosts.</h1>
-        <div style="height:452px;overflow:hidden">${cap}</div>
+        <div class="stage" style="position:absolute;left:0;right:0;bottom:0;height:200px;padding:22px 0 0;overflow:hidden">
+          <div style="width:max-content;margin-left:56px">${cap}</div>
+        </div>
       </div>`;
-    const s = document.querySelector('#og .scroll');
+    const s = document.querySelector('.scroll');
     s.style.display = 'block';
     s.style.overflow = 'hidden';
+    s.removeAttribute('tabindex');
   }, html);
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: `${out}og.png` });

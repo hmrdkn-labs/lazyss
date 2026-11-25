@@ -1,17 +1,21 @@
 # lazyss-site
 
-The page at https://lazyss.hamardikan.com/: one static page that prints a recorded `G` health sweep of
-lazyss the way a teleprinter would have. Deployed as a Workers static-assets site (no Worker script, no
-bindings). Concept, reference, claims and self-critique are in `NOTES.md`.
+The page at https://lazyss.hamardikan.com/: one static page, v2 ("operations room in daylight"): cool stone
+around one full-bleed navy stage that replays a recorded `G` health sweep of lazyss. Deployed as a Workers
+static-assets site (no Worker script, no bindings). Concept, claims and self-critique are in `NOTES.md`.
 
 ## Layout
 
 - `public/`: the site. `index.html` holds all the copy, and between marker comments (`sweep:`,
   `signals:`, `build:`) the parts the build writes. `style.css`, `sweep.js` (the only script, deferred),
   `404.html`, `_headers`, `robots.txt`, `sitemap.xml`, `favicon.svg`, `apple-touch-icon.png`, `og.png`.
-- `public/assets/`: self-hosted fonts (IBM Plex Mono subset, Source Serif 4 Latin, both OFL, licence texts
-  beside them) and `tractor.svg`, the mask for the paper's feed holes. File names carry no hash: rename a
-  file when its content changes (`/assets/*` is cached as immutable).
+  `[data-hero]` marks the hero and `[data-recording]` the recording, for `scripts/audit.mjs`.
+- `public/assets/`: self-hosted fonts (Mona Sans variable Latin subset, wght 400-800, wdth 100-125, opsz
+  fixed at 20; IBM Plex Mono 400 and 600; both OFL, licence texts beside them) and the three illustrations
+  as AVIF and WebP (`reach`, `credentials`, `cleanup`). File names carry no hash: rename a file when its
+  content changes (`/assets/*` is cached as immutable).
+- `images-src/` (gitignored, 7.6 MB): the original PNGs from `generate_image` (`reach-crop.png` is `reach.png` cropped to the
+  blocks). Only the optimised files in `public/assets/` ship.
 - `public/data/signals.json`: the GitHub snapshot (release, formula version, CI on main, licence). Generated.
 - `public/data/replay.json`: the sweep frames `sweep.js` replays. Generated from `data/sweep.json`.
 - `data/sweep.json`: the recorded sweep (frames from tmux, with their `t_ms`). Written by
@@ -20,7 +24,7 @@ bindings). Concept, reference, claims and self-critique are in `NOTES.md`.
   final sweep frame (100 and 60 columns) and the signals into `public/index.html`, and writes the footer's
   deploy sha and build date.
 - `scripts/og.mjs`: redraws `public/og.png` and `public/apple-touch-icon.png` (needs Playwright).
-- `scripts/verify.mjs`: the checks and the shots (needs Playwright).
+- `scripts/audit.mjs`, `scripts/shots.mjs`: the v2 checks and the screenshots (need Playwright).
 
 ## Build and deploy
 
@@ -41,14 +45,17 @@ To re-record the sweep: `bash scripts/capture-sweep.sh` (needs tmux and Go), the
 Playwright is not a dependency. Install it once outside the repo:
 
 ```sh
-npm i --prefix ~/.cache/lazyss-pw playwright @axe-core/playwright
+npm i --prefix ~/.cache/lazyss-pw playwright @axe-core/playwright lighthouse
 npx --prefix ~/.cache/lazyss-pw playwright install chromium
-node scripts/verify.mjs [shots-dir]
+node scripts/audit.mjs                    # NO_LH=1 skips Lighthouse
+node scripts/shots.mjs [shots-dir]
 python3 -m http.server 8791 -d public & node scripts/og.mjs
 ```
 
-## Things to keep true
+Optimising a new illustration: `sips --resampleWidth 640 in.png --out o.png`, then
+`cwebp -q 80 -m 6 o.png -o name-640.webp` and `avifenc -q 55 -s 4 o.png name-640.avif`; same at the large width.
 
+## Things to keep true
 - The sweep is a recording, and the caption says so: capture date, lazyss version, host count and
   "synthetic SSH config" come from `data/sweep.json`. The build refuses a recording that does not say
   synthetic, shows hosts still checking in its final frame, or has no host lines.
@@ -61,5 +68,6 @@ python3 -m http.server 8791 -d public & node scripts/og.mjs
   and the replay and Copy controls are added by `sweep.js` only.
 - The CSP in `_headers` allows `'self'` only. No inline script or style, no analytics, no third-party
   request. `sweep.js` fetches `/data/replay.json` from the same origin.
-- Colours are two inks on paper (red for what failed). Every status is a word as well as a colour.
+- Palette tokens are in `:root` of `style.css`; no beige, purple, gradient or shadow. Every status is a word as well as a colour. Illustrations are illustration: never described as a screenshot.
 - Under 1280 px the 60-column recording is shown; from 1280 px the 100-column one. Text is never scaled.
+- Two families, three body sizes (2.5rem, 1.125rem, 0.875rem), nothing under 14 px; `scripts/audit.mjs` checks it.
