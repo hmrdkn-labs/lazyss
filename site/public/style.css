@@ -92,7 +92,7 @@ figcaption { margin: 20px 0 0; width: 0; min-width: 100%; font-size: var(--text-
 /* sections below the stage */
 h2 { margin: 0 0 24px; font-size: var(--text-heading); font-weight: 800; font-stretch: 112%; line-height: 1.05; letter-spacing: -0.03em; text-wrap: balance; }
 .reach picture, .reach img { display: block; width: 100%; height: auto; }
-.reach .editorial { display: grid; gap: 24px; max-width: 1360px; margin-inline: auto; padding: clamp(48px, 7vw, 96px) var(--pad); }
+.reach .editorial { display: grid; gap: 24px; max-width: 1360px; margin-inline: auto; padding: clamp(56px, 8vw, 112px) var(--pad) clamp(40px, 5vw, 64px); }
 .reach .editorial h2 { margin: 0; }
 .reach .prose p { max-width: 65ch; margin: 0 0 1em; }
 .reach .prose p:last-child { margin-bottom: 0; }
@@ -104,6 +104,12 @@ h2 { margin: 0 0 24px; font-size: var(--text-heading); font-weight: 800; font-st
 .media { margin: 0; }
 .media img { display: block; width: 100%; height: auto; border-radius: 2px; background: var(--surface); }
 .band .media img { background: var(--bg); }
+.cleanup { max-width: 1360px; margin-inline: auto; padding: clamp(56px, 8vw, 112px) var(--pad); }
+.cleanup > p { max-width: 65ch; margin: 0 0 1em; }
+.cleanup .pair { display: grid; gap: 24px; }
+.cleanup .pair p { max-width: 65ch; margin: 0; }
+.cleanup .media img { aspect-ratio: 3 / 2; object-fit: cover; }
+@media (min-width: 900px) { .cleanup .pair { grid-template-columns: 3fr 2fr; gap: clamp(48px, 7vw, 112px); align-items: start; } }
 .split { display: grid; gap: 40px; max-width: 1360px; margin-inline: auto; }
 .band, .split.band { max-width: none; }
 @media (min-width: 900px) {
@@ -125,7 +131,8 @@ h2 { margin: 0 0 24px; font-size: var(--text-heading); font-weight: 800; font-st
 .install { text-align: center; max-width: 1360px; margin-inline: auto; }
 .install p { margin-inline: auto; }
 .cmdrow { display: flex; flex-direction: column; align-items: center; gap: 20px; margin: 32px auto; }
-.cmd { margin: 0; max-width: 100%; font-size: var(--text-body); font-weight: 600; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+.cmd { margin: 0; max-width: 100%; font-size: var(--text-body); font-weight: 600; line-height: 1.4; white-space: pre-wrap; }
+.cmd span { white-space: nowrap; }
 .cmd code { font-size: inherit; }
 @media (min-width: 1280px) { .cmd { font-size: var(--text-heading); white-space: nowrap; } }
 
