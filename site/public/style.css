@@ -1,0 +1,134 @@
+/* lazyss landing page. Reference: Teletype Model 33 console logs and IBM fanfold listing paper.
+   Paper and a two-colour ribbon: ink for everything, red only for what failed. */
+@font-face { font-family: "Plex Mono"; src: url(/assets/plex-mono-400.woff2) format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Plex Mono"; src: url(/assets/plex-mono-600.woff2) format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Source Serif"; src: url(/assets/source-serif-4-400.woff2) format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Source Serif"; src: url(/assets/source-serif-4-600.woff2) format("woff2"); font-weight: 600; font-display: swap; }
+
+:root {
+  --paper: #f5f2ea; --ink: #1c1b19; --muted: #58544a; --red: #a3271f;
+  --rule: #b9b29f; --band: #e8e3d4;
+  --mono: "Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --serif: "Source Serif", Georgia, "Times New Roman", serif;
+  --cell: 9.2308px; /* one terminal column: Plex Mono advance is 0.6 em of the 15.3846 px capture size */
+  --lh: 20px;       /* one terminal row */
+  --margin: 9rem;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --paper: #1b1a18; --ink: #ebe6da; --muted: #a8a395; --red: #ff8a7a; --rule: #55514a; --band: #2b2925; }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+body {
+  margin: 0; overflow-x: clip;
+  background: var(--paper); color: var(--ink);
+  font: 400 18px/1.6 var(--serif);
+  padding-inline: clamp(16px, 4vw, 40px);
+}
+.row, footer { max-width: 1260px; margin-inline: auto; }
+a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+code, kbd, pre { font-family: var(--mono); font-size: 0.86em; }
+p code, dd code { white-space: nowrap; }
+kbd { font-weight: 600; }
+.vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.skip { position: absolute; left: 16px; top: -100px; z-index: 10; background: var(--ink); color: var(--paper); padding: 12px 16px; min-height: 44px; font: 600 16px/1.4 var(--mono); }
+.skip:focus { top: 8px; }
+
+/* The listing grid: a margin for column heads, then the sheet */
+.row { display: block; padding-block: 28px; border-top: 1px solid var(--rule); }
+.row.top { border-top: 0; padding-top: 32px; }
+@media (min-width: 900px) {
+  .row { display: grid; grid-template-columns: var(--margin) minmax(0, 1fr); column-gap: 24px; padding-block: 36px; }
+  .row.top { padding-top: 44px; padding-bottom: 32px; }
+}
+h2, .mark, .label {
+  font: 600 15px/1.4 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; margin: 0 0 12px; color: var(--muted);
+}
+h2 .n { display: inline-block; min-width: 3ch; color: var(--muted); font-weight: 400; }
+.mark { display: flex; flex-direction: column; gap: 2px; text-transform: none; letter-spacing: 0; }
+.wordmark { font-size: 18px; color: var(--ink); }
+.sub { font-weight: 400; }
+.mark .sub { text-transform: uppercase; letter-spacing: 0.06em; }
+
+h1 { font: 600 clamp(1.75rem, 1rem + 2.8vw, 3.25rem)/1.12 var(--serif); letter-spacing: -0.01em; margin: 0 0 16px; max-width: 22ch; text-wrap: balance; }
+p { margin: 0 0 1em; max-width: 64ch; }
+.lede > p:first-of-type { font-size: 1.125rem; }
+.label { margin: 22px 0 8px; }
+.prose p:last-child, .lede p:last-child { margin-bottom: 0; }
+.aside { margin-top: 14px; color: var(--ink); }
+
+/* Install line: a ruled band, square, with a Copy button */
+.install { display: flex; flex-wrap: wrap; align-items: stretch; max-width: 64ch; border-block: 1px solid var(--ink); }
+.cmd { flex: 1 1 18ch; margin: 0; padding: 12px 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; line-height: 1.5; min-width: 0; align-self: center; }
+.cmd code { font-size: inherit; }
+.copy { font: 600 15px/1 var(--mono); min-width: 88px; min-height: 48px; padding: 0 16px; margin: 0; background: transparent; color: var(--ink); border: 0; border-left: 1px solid var(--ink); cursor: pointer; }
+.copy:hover { background: var(--ink); color: var(--paper); }
+.copy:focus-visible { outline-offset: -4px; }
+
+/* The listing: the recorded sweep */
+.intro { max-width: 64ch; }
+.listing { margin: 0; }
+.scroll { overflow-x: auto; overscroll-behavior-x: contain; border-block: 1px solid var(--ink); }
+/* a scrollbar that stays visible where the system would hide it */
+.scroll::-webkit-scrollbar { height: 14px; }
+.scroll::-webkit-scrollbar-track { background: var(--band); border-top: 1px solid var(--rule); }
+.scroll::-webkit-scrollbar-thumb { background: var(--muted); border: 3px solid var(--band); }
+@supports not selector(::-webkit-scrollbar) { .scroll { scrollbar-color: var(--muted) var(--band); } }
+.scroll:focus-visible { outline-offset: 3px; }
+.scroll-100 { display: none; }
+@media (min-width: 1280px) { .scroll-100 { display: block; } .scroll-60 { display: none; } }
+.paper { position: relative; width: max-content; min-width: 100%; }
+.strip { position: absolute; inset: 0 auto 0 0; width: 24px; border-right: 1px dashed var(--rule); background: var(--muted); opacity: 0.55;
+  -webkit-mask: url(/assets/tractor.svg) 0 4px / 24px 40px repeat-y; mask: url(/assets/tractor.svg) 0 4px / 24px 40px repeat-y; }
+.cap { font: 400 15.3846px/var(--lh) var(--mono); white-space: pre; padding: 8px 16px 8px calc(24px + 7ch + 10px); width: max-content; letter-spacing: 0; }
+.ln { position: relative; height: var(--lh); }
+.ln:empty { display: block; }
+.ln .tx { display: inline-block; }
+.g { display: inline-block; width: var(--cell); text-align: center; font-size: 0.8em; vertical-align: top; }
+.b { font-weight: 600; }
+.dim, .c-dim { color: var(--muted); }
+.c-bad { color: var(--red); }
+.c-warn { font-weight: 600; }
+.c-acc { color: var(--muted); }
+.hl { background: var(--band); }
+.host { cursor: default; }
+.host:hover, .host:focus { background: var(--band); }
+.host:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.hostnote { display: none; }
+.note { position: absolute; right: 100%; top: 0; padding-right: 10px; color: var(--ink); font-size: 14px; opacity: 0; white-space: nowrap; }
+.host:hover > .note, .host:focus > .note { opacity: 1; }
+@keyframes strike { from { opacity: 0.55; } to { opacity: 1; } }
+.strike { animation: strike 180ms ease-out; }
+figcaption { margin-top: 12px; max-width: 64ch; font-size: 16px; line-height: 1.5; color: var(--muted); }
+
+.replay { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 12px; }
+.replay button { font: 600 15px/1 var(--mono); min-height: 44px; padding: 0 16px; background: transparent; color: var(--ink); border: 1px solid var(--ink); cursor: pointer; }
+.replay button:hover { background: var(--ink); color: var(--paper); }
+.replay .clock { font: 400 15px/1.4 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Signals */
+.signals { margin: 0; max-width: 64ch; }
+.signals > div { display: grid; grid-template-columns: 11rem 1fr; gap: 0 16px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+.signals > div:first-child { border-top: 1px solid var(--rule); }
+.signals dt { font: 600 15px/1.6 var(--mono); color: var(--muted); }
+.signals dd { margin: 0; }
+.when { display: block; font-size: 16px; color: var(--muted); }
+@media (max-width: 480px) { .signals > div { grid-template-columns: 1fr; } }
+.snapshot { margin-top: 12px; font-size: 16px; color: var(--muted); }
+
+.foot { font-size: 16px; padding-bottom: 56px; }
+.foot p { margin-bottom: 0.4em; }
+.foot a { display: inline-block; padding: 10px 0; min-height: 44px; }
+
+@media (max-width: 699.98px) {
+  .strip { width: 12px; -webkit-mask-position: -6px 4px; mask-position: -6px 4px; -webkit-mask-size: 24px 40px; mask-size: 24px 40px; }
+  .cap { padding-left: 20px; }
+  .note { display: none; }
+  .hostnote { display: block; min-height: 24px; margin: 8px 0 0; font: 400 15px/1.6 var(--mono); color: var(--ink); }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

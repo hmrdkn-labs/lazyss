@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lazyss-site",
+  "compatibility_date": "2026-11-25",
+  "workers_dev": false,
+  "assets": {
+    "directory": "./public",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  },
+  "routes": [{ "pattern": "lazyss.hamardikan.com", "custom_domain": true }],
+  "observability": { "enabled": false }
+}

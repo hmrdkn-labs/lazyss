@@ -1,0 +1,13 @@
+{
+  "name": "lazyss-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bash scripts/build.sh",
+    "dev": "npm run build && wrangler dev --local",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.164.0"
+  }
+}
