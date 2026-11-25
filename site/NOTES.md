@@ -79,7 +79,8 @@ Status: OK = checked against the source (evidence in
 | 9 | Cleanup is a dry run; `--check` also tries a TCP connection to each host; `--write` with `--host` saves `<config>.lazyss-backup-<timestamp>` first, writes only duplicate targets and refuses protected identities such as github.com | README 91–98; `cleanup.go:128`; synthetic run: `cmp` unchanged, `--check` dialled hosts, protected write exit 1 | Run on a copy | OK (EVIDENCE 4) |
 | 10 | Release archives ship with `checksums.txt` | README 183–185; release assets | Release page | OK |
 | 11 | Capture caption: date, version, 10 hosts, "synthetic SSH config", SSH only | `data/sweep.json` | The JSON in the repo | OK |
-| 12 | "Snapshot taken <date>. The build reads GitHub once; this page never calls it." | `site/scripts/build.sh` (gh calls at build); CSP `connect-src` absent in `_headers` | Read the build script and `_headers` | OK |
+| 12 | "Snapshot taken <date>. The build reads GitHub once; this page never calls it." | `site/scripts/build.sh` (gh calls at build); `public/sweep.js` fetches only `/data/replay.json`; CSP `connect-src 'self'` in `_headers` | Read the build script, `sweep.js` and `_headers` | OK |
+| 13 | "The Homebrew formula is the primary install path on macOS and Linux." | README 195; formula `on_macos`/`on_linux` blocks | Read the formula | OK |
 
 ## Real vs missing
 
@@ -138,7 +139,8 @@ Accessibility and phone
 - [x] Contrast AA light and dark: axe zero violations in both schemes.
 - [x] Zero console errors, no failed requests (verify.mjs).
 - [x] No horizontal scroll at 320, 375, 820 (verify.mjs `scrollWidth <= innerWidth`).
-- [x] Touch copy: "Tap or point at a line"; tap shows the result line (verify.mjs touch test).
+- [x] Touch copy: no hover-only or keyboard-only instruction on the page; the 60-column box says it
+  scrolls sideways, and the result list under it needs no gesture (375 shot).
 - [x] Things a thumb can press before first scroll at 375: skip link (hidden until focus), Copy,
   "Release notes for v0.2.0". Three.
 - [x] Reduced motion: finished frame, no replay control (shot). No loop; the replay runs once,
