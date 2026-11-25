@@ -69,8 +69,8 @@
   const secs = (ms) => (ms / 1000).toFixed(1);
   const load = async () => (data ??= await (await fetch('/data/replay.json')).json());
 
-  function lines() {
-    const cap = listing.querySelector(`.scroll-${key()} .cap`);
+  function lines(k) {
+    const cap = listing.querySelector(`.scroll-${k} .cap`);
     return cap ? [...cap.querySelectorAll('.ln > .tx')] : [];
   }
   function apply(tx, frame, strike) {
@@ -86,14 +86,31 @@
     }
   }
 
-  async function play() {
-    let d;
-    try { d = await load(); } catch { return; }
+  let gen = 0; // a playback that is no longer current stops touching the page
+  function cancel() {
+    gen++;
     timers.forEach(clearTimeout);
     clearInterval(tick);
     timers = [];
+  }
+  // both recordings, the margin notes and the list under the capture, complete: the page as it is without script
+  function restore(d) {
+    for (const k of ['100', '60']) {
+      const tx = lines(k);
+      for (const f of d[k].frames) apply(tx, f, false);
+    }
+    for (const el of listing.querySelectorAll('.pending, .strike')) el.classList.remove('pending', 'strike');
+    clock.textContent = `Run length ${secs(d[key()].run_ms)} s`;
+  }
+
+  async function play() {
+    let d;
+    try { d = await load(); } catch { return; }
+    cancel();
+    const mine = gen;
+    restore(d);
     status.textContent = '';
-    const tx = lines();
+    const tx = lines(key());
     const frames = d[key()].frames;
     const runMs = d[key()].run_ms;
     apply(tx, frames[0], false);
@@ -112,6 +129,7 @@
       }, lead + Number(el.dataset.ms)));
     }
     tick = setInterval(() => {
+      if (mine !== gen) return;
       const t = Math.min(Math.max(performance.now() - t0, 0), runMs);
       clock.textContent = `${secs(t)} s of ${secs(runMs)} s`;
       if (t >= runMs) {
@@ -124,6 +142,12 @@
 
   load().then((d) => { clock.textContent = `Run length ${secs(d[key()].run_ms)} s`; }, () => { bar.remove(); });
   button.addEventListener('click', play);
+  // crossing 1280 px mid-replay: stop, and leave both widths finished
+  wide.addEventListener('change', () => {
+    cancel();
+    status.textContent = '';
+    if (data) restore(data);
+  });
 
   // once, on first view
   if ('IntersectionObserver' in window) {

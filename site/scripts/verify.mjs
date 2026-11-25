@@ -158,6 +158,34 @@ try {
     await vid.saveAs(`${shots}/demo.webm`);
   }
 
+  // switching widths mid-replay leaves both recordings finished
+  {
+    const { ctx, page } = await open({ viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' }, 'resize');
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Run the sweep again' }).click();
+    await page.waitForTimeout(1100);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.waitForTimeout(300);
+    await page.getByRole('button', { name: 'Run the sweep again' }).click();
+    await page.waitForTimeout(4300);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.waitForTimeout(400);
+    const left = await page.evaluate(() => ({ checking: /checking|unchecked/.test(document.querySelector('.scroll-100').textContent), pending: document.querySelectorAll('.pending').length, clock: document.querySelector('.clock').textContent }));
+    check(!left.checking && left.pending === 0 && /^Run length 3\.3 s$/.test(left.clock), `resize mid-replay: both widths finished again ${JSON.stringify(left)}`);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.waitForTimeout(300);
+    const narrow = await page.evaluate(() => ({ checking: /checking|unchecked/.test(document.querySelector('.scroll-60').textContent), pending: document.querySelectorAll('.pending').length }));
+    check(!narrow.checking && narrow.pending === 0, `resize mid-replay: 60-column recording finished too ${JSON.stringify(narrow)}`);
+    // and a replay interrupted by a resize does not run on
+    await page.getByRole('button', { name: 'Run the sweep again' }).click();
+    await page.waitForTimeout(900);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.waitForTimeout(3000);
+    const after = await page.evaluate(() => ({ pending: document.querySelectorAll('.pending').length, clock: document.querySelector('.clock').textContent }));
+    check(after.pending === 0 && /^Run length/.test(after.clock), `resize cancels the replay ${JSON.stringify(after)}`);
+    await ctx.close();
+  }
+
   // full-page shots with motion allowed, after the sweep has played: the replay bar is in them
   for (const [w, h, touch] of [[1440, 900, false], [375, 812, true]]) {
     const { ctx, page } = await open({ viewport: { width: w, height: h }, reducedMotion: 'no-preference', isMobile: touch, hasTouch: touch }, `motion-full-${w}`);
