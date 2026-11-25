@@ -54,25 +54,39 @@
 <div class="cap" data-cols="60" data-rows="24">
 <div class="ln" data-i="0"><span class="tx"><span class="hl"> </span><span class="b hl">Lazy Secure Shell</span><span class="hl"> </span><span class="c-dim"> source ssh | 10 machines</span></span></div><div class="ln" data-i="1"><span class="tx"></span></div><div class="ln" data-i="2"><span class="tx"><span class="b c-acc">Machines (10)</span></span></div><div class="ln" data-i="3"><span class="tx"><span class="c-dim">    Prv Name</span>                       <span class="c-dim">Method        Health</span></span></div><div class="ln" data-i="4"><span class="tx"><span class="b hl">›   ssh api</span><span class="hl">                        </span><span class="b hl">ssh           <span class="g">●</span> up</span></span></div><div class="ln" data-i="5"><span class="tx"><span class="c-bad">    ssh bastion-old</span>                <span class="c-bad">ssh           × down</span></span></div><div class="ln" data-i="6"><span class="tx"><span class="c-bad">    ssh build</span>                      <span class="c-bad">ssh           × down</span></span></div><div class="ln" data-i="7"><span class="tx"><span class="c-bad">    ssh cache</span>                      <span class="c-bad">ssh           × down</span></span></div><div class="ln" data-i="8"><span class="tx"><span class="c-ok">    ssh db-primary</span>                 <span class="c-ok">ssh           <span class="g">●</span> up</span></span></div><div class="ln" data-i="9"><span class="tx"><span class="c-bad">    ssh db-replica</span>                 <span class="c-bad">ssh           × down</span></span></div><div class="ln" data-i="10"><span class="tx"><span class="c-bad">    ssh jump</span>                       <span class="c-bad">ssh           × down</span></span></div><div class="ln" data-i="11"><span class="tx"><span class="c-ok">    ssh queue</span>                      <span class="c-ok">ssh           <span class="g">●</span> up</span></span></div><div class="ln" data-i="12"><span class="tx"><span class="c-ok">    ssh web-1</span>                      <span class="c-ok">ssh           <span class="g">●</span> up</span></span></div><div class="ln" data-i="13"><span class="tx"><span class="c-ok">    ssh web-2</span>                      <span class="c-ok">ssh           <span class="g">●</span> up</span></span></div><div class="ln" data-i="14"><span class="tx"></span></div><div class="ln" data-i="15"><span class="tx"></span></div><div class="ln" data-i="16"><span class="tx"></span></div><div class="ln" data-i="17"><span class="tx"></span></div><div class="ln" data-i="18"><span class="tx">j/k move | Enter connect | s source | m method | / search</span></div><div class="ln" data-i="19"><span class="tx">f filter | p pin | x hide | u show hidden | h detail</span></div><div class="ln" data-i="20"><span class="tx">e edit | c copy | g check | G check all | v history</span></div><div class="ln" data-i="21"><span class="tx">P profile | L login | r refresh | C cleanup | ? help</span></div><div class="ln" data-i="22"><span class="tx">q quit</span></div><div class="ln" data-i="23"><span class="tx"></span></div>
 </div></div>
+<ul class="results" aria-label="Result for each host">
+<li data-ms="48"><span class="a">api</span><span class="r c-ok">up</span></li>
+<li data-ms="48"><span class="a">bastion-old</span><span class="r c-bad">down</span></li>
+<li data-ms="3070"><span class="a">build</span><span class="r c-bad">down</span></li>
+<li data-ms="48"><span class="a">cache</span><span class="r c-bad">down</span></li>
+<li data-ms="48"><span class="a">db-primary</span><span class="r c-ok">up</span></li>
+<li data-ms="48"><span class="a">db-replica</span><span class="r c-bad">down</span></li>
+<li data-ms="3070"><span class="a">jump</span><span class="r c-bad">down</span></li>
+<li data-ms="72"><span class="a">queue</span><span class="r c-ok">up</span></li>
+<li data-ms="72"><span class="a">web-1</span><span class="r c-ok">up</span></li>
+<li data-ms="48"><span class="a">web-2</span><span class="r c-ok">up</span></li>
+</ul>
 <p class="vh">Final frame of the recorded sweep, one result per host: api, up; bastion-old, down; build, down; cache, down; db-primary, up; db-replica, down; jump, down; queue, up; web-1, up; web-2, up.</p>
 <figcaption>Recording of lazyss 0.2.0, captured 25 November 2026: 10 hosts from a synthetic SSH config, SSH checks only. The results are real TCP checks against throwaway listeners, closed ports and unreachable test addresses, and the sweep took <span class="w100">3.3</span><span class="w60">3.1</span> s. A recording, not a live feed.</figcaption>
 <!-- sweep:end -->
     </figure>
   </section>
 
-  <section class="split" id="how" aria-labelledby="h-reach">
-    <div class="text">
+  <section class="reach" id="how" aria-labelledby="h-reach">
+    <picture>
+      <source media="(max-width: 699px)" type="image/avif" srcset="/assets/reach-phone-575.avif 575w, /assets/reach-phone-1150.avif 1150w" sizes="100vw">
+      <source media="(max-width: 699px)" type="image/webp" srcset="/assets/reach-phone-575.webp 575w, /assets/reach-phone-1150.webp 1150w" sizes="100vw">
+      <source type="image/avif" srcset="/assets/reach-wide-768.avif 768w, /assets/reach-wide-1536.avif 1536w" sizes="100vw">
+      <source type="image/webp" srcset="/assets/reach-wide-768.webp 768w, /assets/reach-wide-1536.webp 1536w" sizes="100vw">
+      <img src="/assets/reach-wide-1536.webp" width="1536" height="640" loading="lazy" decoding="async" alt="Illustration: ten identical aluminium blocks in a row on pale stone, a navy and a blue cable touching each, most with a green dot and a few with a red one.">
+    </picture>
+    <div class="editorial">
       <h2 id="h-reach">See every host’s reach at once</h2>
-      <p>Each host shows whether it answers, and over which access method: SSH, or AWS Systems Manager (SSM). Press <kbd>g</kbd> to check the selected host and <kbd>G</kbd> to check every visible host. Each row updates as its result arrives.</p>
-      <p>An SSH check runs <code>ssh -G</code>, then makes one TCP connection that gives up after three seconds. Up means the port accepted it, not that you can log in. An SSM check makes no new call: it reports the SSM agent’s ping status from the last inventory load. The recording above is SSH only.</p>
-      <p>At most eight checks run at once.</p>
-    </div>
-    <div class="media">
-      <picture>
-        <source type="image/avif" srcset="/assets/reach-640.avif 640w, /assets/reach-1200.avif 1200w" sizes="(min-width: 900px) 40vw, 92vw">
-        <source type="image/webp" srcset="/assets/reach-640.webp 640w, /assets/reach-1200.webp 1200w" sizes="(min-width: 900px) 40vw, 92vw">
-        <img src="/assets/reach-1200.webp" width="1200" height="800" loading="lazy" decoding="async" alt="Illustration: ten identical aluminium blocks in a row on pale stone, a navy and a blue cable touching each, most with a green dot and a few with a red one.">
-      </picture>
+      <div class="prose">
+        <p>Each host shows whether it answers, and over which access method: SSH, or AWS Systems Manager (SSM). Press <kbd>g</kbd> to check the selected host and <kbd>G</kbd> to check every visible host. Each row updates as its result arrives.</p>
+        <p>An SSH check runs <code>ssh -G</code>, then makes one TCP connection that gives up after three seconds. Up means the port accepted it, not that you can log in. An SSM check makes no new call: it reports the SSM agent’s ping status from the last inventory load. The recording above is SSH only.</p>
+        <p>At most eight checks run at once.</p>
+      </div>
     </div>
   </section>
 
@@ -133,7 +147,7 @@
   <a class="wordmark" href="/">lazyss</a>
   <div>
 <!-- build:start -->
-<p>Built 25 November 2026 from <a href="https://github.com/hmrdkn-labs/lazyss/commit/c369467"><code>c369467</code></a>. MIT licence.</p>
+<p>Built 25 November 2026 from <a href="https://github.com/hmrdkn-labs/lazyss/commit/2c14abb"><code>2c14abb</code></a>. MIT licence.</p>
 <!-- build:end -->
     <p><a href="https://github.com/hmrdkn-labs/lazyss">Source on GitHub</a> and <a href="https://hamardikan.com/">hamardikan.com</a></p>
   </div>

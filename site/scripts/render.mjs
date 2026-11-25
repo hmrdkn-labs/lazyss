@@ -85,6 +85,17 @@ ${lines.join('')}
 </div></div>`;
 }
 
+// under 700 px the 60-column box hides the Health column: the results as a plain list, status as a word
+function resultList() {
+  const s = sizes[60];
+  const bad = (i) => sweep.sizes['60'].frames[s.last].lines[i].some((x) => fgClass(x.fg) === 'bad');
+  const items = [...s.hosts.entries()]
+    .map(([i, h]) => `<li data-ms="${h.t_ms ?? 0}"><span class="a">${esc(h.name)}</span><span class="r ${bad(i) ? 'c-bad' : 'c-ok'}">${esc(h.health)}</span></li>`);
+  return `<ul class="results" aria-label="Result for each host">
+${items.join('\n')}
+</ul>`;
+}
+
 const run = { 100: sizes[100].frames[sizes[100].last].t_ms, 60: sizes[60].frames[sizes[60].last].t_ms };
 const version = (/\d+\.\d+\.\d+/.exec(sweep.lazyss_version) ?? [])[0];
 if (!version) throw new Error(`cannot read a version from ${JSON.stringify(sweep.lazyss_version)}`);
@@ -94,6 +105,7 @@ const results = finalHosts.map((h) => `${h.name}, ${h.health}`).join('; ');
 
 const sweepBlock = `${figure('100')}
 ${figure('60')}
+${resultList()}
 <p class="vh">Final frame of the recorded sweep, one result per host: ${esc(results)}.</p>
 <figcaption>Recording of lazyss ${version}, captured ${day(sweep.captured_at)}: ${hostCount} hosts from a synthetic SSH config, SSH checks only. The results are real TCP checks against throwaway listeners, closed ports and unreachable test addresses, and the sweep took <span class="w100">${(run[100] / 1000).toFixed(1)}</span><span class="w60">${(run[60] / 1000).toFixed(1)}</span> s. A recording, not a live feed.</figcaption>`;
 
