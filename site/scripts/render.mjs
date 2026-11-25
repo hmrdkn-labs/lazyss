@@ -145,7 +145,7 @@ ${dl([
 
 const sha = execFileSync('git', ['-C', root, 'rev-parse', '--short', 'HEAD']).toString().trim();
 const built = day(new Date().toISOString());
-const footBlock = `<p>Maintained ${built}. Deploy <code>${sha}</code>.</p>`;
+const footBlock = `<p>Maintained ${built}. Built from <a href="https://github.com/hmrdkn-labs/lazyss/commit/${sha}"><code>${sha}</code></a>.</p>`;
 
 let html = readFileSync(`${root}/public/index.html`, 'utf8');
 for (const [name, body] of [['sweep', sweepBlock], ['signals', signalsBlock], ['build', footBlock]]) {
