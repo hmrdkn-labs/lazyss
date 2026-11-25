@@ -1,0 +1,4622 @@
+{
+ "captured_at": "2026-11-25T14:45:43Z",
+ "lazyss_version": "lazyss v0.2.0",
+ "command": "lazyss --source ssh --ssh-config <synthetic>",
+ "inventory": "synthetic SSH config, 10 hosts, local listeners",
+ "sizes": {
+  "100": {
+   "cols": 100,
+   "rows": 24,
+   "frames": [
+    {
+     "t_ms": 0,
+     "lines": [
+      [
+       {
+        "t": " ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Lazy Secure Shell",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": " ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": " source ssh | 10 machines",
+        "fg": "#8b949e",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [],
+      [
+       {
+        "t": "╭────────────────────────────────────────────────────────────────────────────────────────────────╮",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Machines (10)",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                   ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    Prv Name",
+        "fg": "#586069",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                          ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Method        Health      Last conn       ",
+        "fg": "#586069",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "›   ssh api",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                           ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ○ unchecked never           ",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh bastion-old                                   ssh           ○ unchecked never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh build                                         ssh           ○ unchecked never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh cache                                         ssh           ○ unchecked never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh db-primary                                    ssh           ○ unchecked never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh db-replica                                    ssh           ○ unchecked never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh jump                                          ssh           ○ unchecked never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh queue                                         ssh           ○ unchecked never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh web-1                                         ssh           ○ unchecked never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh web-2                                         ssh           ○ unchecked never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "╰────────────────────────────────────────────────────────────────────────────────────────────────╯",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "j/k move | Enter connect | s source | m method | / search | f filter | p pin | x hide",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "u show hidden | h detail | e edit | c copy | g check | G check all | v history | P profile | L login",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "r refresh | C cleanup | ? help | q quit",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      []
+     ]
+    },
+    {
+     "t_ms": 43,
+     "lines": [
+      [
+       {
+        "t": " ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Lazy Secure Shell",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": " ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": " source ssh | 10 machines",
+        "fg": "#8b949e",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "checking 0/10",
+        "fg": "#fbbf24",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "╭────────────────────────────────────────────────────────────────────────────────────────────────╮",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Machines (10)",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                   ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    Prv Name",
+        "fg": "#586069",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                          ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Method        Health      Last conn       ",
+        "fg": "#586069",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "›   ssh api",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                           ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           … checking  never           ",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh bastion-old                                   ssh           … checking  never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh build                                         ssh           … checking  never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh cache                                         ssh           … checking  never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh db-primary                                    ssh           … checking  never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh db-replica                                    ssh           … checking  never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh jump                                          ssh           … checking  never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh queue                                         ssh           … checking  never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh web-1                                         ssh           … checking  never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh web-2                                         ssh           … checking  never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "╰────────────────────────────────────────────────────────────────────────────────────────────────╯",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "j/k move | Enter connect | s source | m method | / search | f filter | p pin | x hide",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "u show hidden | h detail | e edit | c copy | g check | G check all | v history | P profile | L login",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "r refresh | C cleanup | ? help | q quit",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      []
+     ]
+    },
+    {
+     "t_ms": 332,
+     "lines": [
+      [
+       {
+        "t": " ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Lazy Secure Shell",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": " ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": " source ssh | 10 machines",
+        "fg": "#8b949e",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "checking 8/10",
+        "fg": "#fbbf24",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "╭────────────────────────────────────────────────────────────────────────────────────────────────╮",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Machines (10)",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                   ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    Prv Name",
+        "fg": "#586069",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                          ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Method        Health      Last conn       ",
+        "fg": "#586069",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "›   ssh api",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                           ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up        never           ",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh bastion-old",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                   ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down      never           ",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh build                                         ssh           … checking  never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh cache",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                         ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down      never           ",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh db-primary",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                    ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up        never           ",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh db-replica",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                    ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down      never           ",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh jump                                          ssh           … checking  never           ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh queue",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                         ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up        never           ",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh web-1",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                         ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up        never           ",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh web-2",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                         ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up        never           ",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "╰────────────────────────────────────────────────────────────────────────────────────────────────╯",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "j/k move | Enter connect | s source | m method | / search | f filter | p pin | x hide",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "u show hidden | h detail | e edit | c copy | g check | G check all | v history | P profile | L login",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "r refresh | C cleanup | ? help | q quit",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      []
+     ]
+    },
+    {
+     "t_ms": 3320,
+     "lines": [
+      [
+       {
+        "t": " ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Lazy Secure Shell",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": " ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": " source ssh | 10 machines",
+        "fg": "#8b949e",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [],
+      [
+       {
+        "t": "╭────────────────────────────────────────────────────────────────────────────────────────────────╮",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Machines (10)",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                   ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    Prv Name",
+        "fg": "#586069",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                          ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Method        Health      Last conn       ",
+        "fg": "#586069",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "›   ssh api",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                           ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up        never           ",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh bastion-old",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                   ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down      never           ",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh build",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                         ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down      never           ",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh cache",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                         ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down      never           ",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh db-primary",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                    ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up        never           ",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh db-replica",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                    ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down      never           ",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh jump",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                          ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down      never           ",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh queue",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                         ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up        never           ",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh web-1",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                         ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up        never           ",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "    ssh web-2",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                         ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up        never           ",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                                                                                                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "│",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "╰────────────────────────────────────────────────────────────────────────────────────────────────╯",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "j/k move | Enter connect | s source | m method | / search | f filter | p pin | x hide",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "u show hidden | h detail | e edit | c copy | g check | G check all | v history | P profile | L login",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "r refresh | C cleanup | ? help | q quit",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      []
+     ]
+    }
+   ]
+  },
+  "60": {
+   "cols": 60,
+   "rows": 24,
+   "frames": [
+    {
+     "t_ms": 0,
+     "lines": [
+      [
+       {
+        "t": " ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Lazy Secure Shell",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": " ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": " source ssh | 10 machines",
+        "fg": "#8b949e",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [],
+      [
+       {
+        "t": "Machines (10)",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": true,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    Prv Name",
+        "fg": "#586069",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                       ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Method        Health",
+        "fg": "#586069",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "›   ssh api",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                        ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ○ unchecked",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh bastion-old                ssh           ○ unchecked",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh build                      ssh           ○ unchecked",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh cache                      ssh           ○ unchecked",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh db-primary                 ssh           ○ unchecked",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh db-replica                 ssh           ○ unchecked",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh jump                       ssh           ○ unchecked",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh queue                      ssh           ○ unchecked",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh web-1                      ssh           ○ unchecked",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh web-2                      ssh           ○ unchecked",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [],
+      [],
+      [],
+      [],
+      [
+       {
+        "t": "j/k move | Enter connect | s source | m method | / search",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "f filter | p pin | x hide | u show hidden | h detail",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "e edit | c copy | g check | G check all | v history",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "P profile | L login | r refresh | C cleanup | ? help",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "q quit",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      []
+     ]
+    },
+    {
+     "t_ms": 48,
+     "lines": [
+      [
+       {
+        "t": " ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Lazy Secure Shell",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": " ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": " source ssh | 10 machines",
+        "fg": "#8b949e",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "checking 6/10",
+        "fg": "#fbbf24",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "Machines (10)",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": true,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    Prv Name",
+        "fg": "#586069",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                       ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Method        Health",
+        "fg": "#586069",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "›   ssh api",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                        ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh bastion-old",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh build                      ssh           … checking",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh cache",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                      ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh db-primary",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                 ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh db-replica",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                 ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh jump                       ssh           … checking",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh queue                      ssh           … checking",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh web-1                      ssh           … checking",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh web-2",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                      ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [],
+      [],
+      [],
+      [],
+      [
+       {
+        "t": "j/k move | Enter connect | s source | m method | / search",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "f filter | p pin | x hide | u show hidden | h detail",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "e edit | c copy | g check | G check all | v history",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "P profile | L login | r refresh | C cleanup | ? help",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "q quit",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      []
+     ]
+    },
+    {
+     "t_ms": 72,
+     "lines": [
+      [
+       {
+        "t": " ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Lazy Secure Shell",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": " ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": " source ssh | 10 machines",
+        "fg": "#8b949e",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "checking 8/10",
+        "fg": "#fbbf24",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "Machines (10)",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": true,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    Prv Name",
+        "fg": "#586069",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                       ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Method        Health",
+        "fg": "#586069",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "›   ssh api",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                        ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh bastion-old",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh build                      ssh           … checking",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh cache",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                      ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh db-primary",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                 ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh db-replica",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                 ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh jump                       ssh           … checking",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh queue",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                      ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh web-1",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                      ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh web-2",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                      ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [],
+      [],
+      [],
+      [],
+      [
+       {
+        "t": "j/k move | Enter connect | s source | m method | / search",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "f filter | p pin | x hide | u show hidden | h detail",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "e edit | c copy | g check | G check all | v history",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "P profile | L login | r refresh | C cleanup | ? help",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "q quit",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      []
+     ]
+    },
+    {
+     "t_ms": 3070,
+     "lines": [
+      [
+       {
+        "t": " ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Lazy Secure Shell",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": " ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": " source ssh | 10 machines",
+        "fg": "#8b949e",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [],
+      [
+       {
+        "t": "Machines (10)",
+        "fg": "#7dd3fc",
+        "bg": null,
+        "b": true,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    Prv Name",
+        "fg": "#586069",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                       ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "Method        Health",
+        "fg": "#586069",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "›   ssh api",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                        ",
+        "fg": null,
+        "bg": "#7dd3fc",
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up",
+        "fg": "#0b1220",
+        "bg": "#7dd3fc",
+        "b": true,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh bastion-old",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh build",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                      ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh cache",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                      ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh db-primary",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                 ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh db-replica",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                 ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh jump",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                       ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           × down",
+        "fg": "#f85149",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh queue",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                      ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh web-1",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                      ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "    ssh web-2",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "                      ",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       },
+       {
+        "t": "ssh           ● up",
+        "fg": "#3fb950",
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [],
+      [],
+      [],
+      [],
+      [
+       {
+        "t": "j/k move | Enter connect | s source | m method | / search",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "f filter | p pin | x hide | u show hidden | h detail",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "e edit | c copy | g check | G check all | v history",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "P profile | L login | r refresh | C cleanup | ? help",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      [
+       {
+        "t": "q quit",
+        "fg": null,
+        "bg": null,
+        "b": false,
+        "dim": false,
+        "rev": false
+       }
+      ],
+      []
+     ]
+    }
+   ]
+  }
+ },
+ "extra": {
+  "help": {
+   "lines": [
+    [
+     {
+      "t": " ",
+      "fg": null,
+      "bg": "#7dd3fc",
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "Lazy Secure Shell",
+      "fg": "#0b1220",
+      "bg": "#7dd3fc",
+      "b": true,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": " ",
+      "fg": null,
+      "bg": "#7dd3fc",
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": " source ssh | 10 machines",
+      "fg": "#8b949e",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "╭──────────────────────────────────────────────╮",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "Keys",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": true,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "                                          ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "j/k     ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "move selection                        ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "Enter   ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "connect to selected machine           ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "s       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "cycle source all/ssh/ssm              ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "m       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "cycle access method                   ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "/       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "fuzzy search machines                 ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "f       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "structured filter                     ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "p       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "toggle pin                            ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "x       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "hide selected machine                 ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "u       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "toggle showing hidden                 ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "h       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "toggle detail panel                   ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "e       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "edit note, tags, preferred method     ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "c       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "copy connect command                  ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "g       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "health check selected                 ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "G       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "health check visible                  ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "v       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "view full session/health history      ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "P       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "choose AWS profile                    ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "L       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "AWS SSO login                         ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "r       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "reload inventory                      ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "C       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "ssh config cleanup                    ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "?       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "toggle this help                      ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ],
+    [
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "q       ",
+      "fg": "#586069",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "quit lazyss                           ",
+      "fg": null,
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     },
+     {
+      "t": "│",
+      "fg": "#7dd3fc",
+      "bg": null,
+      "b": false,
+      "dim": false,
+      "rev": false
+     }
+    ]
+   ]
+  }
+ }
+}
