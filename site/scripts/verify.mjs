@@ -17,10 +17,11 @@ const AxeBuilder = require('@axe-core/playwright').default;
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const shots = resolve(process.argv[2] ?? `${homedir()}/workspace/sandbox/showcase-scan/build/lazyss/shots`);
 mkdirSync(shots, { recursive: true });
+// BASE_URL=https://lazyss.hamardikan.com node scripts/verify.mjs shots/live  checks a deployed site; otherwise public/ is served locally
 const PORT = 8793;
-const base = `http://127.0.0.1:${PORT}`;
-const server = spawn('python3', ['-m', 'http.server', String(PORT), '-d', `${root}/public`, '-b', '127.0.0.1'], { stdio: 'ignore' });
-await new Promise((r) => setTimeout(r, 800));
+const base = (process.env.BASE_URL ?? `http://127.0.0.1:${PORT}`).replace(/\/$/, '');
+const server = process.env.BASE_URL ? null : spawn('python3', ['-m', 'http.server', String(PORT), '-d', `${root}/public`, '-b', '127.0.0.1'], { stdio: 'ignore' });
+if (server) await new Promise((r) => setTimeout(r, 800));
 
 const failures = [];
 const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (!ok) failures.push(msg); };
@@ -227,7 +228,7 @@ try {
   }
 } finally {
   await browser.close();
-  server.kill();
+  server?.kill();
   rmSync(`${shots}/.video`, { recursive: true, force: true });
 }
 console.log(failures.length ? `\n${failures.length} FAILED` : '\nall checks passed');
