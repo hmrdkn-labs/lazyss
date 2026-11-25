@@ -1,15 +1,11 @@
 {
-  "generated_at": "2026-11-25T15:03:07Z",
+  "generated_at": "2026-11-25T15:23:56Z",
   "release": {
     "tag": "v0.2.0",
     "published_at": "2026-07-13T03:27:40Z",
     "url": "https://github.com/hmrdkn-labs/lazyss/releases/tag/v0.2.0"
   },
   "formula": "0.2.0",
-  "ci": {
-    "conclusion": "success",
-    "created_at": "2026-07-13T03:10:51Z",
-    "url": "https://github.com/hmrdkn-labs/lazyss/actions/runs/29221108546"
-  },
+  "ci": null,
   "license": "MIT"
 }
