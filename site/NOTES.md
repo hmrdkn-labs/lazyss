@@ -29,21 +29,21 @@ cool stone wall with one dark screen in it: colour-blocking, not a fake terminal
 
 1. Header: wordmark, three links (How it works, Install, GitHub), one line.
 2. Hero (h1, one line, "Install with Homebrew") then the stage with caption.
-3. See every host’s reach at once (text first, then a full-bleed 3.6:1 band);  Your credentials stay where they are; Cleanup shows you the change first.
+3. See which SSH and SSM hosts answer (text first, then a full-bleed 3.6:1 band);  Your credentials stay where they are; Clean up your SSH config, dry run first.
 4. Install: the brew command, Copy, release archives and `checksums.txt`.
 5. Where the project stands: latest release, formula, CI on main, licence, each dated; snapshot date.
-6. Footer: deploy sha, licence, repo, hamardikan.com.
+6. Footer: deploy sha, licence, repo, hamardikan.com, and a plain "More from hmrdkn-labs" line linking the four sibling pages.
 
 Not on the page: real SSH/SSM smoke results (unresolved), the CV "7.4 → 2.6 min" figure, stars (0), open
 issues, peer stats, and the per-host result times of v1 (the replay still runs at those times).
 
 ## Claims table
 
-Status: OK = checked against the source (evidence in `~/workspace/sandbox/showcase-scan/build/lazyss/capture/EVIDENCE.md`), Off = left off the page. Rows 1-13 are the v1 rows, reused; v2 wording of each sentence was re-read against its row on 2026-11-25 (the page no longer says the connection is closed at once).
+Status: OK = checked against the source (evidence in `~/workspace/sandbox/showcase-scan/build/lazyss/capture/EVIDENCE.md`), Off = left off the page. Rows 1-13 are the v1 rows (row 14 added 2026-11-25 for the SEO pass), reused; v2 wording of each sentence was re-read against its row on 2026-11-25 (the page no longer says the connection is closed at once).
 
 | # | Page text (draft) | Source | Reader check | Status |
 |---|---|---|---|---|
-| 1 | A terminal cockpit for your SSH and SSM hosts. | README 14–18; formula `desc` "Terminal machine cockpit for SSH and AWS SSM" | Read README / `Formula/lazyss.rb` | OK |
+| 1 | A terminal cockpit for your SSH and AWS SSM hosts. | README 14–18; formula `desc` "Terminal machine cockpit for SSH and AWS SSM" | Read README / `Formula/lazyss.rb` | OK |
 | 2 | `brew install --formula hmrdkn-labs/tap/lazyss` | `gh api repos/hmrdkn-labs/homebrew-tap` (public); formula version 0.2.0, checked 2026-11-25 | Run the command | OK |
 | 3 | Latest release v0.2.0, 13 July 2026 | `gh release list --repo hmrdkn-labs/lazyss` | Release page | OK (snapshot) |
 | 4 | MIT licence | `gh api repos/hmrdkn-labs/lazyss --jq .license.spdx_id` | LICENSE | OK (snapshot) |
@@ -56,6 +56,7 @@ Status: OK = checked against the source (evidence in `~/workspace/sandbox/showca
 | 11 | Capture caption: date, version, 10 hosts, "synthetic SSH config", SSH only, run length; "A recording, not a live feed" | `data/sweep.json` | The JSON in the repo | OK |
 | 12 | "Snapshot taken <date>. The build reads GitHub once; this page never calls it." | `site/scripts/build.sh` (gh calls at build); `public/sweep.js` fetches only `/data/replay.json`; CSP `connect-src 'self'` in `_headers` | Read the build script, `sweep.js` and `_headers` | OK |
 | 13 | "The Homebrew formula is the primary install path on macOS and Linux." | README 195; formula `on_macos`/`on_linux` blocks | Read the formula | OK |
+| 14 | "Press Enter to connect: lazyss runs `ssh`, or `aws ssm start-session`, for the selected host." | `internal/tui/keymap.go:34` (Enter connects); `internal/adapters/awsssm/awsssm.go:301-310` (`aws ssm start-session`) | Read the keymap and the adapter | OK (SEO.md, build/v3/lazyss) |
 
 ## Real vs missing
 
@@ -91,3 +92,12 @@ no horizontal overflow at 320/390/1440, axe zero at 1440 and 390, 153 KB at 390 
 page complete, no console errors, Lighthouse mobile as printed by the script. Shots:
 `~/workspace/sandbox/showcase-scan/build/v2/lazyss/shots/w1/`. Privacy grep from `README.md`: empty.
 The live check, the reviewer rounds and the parent gate are still to do.
+
+## SEO (v3, 2026-11-25)
+
+Decisions and queries: `~/workspace/sandbox/showcase-scan/build/v3/lazyss/SEO.md`. In the page: title, description and
+og tags, one JSON-LD `@graph` (WebSite, SoftwareApplication, Person) rendered by `scripts/render.mjs` between the
+`jsonld` markers (version, download URL and licence follow `public/data/signals.json`), `public/sitemap.xml` with
+`<lastmod>` = build date, and an IndexNow key file in `public/` (submitted by hand after a deploy). The page is not
+rich-result eligible on purpose: no `offers`, `aggregateRating` or `review` exist and none are invented.
+`scripts/audit.mjs` checks all of it, and Lighthouse mobile must score performance >= 95 and the other three 100.
