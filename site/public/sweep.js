@@ -99,7 +99,7 @@
       const tx = lines(k);
       for (const f of d[k].frames) apply(tx, f, false);
     }
-    for (const el of listing.querySelectorAll('.strike')) el.classList.remove('strike');
+    for (const el of listing.querySelectorAll('.strike, .pending')) el.classList.remove('strike', 'pending');
     clock.textContent = `Run length ${secs(d[key()].run_ms)} s`;
   }
 
@@ -117,6 +117,11 @@
     const t0 = performance.now() + lead;
     clock.textContent = `0.0 s of ${secs(d[key()].run_ms)} s`;
     for (const f of frames.slice(1)) timers.push(setTimeout(() => apply(tx, f, true), lead + f.t));
+    // under 700 px the result list under the box: each row prints when its result landed
+    for (const el of listing.querySelectorAll('.results li[data-ms]')) {
+      el.classList.add('pending');
+      timers.push(setTimeout(() => el.classList.remove('pending'), lead + Number(el.dataset.ms)));
+    }
     tick = setInterval(() => {
       if (mine !== gen) return;
       const t = Math.min(Math.max(performance.now() - t0, 0), runMs);
