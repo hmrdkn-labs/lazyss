@@ -39,7 +39,7 @@
 <main id="main">
   <section class="hero" data-hero aria-labelledby="h-hero">
     <h1 id="h-hero">A terminal cockpit for your SSH and SSM hosts.</h1>
-    <p>See which hosts answer, over which access method, from one screen. Cleanup changes nothing until you pass <code>--write</code>.</p>
+    <p>See which hosts answer, and over which access method, from one screen.</p>
     <a class="btn" href="#install">Install with Homebrew</a>
   </section>
 
@@ -73,13 +73,6 @@
   </section>
 
   <section class="reach" id="how" aria-labelledby="h-reach">
-    <picture>
-      <source media="(max-width: 699px)" type="image/avif" srcset="/assets/reach-phone-575.avif 575w, /assets/reach-phone-1150.avif 1150w" sizes="100vw">
-      <source media="(max-width: 699px)" type="image/webp" srcset="/assets/reach-phone-575.webp 575w, /assets/reach-phone-1150.webp 1150w" sizes="100vw">
-      <source type="image/avif" srcset="/assets/reach-wide-768.avif 768w, /assets/reach-wide-1536.avif 1536w" sizes="100vw">
-      <source type="image/webp" srcset="/assets/reach-wide-768.webp 768w, /assets/reach-wide-1536.webp 1536w" sizes="100vw">
-      <img src="/assets/reach-wide-1536.webp" width="1536" height="640" loading="lazy" decoding="async" alt="Illustration: ten identical aluminium blocks in a row on pale stone, a navy and a blue cable touching each, most with a green dot and a few with a red one.">
-    </picture>
     <div class="editorial">
       <h2 id="h-reach">See every host’s reach at once</h2>
       <div class="prose">
@@ -88,6 +81,13 @@
         <p>At most eight checks run at once.</p>
       </div>
     </div>
+    <picture>
+      <source media="(max-width: 699px)" type="image/avif" srcset="/assets/reach-phone-575.avif 575w, /assets/reach-phone-1150.avif 1150w" sizes="100vw">
+      <source media="(max-width: 699px)" type="image/webp" srcset="/assets/reach-phone-575.webp 575w, /assets/reach-phone-1150.webp 1150w" sizes="100vw">
+      <source type="image/avif" srcset="/assets/reach-wide-680.avif 680w, /assets/reach-wide-1360.avif 1360w" sizes="100vw">
+      <source type="image/webp" srcset="/assets/reach-wide-680.webp 680w, /assets/reach-wide-1360.webp 1360w" sizes="100vw">
+      <img src="/assets/reach-wide-1360.webp" width="1360" height="378" loading="lazy" decoding="async" alt="Illustration: ten identical aluminium blocks in a row on pale stone, a navy and a blue cable touching each, most with a green dot and a few with a red one.">
+    </picture>
   </section>
 
   <section class="split flip band" aria-labelledby="h-creds">
@@ -105,18 +105,18 @@
     </div>
   </section>
 
-  <section class="split" aria-labelledby="h-cleanup">
-    <div class="text">
-      <h2 id="h-cleanup">Cleanup shows you the change first</h2>
-      <p>lazyss reads your SSH config and does not edit it, except in cleanup with <code>--write</code>. Cleanup is a dry run: <code>lazyss ssh cleanup</code> prints a plan and changes nothing. Add <code>--check</code> and it also tries a TCP connection to each host.</p>
+  <section class="cleanup" aria-labelledby="h-cleanup">
+    <h2 id="h-cleanup">Cleanup shows you the change first</h2>
+    <p>lazyss reads your SSH config and does not edit it, except in cleanup with <code>--write</code>. Cleanup is a dry run: <code>lazyss ssh cleanup</code> prints a plan and changes nothing. Add <code>--check</code> and it also tries a TCP connection to each host.</p>
+    <div class="pair">
       <p>Pass <code>--write</code> with <code>--host</code> and a name, and lazyss first saves a backup beside the config, named with <code>.lazyss-backup</code> and a timestamp. It writes only duplicate targets, and refuses protected identities such as github.com.</p>
-    </div>
-    <div class="media">
-      <picture>
-        <source type="image/avif" srcset="/assets/cleanup-640.avif 640w, /assets/cleanup-1280.avif 1280w" sizes="(min-width: 900px) 40vw, 92vw">
-        <source type="image/webp" srcset="/assets/cleanup-640.webp 640w, /assets/cleanup-1280.webp 1280w" sizes="(min-width: 900px) 40vw, 92vw">
+      <div class="media">
+        <picture>
+        <source type="image/avif" srcset="/assets/cleanup-640.avif 640w, /assets/cleanup-1280.avif 1280w" sizes="(min-width: 900px) 36vw, 92vw">
+        <source type="image/webp" srcset="/assets/cleanup-640.webp 640w, /assets/cleanup-1280.webp 1280w" sizes="(min-width: 900px) 36vw, 92vw">
         <img src="/assets/cleanup-1280.webp" width="1280" height="853" loading="lazy" decoding="async" alt="Illustration: a steel tray of blank white cards with two cards lifted above it, and a sealed clear sleeve holding a copy of the stack beside it.">
       </picture>
+      </div>
     </div>
   </section>
 
@@ -124,7 +124,7 @@
     <h2 id="h-install">Install</h2>
     <p>The Homebrew formula is the primary install path on macOS and Linux.</p>
     <div class="cmdrow" id="cmdrow">
-      <pre class="cmd"><code id="brew">brew install --formula hmrdkn-labs/tap/lazyss</code></pre>
+      <pre class="cmd"><code id="brew"><span>brew</span> <span>install</span> <span>--formula</span> <span>hmrdkn-labs/tap/lazyss</span></code></pre>
     </div>
     <p>Or download the archive for your system from <a href="https://github.com/hmrdkn-labs/lazyss/releases/tag/v0.2.0">the v0.2.0 release</a>. Each release includes <code>checksums.txt</code>: verify the archive against it, then put <code>lazyss</code> on your <code>PATH</code>.</p>
   </section>
@@ -147,7 +147,7 @@
   <a class="wordmark" href="/">lazyss</a>
   <div>
 <!-- build:start -->
-<p>Built 25 November 2026 from <a href="https://github.com/hmrdkn-labs/lazyss/commit/ff51ece"><code>ff51ece</code></a>. MIT licence.</p>
+<p>Built 25 November 2026 from <a href="https://github.com/hmrdkn-labs/lazyss/commit/054a227"><code>054a227</code></a>. MIT licence.</p>
 <!-- build:end -->
     <p><a href="https://github.com/hmrdkn-labs/lazyss">Source on GitHub</a> and <a href="https://hamardikan.com/">hamardikan.com</a></p>
   </div>

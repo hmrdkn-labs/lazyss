@@ -14,7 +14,7 @@ cool stone wall with one dark screen in it: colour-blocking, not a fake terminal
 - **Type:** Mona Sans (GitHub, OFL) for the h1 (wide, 800) and all prose; IBM Plex Mono (OFL) for the
   recording, keys and the brew command only. Sizes below the hero: 2.5rem (h2), 1.125rem (prose, h3-as-bold,
   buttons), 0.875rem (recording, captions, footer). Nothing under 14 px.
-- **Hero:** centered monumental headline across about 92% of the width, one 24-word line, one button, the navy
+- **Hero:** centered monumental headline across about 92% of the width, one 12-word line, one button, the navy
   stage's top edge in the first 900 px.
 - **Stage:** the real recording (`data/sweep.json`), 100 columns from 1280 px, 60 below (sideways scroll, text
   never scaled), replayed once on view at real `t_ms`, then "Run the sweep again" with elapsed time. Static
@@ -29,7 +29,7 @@ cool stone wall with one dark screen in it: colour-blocking, not a fake terminal
 
 1. Header: wordmark, three links (How it works, Install, GitHub), one line.
 2. Hero (h1, one line, "Install with Homebrew") then the stage with caption.
-3. See every host's reach at once; Your credentials stay where they are; Cleanup shows you the change first.
+3. See every host’s reach at once (text first, then a full-bleed 3.6:1 band);  Your credentials stay where they are; Cleanup shows you the change first.
 4. Install: the brew command, Copy, release archives and `checksums.txt`.
 5. Where the project stands: latest release, formula, CI on main, licence, each dated; snapshot date.
 6. Footer: deploy sha, licence, repo, hamardikan.com.
