@@ -1,5 +1,5 @@
 // Pre-renders data/sweep.json and public/data/signals.json into public/index.html, between marker comments,
-// so the page is complete with JavaScript off. Also writes public/data/replay.json, the frames sweep.js replays.
+// so the page is complete with JavaScript off. Also renders the JSON-LD block and writes public/sitemap.xml. Also writes public/data/replay.json, the frames sweep.js replays.
 // Usage: node scripts/render.mjs [path/to/sweep.json]   (default: data/sweep.json; env SWEEP_JSON overrides)
 import { readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -139,8 +139,28 @@ const sha = execFileSync('git', ['-C', root, 'rev-parse', '--short', 'HEAD']).to
 const built = day(new Date().toISOString());
 const footBlock = `<p>Built ${built} from <a href="https://github.com/hmrdkn-labs/lazyss/commit/${sha}"><code>${sha}</code></a>.${l ? ` ${esc(l)} licence.` : ''}</p>`;
 
+// JSON-LD: entity description only. No offers, rating or review (see build/v3/lazyss/SEO.md). Version and release
+// URL come from the signals snapshot; the licence is stated only when the snapshot says MIT.
+const SITE = 'https://lazyss.hamardikan.com/';
+const PERSON = { '@id': 'https://hamardikan.com/#person' };
+const DESCRIPTION = /<meta name="description" content="([^"]*)">/.exec(readFileSync(`${root}/public/index.html`, 'utf8'))?.[1];
+if (!DESCRIPTION) throw new Error('meta description missing in public/index.html');
+const app = {
+  '@type': 'SoftwareApplication', '@id': `${SITE}#app`, name: 'lazyss', description: DESCRIPTION, url: SITE,
+  applicationCategory: 'DeveloperApplication', operatingSystem: 'macOS, Linux',
+  ...(r ? { softwareVersion: r.tag.replace(/^v/, ''), downloadUrl: r.url } : {}),
+  ...(l === 'MIT' ? { license: 'https://opensource.org/licenses/MIT' } : {}),
+  sameAs: ['https://github.com/hmrdkn-labs/lazyss'], author: PERSON, publisher: PERSON, isPartOf: { '@id': `${SITE}#website` }, mainEntityOfPage: { '@id': SITE },
+};
+const graph = { '@context': 'https://schema.org', '@graph': [
+  { '@type': 'WebSite', '@id': `${SITE}#website`, name: 'lazyss', url: SITE, inLanguage: 'en', publisher: PERSON },
+  app,
+  { '@type': 'Person', '@id': PERSON['@id'], name: 'Azzam Muhammadi Rizqun Karima', url: 'https://hamardikan.com/' },
+] };
+const jsonLdBlock = `<script type="application/ld+json">\n${JSON.stringify(graph, null, 2).replace(/</g, '\\u003c')}\n</script>`;
+
 let html = readFileSync(`${root}/public/index.html`, 'utf8');
-for (const [name, body] of [['sweep', sweepBlock], ['signals', signalsBlock], ['build', footBlock]]) {
+for (const [name, body] of [['sweep', sweepBlock], ['signals', signalsBlock], ['build', footBlock], ['jsonld', jsonLdBlock]]) {
   const re = new RegExp(`(<!-- ${name}:start -->)[\\s\\S]*?(<!-- ${name}:end -->)`);
   if (!re.test(html)) throw new Error(`marker ${name} missing in public/index.html`);
   html = html.replace(re, (_, a, b) => `${a}\n${body}\n${b}`);
@@ -148,5 +168,14 @@ for (const [name, body] of [['sweep', sweepBlock], ['signals', signalsBlock], ['
 const tmp = `${root}/public/.index.html.tmp`;
 writeFileSync(tmp, html);
 renameSync(tmp, `${root}/public/index.html`);
+const lastmod = new Date().toISOString().slice(0, 10);
+writeFileSync(`${root}/public/sitemap.xml`, `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${SITE}</loc>
+    <lastmod>${lastmod}</lastmod>
+  </url>
+</urlset>
+`);
 writeFileSync(`${root}/public/data/replay.json`, JSON.stringify(replay));
 console.log(`rendered ${hostCount} hosts, run ${(run[100] / 1000).toFixed(1)} s (100) and ${(run[60] / 1000).toFixed(1)} s (60), replay.json ${JSON.stringify(replay).length} B`);
