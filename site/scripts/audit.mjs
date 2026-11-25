@@ -1,7 +1,7 @@
 // v2 audit of the landing page in Chromium. Prints ok/FAIL per check and exits 1 on any FAIL.
 //   node scripts/audit.mjs              serves public/ on a free local port
 //   BASE_URL=https://lazyss.hamardikan.com node scripts/audit.mjs   audits a live site
-//   NO_LH=1 node scripts/audit.mjs      skips Lighthouse (mobile: performance >= 90, accessibility = 100)
+//   NO_LH=1 node scripts/audit.mjs      skips Lighthouse (mobile: performance >= 95, accessibility, best practices, SEO = 100)
 // Hero = [data-hero], else the h1's closest section. Playwright, axe and lighthouse live in ~/.cache/lazyss-pw:
 //   npm i --prefix ~/.cache/lazyss-pw playwright @axe-core/playwright lighthouse && npx --prefix ~/.cache/lazyss-pw playwright install chromium
 import { createRequire } from 'node:module';
@@ -155,6 +155,63 @@ try {
     await ctx.close();
   }
 
+  // SEO: head, JSON-LD, social tags, crawl files, images
+  {
+    const res = await fetch(`${base}/`);
+    const src = await res.text();
+    check(res.status === 200, `/ returns ${res.status}`);
+    const { ctx, page } = await open({ viewport: { width: 1440, height: 900 } }, 'seo');
+    const d = await page.evaluate(() => {
+      const meta = (sel) => [...document.querySelectorAll(sel)].map((m) => m.getAttribute('content') ?? '');
+      return {
+        title: document.title,
+        desc: meta('meta[name=description]'),
+        canon: [...document.querySelectorAll('link[rel=canonical]')].map((l) => l.getAttribute('href')),
+        robots: meta('meta[name=robots]'),
+        og: Object.fromEntries(['title', 'description', 'url', 'type', 'site_name', 'image', 'image:alt'].map((k) => [k, meta(`meta[property="og:${k}"]`)[0] ?? ''])),
+        twitter: meta('meta[name="twitter:card"]')[0] ?? '',
+        ld: [...document.querySelectorAll('script[type="application/ld+json"]')].map((n) => n.textContent),
+        imgs: [...document.images].map((i) => ({ src: i.getAttribute('src'), alt: i.hasAttribute('alt') && i.getAttribute('alt').trim().length > 0, w: i.hasAttribute('width'), h: i.hasAttribute('height') })),
+      };
+    });
+    await ctx.close();
+    check(d.title.length > 0 && d.title.length <= 60, `title ${d.title.length} chars <= 60: ${d.title}`);
+    check(d.desc.length === 1 && d.desc[0].length >= 120 && d.desc[0].length <= 155, `meta description ${d.desc[0]?.length} chars in 120-155 (${d.desc.length} tag)`);
+    check(d.canon.length === 1 && /^https:\/\/[^/]+\/$/.test(d.canon[0]), `one absolute https canonical with trailing slash: ${d.canon.join(' ')}`);
+    check(!d.robots.some((r) => /noindex/i.test(r)) && !/noindex/i.test(src), 'no noindex on /');
+    const missing = Object.entries(d.og).filter(([, v]) => !v).map(([k]) => k);
+    check(missing.length === 0 && !!d.twitter, `og:title/description/url/type/site_name/image/image:alt and twitter:card present${missing.length ? ', missing ' + missing.join(' ') : ''}`);
+    check(d.og.description === d.desc[0], 'og:description equals the meta description');
+
+    const ldErrors = [];
+    const types = new Map();
+    for (const raw of d.ld) {
+      try { for (const n of JSON.parse(raw)['@graph'] ?? []) types.set(n['@type'], n); } catch (e) { ldErrors.push(e.message); }
+    }
+    check(d.ld.length > 0 && ldErrors.length === 0, `${d.ld.length} JSON-LD block(s) parse${ldErrors.length ? ': ' + ldErrors[0] : ''}`);
+    const need = { WebSite: ['@id', 'name', 'url', 'inLanguage', 'publisher'], SoftwareApplication: ['@id', 'name', 'description', 'url', 'applicationCategory', 'operatingSystem', 'softwareVersion', 'downloadUrl', 'sameAs', 'author', 'publisher'], Person: ['@id', 'name', 'url'] };
+    for (const [t, fields] of Object.entries(need)) {
+      const n = types.get(t);
+      const gone = n ? fields.filter((f) => n[f] === undefined) : fields;
+      check(!!n && gone.length === 0, `JSON-LD ${t}${n ? '' : ' MISSING'}${gone.length && n ? ' lacks ' + gone.join(', ') : ''}`);
+    }
+    const app = types.get('SoftwareApplication');
+    check(!!app && app.description === d.desc[0], 'JSON-LD description equals the meta description');
+    const banned = ['offers', 'aggregateRating', 'review', 'BreadcrumbList'].filter((k) => d.ld.join('').includes(`"${k}"`));
+    check(banned.length === 0, `JSON-LD has none of offers, aggregateRating, review, BreadcrumbList${banned.length ? ': ' + banned.join(', ') : ''}`);
+
+    const bad = d.imgs.filter((i) => !i.alt || !i.w || !i.h);
+    check(bad.length === 0, `${d.imgs.length} img, each with alt, width and height${bad.length ? ': ' + bad.map((i) => i.src).join(', ') : ''}`);
+
+    for (const [path, type] of [['/sitemap.xml', /xml/], ['/robots.txt', /text/]]) {
+      const r = await fetch(base + path);
+      const ct = r.headers.get('content-type') ?? '';
+      check(r.status === 200 && type.test(ct), `${path} ${r.status} ${ct}`);
+    }
+    const nf = await fetch(`${base}/no-such-page-${Date.now()}`);
+    check(nf.status === 404, `unknown path returns ${nf.status}`);
+  }
+
   check(problems.length === 0, `console errors and failed requests: ${problems.length}${problems.length ? '\n       ' + [...new Set(problems)].slice(0, 8).join('\n       ') : ''}`);
 } finally {
   await browser.close();
@@ -169,15 +226,17 @@ if (process.env.NO_LH) {
   const probe = spawnSync('test', ['-x', bin]);
   if (probe.status !== 0) spawnSync('npm', ['i', '--prefix', pw, 'lighthouse'], { stdio: 'inherit' });
   const exe = chromium.executablePath();
-  const lh = spawnSync('npx', ['--prefix', pw, 'lighthouse', `${base}/`, '--chrome-flags=--headless=new', '--only-categories=performance,accessibility', '--output=json', '--output-path=stdout', '--quiet'], {
+  const lh = spawnSync('npx', ['--prefix', pw, 'lighthouse', `${base}/`, '--chrome-flags=--headless=new', '--only-categories=performance,accessibility,best-practices,seo', '--output=json', '--output-path=stdout', '--quiet'], {
     env: { ...process.env, CHROME_PATH: exe }, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
   });
   try {
     const j = JSON.parse(lh.stdout);
-    const perf = Math.round(j.categories.performance.score * 100);
-    const a11y = Math.round(j.categories.accessibility.score * 100);
-    check(perf >= 90, `Lighthouse mobile performance ${perf} >= 90`);
+    const score = (k) => Math.round(j.categories[k].score * 100);
+    const perf = score('performance'), a11y = score('accessibility'), bp = score('best-practices'), seo = score('seo');
+    check(perf >= 95, `Lighthouse mobile performance ${perf} >= 95`);
     check(a11y === 100, `Lighthouse mobile accessibility ${a11y} = 100`);
+    check(bp === 100, `Lighthouse mobile best practices ${bp} = 100`);
+    check(seo === 100, `Lighthouse mobile SEO ${seo} = 100`);
   } catch {
     check(false, `Lighthouse did not produce a report: ${(lh.stderr || '').slice(0, 300)}`);
   }
