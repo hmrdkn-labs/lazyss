@@ -161,9 +161,17 @@ Privacy
 Deploy
 - [x] Root-absolute URLs for internal links and assets.
 - [x] No `_redirects`.
-- [x] CSP allows only `'self'` (`_headers`); no console CSP errors under `wrangler dev`.
+- [x] CSP allows only `'self'` (`_headers`); no console CSP errors live. The zone's Web Analytics
+  beacon was injected into HTML and blocked by the CSP; `Cache-Control: no-transform` on `/*` stops
+  the injection (`~/universe/kb/cloudflare.md`).
 - [x] `/assets/*` immutable; font files carry weight in the name, rename on change.
 - [x] No layout shift: capture height reserved by fixed rows in CSS; fonts preloaded.
-- [ ] Live copy checked after deploy (see REPORT.md).
+- [x] Live copy checked after deploy: live `index.html` byte-identical to `site/public/index.html`;
+  `BASE_URL=https://lazyss.hamardikan.com node scripts/verify.mjs` passes (axe zero, no console
+  errors, no overflow, 122.9 KB at 375); shots in `shots/live/`.
 
-Lighthouse (mobile, local server): performance 100, accessibility 100, best practices 100, SEO 100.
+Lighthouse mobile, live, three runs on 2026-11-25: performance 100, accessibility 100, best
+practices 100, SEO 100 each.
+
+Review: three rounds on `openai-codex/gpt-6.1-sol` (`build/lazyss/REVIEW.md`); round 3 open
+must-fix 0.
