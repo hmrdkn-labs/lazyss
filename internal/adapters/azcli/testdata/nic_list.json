@@ -1,0 +1,5 @@
+[
+ {"id":"/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-app/providers/Microsoft.Network/networkInterfaces/web-1-nic","ipConfigurations":[{"subnet":{"id":"/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-app/providers/Microsoft.Network/virtualNetworks/vnet-app/subnets/web"}}]},
+ {"id":"/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-app/providers/Microsoft.Network/networkInterfaces/db-1-nic","ipConfigurations":[{"subnet":{"id":"/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-app/providers/Microsoft.Network/virtualNetworks/vnet-app/subnets/db"}}]},
+ {"id":"/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-other/providers/Microsoft.Network/networkInterfaces/old-1-nic","ipConfigurations":[{"subnet":{"id":"/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-other/providers/Microsoft.Network/virtualNetworks/vnet-old/subnets/default"}}]}
+]
