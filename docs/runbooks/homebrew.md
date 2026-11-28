@@ -9,9 +9,17 @@ brew install --formula hmrdkn-labs/tap/lazyss
 ## Current Decision
 
 ADR 0002 selects public GitHub release assets and a public Homebrew formula.
-GoReleaser builds and publishes the release archives. LazySS release automation
-then generates `homebrew/Formula/lazyss.rb` from the snapshot `dist/` directory
-and publishes `Formula/lazyss.rb` to `hmrdkn-labs/homebrew-tap`.
+- Tagged release (`.github/workflows/release.yml`, on a `v<major>.<minor>.<patch>`
+  tag push): `goreleaser release --clean` publishes the archives and
+  `checksums.txt` to the GitHub Release. The "Update Homebrew formula" step then
+  runs `scripts/homebrew_formula.py generate --dist dist` on that release's
+  `dist/`, writes `homebrew-tap/Formula/lazyss.rb`, and pushes it to
+  `hmrdkn-labs/homebrew-tap`.
+- Snapshot candidate gate (`make release-snapshot`, `make release-artifacts-verify`):
+  `goreleaser release --clean --snapshot --skip=publish` writes `dist/` locally or
+  in CI, and the same generator writes `dist/homebrew/Formula/lazyss.rb` for
+  verification. Snapshot `dist/` is never published, and this gate does not touch
+  the tap.
 
 The formula must use public release URLs, release checksums, `bin.install
 "lazyss"`, and a `lazyss --version` test. It must not contain token values,

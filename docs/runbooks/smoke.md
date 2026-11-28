@@ -68,8 +68,9 @@ Google Cloud (`gcloud`):
 3. Run `./bin/lazyss --source gcp --gcp-project <project-id>`.
 4. Select a RUNNING instance with an external IP, press `g`, and confirm
    `tcp/22 open` or a clear failure label.
-5. Press `m` to choose `gcloud-iap-ssh`, press `Enter`, and confirm the
-   `gcloud compute ssh --tunnel-through-iap` session starts.
+5. Check the displayed method. A saved preference can change the starting method,
+   so press `m` only until `gcloud-iap-ssh` is shown, then press `Enter` and
+   confirm the `gcloud compute ssh --tunnel-through-iap` session starts.
 
 Azure (`az`):
 
@@ -77,9 +78,12 @@ Azure (`az`):
    (`az extension add --name ssh` if not).
 2. Run `./bin/lazyss doctor --source azure` and confirm the azure check is `ok`.
 3. Run `./bin/lazyss --source azure --azure-subscription <id-or-name>`.
-4. Select a VM with a public IP, press `g`, then `Enter` to start `az ssh vm`.
-5. For a VM behind a Bastion in the same VNet, press `m` to choose
-   `az-bastion-ssh`, then `Enter`.
+4. Select a VM with a public IP, press `g`, and check that the displayed method is
+   `az-ssh`; a saved preference can change the starting method. Then press `Enter`
+   to start `az ssh vm`.
+5. For a VM behind a Bastion in the same VNet, check the displayed method. Press
+   `m` only until `az-bastion-ssh` is shown, then `Enter`. A single `m` can select
+   direct `az-ssh` instead.
 
 Do not paste CLI output, tokens, or account dumps into the release issue.
 
@@ -94,7 +98,7 @@ Do not paste CLI output, tokens, or account dumps into the release issue.
 
 ## Release Evidence File
 
-Before `v0.1.0`, record the live SSH and AWS SSM smoke result in a local JSON
+Before `v0.3.0`, record the live SSH and AWS SSM smoke result in a local JSON
 file that is not committed:
 
 ```sh
@@ -105,7 +109,7 @@ The helper writes `live-smoke-evidence.json` with file mode `0600`, the current
 commit, the target release version, and deliberately failing boolean fields.
 Edit it only after the real smoke checks pass. Fill in only non-secret labels:
 
-- `target_version`: release version, for example `v0.1.0`
+- `target_version`: release version, for example `v0.3.0`
 - `commit`: full commit SHA that was smoked
 - `checked_at`: ISO-8601 timestamp
 - `ssh.host_label`: SSH config alias or redacted host label
@@ -122,7 +126,7 @@ Validate the evidence directly:
 ```sh
 python3 scripts/live_smoke_evidence.py validate \
   --file live-smoke-evidence.json \
-  --target-version v0.1.0 \
+  --target-version v0.3.0 \
   --commit "$(git rev-parse HEAD)"
 ```
 
