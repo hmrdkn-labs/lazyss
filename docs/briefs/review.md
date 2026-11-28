@@ -3,6 +3,12 @@
 You review one branch, read-only. The launch prompt names the branch and its brief
 (`docs/briefs/<brief>.md`). You run in that branch's worktree.
 
+## Process safety
+
+Never kill processes by name (`pkill -f`, `killall`, e.g. wrangler/workerd): other agents run production
+processes on this Mac. Start any background process with `cmd & echo $! > <pidfile>` and kill only that PID
+and its children. Do not use port 8787; pick another free port.
+
 ## Do
 
 1. Read the brief, then `git diff main...HEAD` (use `git merge-base` if main has moved).
