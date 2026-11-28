@@ -55,6 +55,34 @@ LAZYSS_LIVE_AWS_REGION=<region> \
 go test -tags liveaws ./internal/adapters/awsssm -run TestLiveAWSInventoryWithProfile -count=1 -v
 ```
 
+## Optional GCP and Azure Smoke
+
+Google Cloud and Azure smoke is optional evidence for v0.3.0. Release readiness
+does not check it, and `scripts/live_smoke_evidence.py` has no fields for it.
+Record the result in the release issue with non-secret labels only.
+
+Google Cloud (`gcloud`):
+
+1. Run `gcloud auth list`; the account marked ACTIVE must be yours.
+2. Run `./bin/lazyss doctor --source gcp` and confirm the gcloud check is `ok`.
+3. Run `./bin/lazyss --source gcp --gcp-project <project-id>`.
+4. Select a RUNNING instance with an external IP, press `g`, and confirm
+   `tcp/22 open` or a clear failure label.
+5. Press `m` to choose `gcloud-iap-ssh`, press `Enter`, and confirm the
+   `gcloud compute ssh --tunnel-through-iap` session starts.
+
+Azure (`az`):
+
+1. Run `az account show`, then `az extension list`; `ssh` must be installed
+   (`az extension add --name ssh` if not).
+2. Run `./bin/lazyss doctor --source azure` and confirm the azure check is `ok`.
+3. Run `./bin/lazyss --source azure --azure-subscription <id-or-name>`.
+4. Select a VM with a public IP, press `g`, then `Enter` to start `az ssh vm`.
+5. For a VM behind a Bastion in the same VNet, press `m` to choose
+   `az-bastion-ssh`, then `Enter`.
+
+Do not paste CLI output, tokens, or account dumps into the release issue.
+
 ## Failure Safety
 
 1. Use a bad SSH host and confirm failed connects record failure without
