@@ -65,7 +65,7 @@ func (m Model) inputValue() string {
 }
 
 func (m Model) availableFiltersLine() string {
-	return "Available filters: tag:Key=Value | name:prefix | method:ssh|ssm | health:up|down|unknown | hidden:true|false | text"
+	return "Available filters: tag:Key=Value | name:prefix | method:ssh|ssm|gcloud|iap|az|bastion | health:up|down|unknown | hidden:true|false | text"
 }
 
 func (m *Model) applySearch(query string) {

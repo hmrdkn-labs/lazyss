@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -32,6 +33,20 @@ type Runtime struct {
 	AWSProfile    string
 	AWSRegion     string
 	SetAWSProfile func(ctx context.Context, profile string) (*app.InventoryService, error)
+
+	// GCP and Azure scope selection and login. Scope listers and login specs
+	// come from the CLI adapters through ports so the TUI never imports them.
+	GCPProject string
+	// ResolveGCPProject looks up the default project in the background when
+	// GCPProject is empty; the cockpit never waits for it.
+	ResolveGCPProject    func(ctx context.Context) (string, error)
+	AzureSubscription    string
+	GCPScopes            ports.ScopeLister
+	AzureScopes          ports.ScopeLister
+	GCPLogin             ports.CommandSpec
+	AzureLogin           ports.CommandSpec
+	SetGCPProject        func(ctx context.Context, project string) (*app.InventoryService, error)
+	SetAzureSubscription func(ctx context.Context, subscription string) (*app.InventoryService, error)
 }
 
 // Model is the Bubble Tea state for the machine cockpit.
@@ -49,7 +64,9 @@ type Model struct {
 	mode          mode
 	inputKind     string
 	details       bool
-	profiles      []string
+	profiles      []string // picker labels
+	pickerValues  []string // picker values parallel to profiles; equals profiles for AWS
+	pickerKind    domain.ProviderKind
 	profileCursor int
 	refreshSeq    int
 	statusLine    string
@@ -66,14 +83,22 @@ type machinesMsg struct {
 	machines []domain.Machine
 	statuses []domain.ProviderStatus
 	err      error
+	// ch is the inventory stream still delivering snapshots; nil when the
+	// message is final.
+	ch <-chan app.InventoryResult
+	// closed marks the end of the stream: it carries no inventory.
+	closed bool
 }
 
 type profilesMsg struct {
+	provider domain.ProviderKind // zero means AWS
 	profiles []string
+	values   []string // optional ids parallel to profiles
 	err      error
 }
 
 type profileSelectedMsg struct {
+	provider  domain.ProviderKind // zero means AWS
 	profile   string
 	inventory *app.InventoryService
 	err       error
@@ -81,6 +106,11 @@ type profileSelectedMsg struct {
 
 type awsLoginMsg struct {
 	err error
+}
+
+type cloudLoginMsg struct {
+	provider domain.ProviderKind
+	err      error
 }
 
 type connectFinishedMsg struct {
@@ -100,18 +130,34 @@ type healthStreamMsg struct {
 
 // NewModel creates a TUI model with the detail panel shown and an initial filtered view.
 func NewModel(runtime *Runtime) Model {
-	m := Model{runtime: runtime, details: true}
+	m := Model{runtime: runtime, details: true, refreshSeq: 1}
 	m.recompute()
 	return m
 }
 
-// Init starts initial inventory loading when services are available.
+// Init starts initial inventory loading when services are available. The
+// initial request uses the generation NewModel allocated in retained state.
 func (m Model) Init() tea.Cmd {
 	if m.runtime == nil || m.runtime.Inventory == nil {
 		return nil
 	}
-	m.refreshSeq++
-	return m.fetchCmd(m.refreshSeq)
+	return tea.Batch(m.fetchCmd(m.refreshSeq), m.resolveProjectCmd())
+}
+
+type gcpProjectMsg struct{ project string }
+
+func (m Model) resolveProjectCmd() tea.Cmd {
+	if m.runtime.GCPProject != "" || m.runtime.ResolveGCPProject == nil {
+		return nil
+	}
+	resolve := m.runtime.ResolveGCPProject
+	return func() tea.Msg {
+		project, err := resolve(context.Background())
+		if err != nil || project == "" {
+			return nil
+		}
+		return gcpProjectMsg{project: project}
+	}
 }
 
 // Update applies one Bubble Tea message.
@@ -120,8 +166,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+	case gcpProjectMsg:
+		if m.runtime.GCPProject == "" {
+			m.runtime.GCPProject = msg.project
+		}
 	case machinesMsg:
-		m.handleMachinesMsg(msg)
+		cmd := m.handleMachinesMsg(msg)
+		return m, cmd
 	case healthMsg:
 		m.applyHealth(domain.HealthObservation(msg))
 	case healthStreamMsg:
@@ -134,6 +185,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleProfileSelectedMsg(msg)
 	case awsLoginMsg:
 		return m.handleAWSLoginMsg(msg)
+	case cloudLoginMsg:
+		return m.handleCloudLoginMsg(msg)
 	case connectFinishedMsg:
 		return m.handleConnectFinishedMsg(msg)
 	case tea.KeyPressMsg:
@@ -155,15 +208,28 @@ func (m Model) fetchCmd(seq int) tea.Cmd {
 			return machinesMsg{seq: seq, err: fmt.Errorf("inventory is not configured")}
 		}
 	}
+	ch := m.runtime.Inventory.Stream(context.Background(), m.runtime.Query)
+	return waitInventory(seq, ch)
+}
+
+// waitInventory blocks for the next inventory snapshot. Each snapshot carries
+// the stream so the model can keep reading until the last provider finishes.
+func waitInventory(seq int, ch <-chan app.InventoryResult) tea.Cmd {
 	return func() tea.Msg {
-		result, err := m.runtime.Inventory.List(context.Background(), m.runtime.Query)
-		return machinesMsg{seq: seq, machines: result.Machines, statuses: result.Statuses, err: err}
+		r, ok := <-ch
+		if !ok {
+			return machinesMsg{seq: seq, closed: true}
+		}
+		return machinesMsg{seq: seq, machines: r.Machines, statuses: r.Statuses, ch: ch}
 	}
 }
 
-func (m *Model) handleMachinesMsg(msg machinesMsg) {
+func (m *Model) handleMachinesMsg(msg machinesMsg) tea.Cmd {
 	if msg.seq != 0 && msg.seq < m.refreshSeq {
-		return
+		return nil
+	}
+	if msg.closed {
+		return nil
 	}
 	m.machines = append([]domain.Machine(nil), msg.machines...)
 	m.statuses = append([]domain.ProviderStatus(nil), msg.statuses...)
@@ -171,6 +237,10 @@ func (m *Model) handleMachinesMsg(msg machinesMsg) {
 		m.statusLine = msg.err.Error()
 	}
 	m.recompute()
+	if msg.ch != nil {
+		return waitInventory(msg.seq, msg.ch)
+	}
+	return nil
 }
 
 func (m Model) handleAWSLoginMsg(msg awsLoginMsg) (tea.Model, tea.Cmd) {
@@ -181,6 +251,59 @@ func (m Model) handleAWSLoginMsg(msg awsLoginMsg) (tea.Model, tea.Cmd) {
 	m.statusLine = "aws login complete"
 	m.refreshSeq++
 	return m, m.fetchCmd(m.refreshSeq)
+}
+
+func (m Model) handleCloudLoginMsg(msg cloudLoginMsg) (tea.Model, tea.Cmd) {
+	if msg.err != nil {
+		m.statusLine = string(msg.provider) + " login: " + msg.err.Error()
+		return m, nil
+	}
+	m.statusLine = string(msg.provider) + " login complete"
+	m.refreshSeq++
+	return m, m.fetchCmd(m.refreshSeq)
+}
+
+// scopeProvider picks the provider P and L act on: the source in view, or for
+// source all the selected machine's provider, falling back to AWS.
+func (m Model) scopeProvider() domain.ProviderKind {
+	if m.runtime == nil {
+		return domain.ProviderAWS
+	}
+	switch m.runtime.Query.Source {
+	case "gcp":
+		return domain.ProviderGCP
+	case "azure":
+		return domain.ProviderAzure
+	case "", "all":
+		if len(m.visible) > 0 {
+			if p := m.visible[m.cursor].Provider; p == domain.ProviderGCP || p == domain.ProviderAzure {
+				return p
+			}
+		}
+	}
+	return domain.ProviderAWS
+}
+
+// loginCmd runs the interactive login for the provider P/L currently target.
+func (m Model) loginCmd() tea.Cmd {
+	provider := m.scopeProvider()
+	var spec ports.CommandSpec
+	switch provider {
+	case domain.ProviderGCP:
+		spec = m.runtime.GCPLogin
+	case domain.ProviderAzure:
+		spec = m.runtime.AzureLogin
+	default:
+		return m.awsLoginCmd()
+	}
+	if spec.Executable == "" {
+		return func() tea.Msg {
+			return cloudLoginMsg{provider: provider, err: fmt.Errorf("login is not configured")}
+		}
+	}
+	return tea.ExecProcess(exec.Command(spec.Executable, spec.Args...), func(err error) tea.Msg {
+		return cloudLoginMsg{provider: provider, err: err}
+	})
 }
 
 func (m Model) handleConnectFinishedMsg(msg connectFinishedMsg) (tea.Model, tea.Cmd) {

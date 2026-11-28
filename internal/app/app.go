@@ -40,48 +40,98 @@ type InventoryService struct {
 }
 
 // List returns merged inventory while preserving partial provider failures.
+// It is the final snapshot of Stream.
 func (s InventoryService) List(ctx context.Context, q InventoryQuery) (InventoryResult, error) {
 	var result InventoryResult
+	for r := range s.Stream(ctx, q) {
+		result = r
+	}
+	return result, nil
+}
+
+// Stream queries providers concurrently and emits a cumulative snapshot each
+// time a provider finishes, so fast providers render before a slow one
+// returns. Snapshots keep statuses in provider order and machines sorted; the
+// last snapshot covers every provider. A slow or failing provider only
+// degrades its own status. The channel is buffered for every snapshot, so an
+// abandoned consumer never blocks the producers, and it closes after the last.
+func (s InventoryService) Stream(ctx context.Context, q InventoryQuery) <-chan InventoryResult {
+	var selected []InventoryProvider
 	for _, provider := range s.Providers {
 		if q.Source != "" && q.Source != "all" && provider.ProviderName() != q.Source {
 			continue
 		}
-		machines, status, err := provider.ListMachines(ctx, q)
-		if err != nil {
-			if status.Name == "" {
-				status.Name = provider.ProviderName()
+		selected = append(selected, provider)
+	}
+	type providerResult struct {
+		index    int
+		machines []domain.Machine
+		status   domain.ProviderStatus
+	}
+	done := make(chan providerResult, len(selected))
+	for i, provider := range selected {
+		go func() {
+			machines, status := s.listProvider(ctx, provider, q)
+			done <- providerResult{index: i, machines: machines, status: status}
+		}()
+	}
+	out := make(chan InventoryResult, len(selected)+1)
+	go func() {
+		defer close(out)
+		if len(selected) == 0 {
+			out <- InventoryResult{}
+			return
+		}
+		collected := make([]*providerResult, len(selected))
+		for range selected {
+			r := <-done
+			collected[r.index] = &r
+			var snapshot InventoryResult
+			for _, c := range collected {
+				if c == nil {
+					continue
+				}
+				snapshot.Statuses = append(snapshot.Statuses, c.status)
+				snapshot.Machines = append(snapshot.Machines, c.machines...)
 			}
-			status.Status = domain.ProviderDegraded
-			if status.Message == "" {
-				status.Message = err.Error()
+			domain.SortMachines(snapshot.Machines)
+			out <- snapshot
+		}
+	}()
+	return out
+}
+
+func (s InventoryService) listProvider(ctx context.Context, provider InventoryProvider, q InventoryQuery) ([]domain.Machine, domain.ProviderStatus) {
+	machines, status, err := provider.ListMachines(ctx, q)
+	if status.Name == "" {
+		status.Name = provider.ProviderName()
+	}
+	if err != nil {
+		status.Status = domain.ProviderDegraded
+		if status.Message == "" {
+			status.Message = err.Error()
+		}
+		return nil, status
+	}
+	if status.Status == "" {
+		status.Status = domain.ProviderHealthy
+	}
+	var kept []domain.Machine
+	for _, m := range machines {
+		if s.Store != nil {
+			overlay, err := s.Store.LoadOverlay(ctx, m.ID)
+			if err == nil {
+				m.ApplyOverlay(overlay)
 			}
-			result.Statuses = append(result.Statuses, status)
+		}
+		if m.Hidden && !q.ShowHidden {
 			continue
 		}
-		if status.Name == "" {
-			status.Name = provider.ProviderName()
-		}
-		if status.Status == "" {
-			status.Status = domain.ProviderHealthy
-		}
-		result.Statuses = append(result.Statuses, status)
-		for _, m := range machines {
-			if s.Store != nil {
-				overlay, err := s.Store.LoadOverlay(ctx, m.ID)
-				if err == nil {
-					m.ApplyOverlay(overlay)
-				}
-			}
-			if m.Hidden && !q.ShowHidden {
-				continue
-			}
-			if q.Search == "" || strings.Contains(strings.ToLower(m.Name+" "+m.Address+" "+m.NativeID), strings.ToLower(q.Search)) {
-				result.Machines = append(result.Machines, m)
-			}
+		if q.Search == "" || strings.Contains(strings.ToLower(m.Name+" "+m.Address+" "+m.NativeID), strings.ToLower(q.Search)) {
+			kept = append(kept, m)
 		}
 	}
-	domain.SortMachines(result.Machines)
-	return result, nil
+	return kept, status
 }
 
 // ConnectService builds and runs interactive connection commands.

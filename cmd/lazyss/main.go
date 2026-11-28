@@ -16,6 +16,8 @@ import (
 
 	"github.com/hmrdkn-labs/lazyss/internal/adapters/awsconfig"
 	"github.com/hmrdkn-labs/lazyss/internal/adapters/awsssm"
+	"github.com/hmrdkn-labs/lazyss/internal/adapters/azcli"
+	"github.com/hmrdkn-labs/lazyss/internal/adapters/gcloud"
 	"github.com/hmrdkn-labs/lazyss/internal/adapters/sshconfig"
 	"github.com/hmrdkn-labs/lazyss/internal/adapters/statejson"
 	"github.com/hmrdkn-labs/lazyss/internal/app"
@@ -33,6 +35,8 @@ type cliConfig struct {
 	SSHConfig      string
 	AWSProfile     string
 	AWSRegion      string
+	GCPProject     string
+	AzureSub       string
 	CleanupHosts   []string
 	CleanupWrite   bool
 	CleanupCheck   bool
@@ -101,7 +105,7 @@ func parseArgs(args []string) (cliConfig, string, error) {
 		}
 	}
 	switch cfg.Source {
-	case "all", "ssh", "aws":
+	case "all", "ssh", "aws", "gcp", "azure":
 	default:
 		return cfg, "", fmt.Errorf("invalid --source %q", cfg.Source)
 	}
@@ -121,10 +125,12 @@ func (s *stringListFlag) Set(value string) error {
 
 func parseFlagSegment(cfg *cliConfig, args []string) ([]string, error) {
 	fs := flag.NewFlagSet("lazyss", flag.ContinueOnError)
-	fs.StringVar(&cfg.Source, "source", cfg.Source, "inventory source: all, ssh, aws")
+	fs.StringVar(&cfg.Source, "source", cfg.Source, "inventory source: all, ssh, aws, gcp, azure")
 	fs.StringVar(&cfg.SSHConfig, "ssh-config", cfg.SSHConfig, "SSH config path")
 	fs.StringVar(&cfg.AWSProfile, "aws-profile", cfg.AWSProfile, "AWS profile")
 	fs.StringVar(&cfg.AWSRegion, "aws-region", cfg.AWSRegion, "AWS region")
+	fs.StringVar(&cfg.GCPProject, "gcp-project", cfg.GCPProject, "GCP project id")
+	fs.StringVar(&cfg.AzureSub, "azure-subscription", cfg.AzureSub, "Azure subscription id or name")
 	fs.Var((*stringListFlag)(&cfg.CleanupHosts), "host", "SSH host to remove with ssh cleanup --write; repeatable")
 	fs.BoolVar(&cfg.CleanupWrite, "write", cfg.CleanupWrite, "write SSH cleanup changes")
 	fs.BoolVar(&cfg.CleanupCheck, "check", cfg.CleanupCheck, "check SSH host TCP reachability in cleanup report")
@@ -148,13 +154,18 @@ func runTUI(cfg cliConfig) int {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "preferences:", err)
 	}
-	effectiveCfg := resolveAWSConfig(cfg, prefs)
+	effectiveCfg := resolveConfig(cfg, prefs)
 	providers := buildProviders(effectiveCfg)
 	awsCLI := awsconfig.NewCLI(nil)
-	connectors := []ports.Connector{sshconfig.NewConnector(nil, nil), awsssm.NewConnector(nil)}
+	connectors := []ports.Connector{
+		sshconfig.NewConnector(nil, nil), awsssm.NewConnector(nil),
+		gcloud.NewConnector(nil), azcli.NewConnector(nil),
+	}
 	checkers := []ports.HealthChecker{
 		sshconfig.NewChecker(nil, nil, 3*time.Second),
 		awsssm.Checker{},
+		gcloud.NewChecker(nil, 3*time.Second),
+		azcli.NewChecker(nil, 3*time.Second),
 	}
 	var cleanup *app.CleanupService
 	if effectiveCfg.SSHConfig != "" {
@@ -172,6 +183,22 @@ func runTUI(cfg cliConfig) int {
 		AWSLogin:    awsCLI,
 		AWSProfile:  effectiveCfg.AWSProfile,
 		AWSRegion:   effectiveCfg.AWSRegion,
+
+		GCPProject:        effectiveCfg.GCPProject,
+		AzureSubscription: effectiveCfg.AzureSub,
+		ResolveGCPProject: resolveGCPProject,
+		GCPScopes:         gcpScopes{},
+		AzureScopes:       azureScopes{},
+		GCPLogin:          gcloud.LoginCommand(),
+		AzureLogin:        azcli.LoginCommand(),
+		SetGCPProject: func(_ context.Context, project string) (*app.InventoryService, error) {
+			effectiveCfg.GCPProject = project
+			return &app.InventoryService{Providers: buildProviders(effectiveCfg), Store: store}, nil
+		},
+		SetAzureSubscription: func(_ context.Context, subscription string) (*app.InventoryService, error) {
+			effectiveCfg.AzureSub = subscription
+			return &app.InventoryService{Providers: buildProviders(effectiveCfg), Store: store}, nil
+		},
 		SetAWSProfile: func(_ context.Context, profile string) (*app.InventoryService, error) {
 			nextCfg := effectiveCfg
 			nextCfg.AWSProfile = profile
@@ -186,25 +213,59 @@ func runTUI(cfg cliConfig) int {
 	return 0
 }
 
+// buildProviders registers every provider regardless of the initial source;
+// InventoryQuery.Source filters at query time, so cycling sources works from
+// any start.
 func buildProviders(cfg cliConfig) []ports.InventoryProvider {
-	var providers []ports.InventoryProvider
-	if cfg.Source == "all" || cfg.Source == "ssh" {
-		providers = append(providers, sshconfig.NewInventory(cfg.SSHConfig))
+	return []ports.InventoryProvider{
+		sshconfig.NewInventory(cfg.SSHConfig),
+		lazyAWSProvider{profile: cfg.AWSProfile, region: cfg.AWSRegion},
+		gcloud.NewInventory(nil, cfg.GCPProject),
+		azcli.NewInventory(nil, cfg.AzureSub),
 	}
-	if cfg.Source == "all" || cfg.Source == "aws" {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		inv, err := awsssm.LoadInventory(ctx, cfg.AWSProfile, cfg.AWSRegion)
-		if err != nil {
-			providers = append(providers, failingProvider{name: "aws", err: err})
-		} else {
-			providers = append(providers, inv)
-		}
-	}
-	return providers
 }
 
-func resolveAWSConfig(cfg cliConfig, prefs domain.OperatorPreferences) cliConfig {
+func resolveGCPProject(ctx context.Context) (string, error) {
+	return gcloud.ActiveProject(ctx, nil)
+}
+
+// gcpScopes lists GCP projects for the TUI picker through the gcloud CLI.
+type gcpScopes struct{}
+
+func (gcpScopes) ListScopes(ctx context.Context) ([]ports.ScopeOption, error) {
+	projects, err := gcloud.ListProjects(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]ports.ScopeOption, 0, len(projects))
+	for _, p := range projects {
+		out = append(out, ports.ScopeOption{ID: p.ID, Name: p.Name})
+	}
+	return out, nil
+}
+
+// azureScopes lists Azure subscriptions for the TUI picker through the az CLI.
+type azureScopes struct{}
+
+func (azureScopes) ListScopes(ctx context.Context) ([]ports.ScopeOption, error) {
+	subs, err := azcli.ListSubscriptions(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]ports.ScopeOption, 0, len(subs))
+	for _, s := range subs {
+		out = append(out, ports.ScopeOption{ID: s.ID, Name: s.Name})
+	}
+	return out, nil
+}
+
+func resolveConfig(cfg cliConfig, prefs domain.OperatorPreferences) cliConfig {
+	if cfg.GCPProject == "" {
+		cfg.GCPProject = prefs.GCPProject
+	}
+	if cfg.AzureSub == "" {
+		cfg.AzureSub = prefs.AzureSubscription
+	}
 	if cfg.AWSProfile == "" {
 		cfg.AWSProfile = prefs.AWSProfile
 	}
@@ -216,7 +277,15 @@ func resolveAWSConfig(cfg cliConfig, prefs domain.OperatorPreferences) cliConfig
 
 func runDoctor(cfg cliConfig) int {
 	checks := doctor.Doctor{
-		Region: cfg.AWSRegion,
+		Region:       cfg.AWSRegion,
+		RequireGCP:   cfg.Source == "gcp",
+		RequireAzure: cfg.Source == "azure",
+		GCP: func(ctx context.Context) domain.ProviderStatus {
+			return gcloud.CLIStatus(ctx, nil)
+		},
+		Azure: func(ctx context.Context) domain.ProviderStatus {
+			return azcli.CLIStatus(ctx, nil)
+		},
 		Identity: func(ctx context.Context) error {
 			var opts []func(*config.LoadOptions) error
 			if cfg.AWSProfile != "" {
@@ -240,7 +309,11 @@ func runDoctor(cfg cliConfig) int {
 		mark := "ok"
 		if !check.OK {
 			mark = "fail"
-			ok = false
+			if check.Optional {
+				mark = "warn"
+			} else {
+				ok = false
+			}
 		}
 		fmt.Printf("  [%s] %s - %s\n", mark, check.Name, check.Detail)
 		if !check.OK && check.Fix != "" {
@@ -319,13 +392,21 @@ func nonempty(value, fallback string) string {
 	return value
 }
 
-type failingProvider struct {
-	name string
-	err  error
+// lazyAWSProvider loads AWS config on first listing so registering it never
+// delays startup; a load failure degrades only the aws status.
+type lazyAWSProvider struct {
+	profile string
+	region  string
 }
 
-func (f failingProvider) ProviderName() string { return f.name }
+func (lazyAWSProvider) ProviderName() string { return "aws" }
 
-func (f failingProvider) ListMachines(context.Context, app.InventoryQuery) ([]domain.Machine, domain.ProviderStatus, error) {
-	return nil, domain.ProviderStatus{Name: f.name, Status: domain.ProviderDegraded, Message: f.err.Error()}, f.err
+func (l lazyAWSProvider) ListMachines(ctx context.Context, q app.InventoryQuery) ([]domain.Machine, domain.ProviderStatus, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	inv, err := awsssm.LoadInventory(ctx, l.profile, l.region)
+	if err != nil {
+		return nil, domain.ProviderStatus{Name: "aws", Status: domain.ProviderDegraded, Message: err.Error()}, err
+	}
+	return inv.ListMachines(ctx, q)
 }

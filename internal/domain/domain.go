@@ -142,8 +142,10 @@ type ProviderStatus struct {
 // OperatorPreferences stores safe local cockpit defaults. It must not contain
 // credential material, tokens, private keys, or environment dumps.
 type OperatorPreferences struct {
-	AWSProfile string `json:"aws_profile,omitempty"`
-	AWSRegion  string `json:"aws_region,omitempty"`
+	AWSProfile        string `json:"aws_profile,omitempty"`
+	AWSRegion         string `json:"aws_region,omitempty"`
+	GCPProject        string `json:"gcp_project,omitempty"`
+	AzureSubscription string `json:"azure_subscription,omitempty"`
 }
 
 // NewSSHMachineID returns the stable ID for an SSH config alias.

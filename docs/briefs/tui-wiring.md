@@ -76,8 +76,19 @@ only that PID and its children. Do not use port 8787 (taken by another agent); p
 
 ## Report (fill in, then reply in ≤ 20 lines)
 
-- Commits:
-- `make check` / `make smoke-local` result (last lines):
-- Total coverage vs baseline:
-- Key bindings and help text changed:
-- Anything the reviewer should look at:
+- Commits: `d9e5bf5` style(azcli) tagged switch (lint QF1002); `feat(tui)` commit (see `git log`) with everything else.
+- `make check` / `make smoke-local` result (last lines): check: `ok coverage 78.7% meets baseline`, 43 script tests OK; smoke-local: `local smoke passed`. golangci-lint v2.12.2: 0 issues.
+- Total coverage vs baseline: 78.7% vs 57.7%; baseline raised to 78.5.
+- Key bindings and help text changed: `s` cycles all/ssh/ssm/gcp/azure; `P` (footer "scope") picks AWS profile / GCP project / Azure subscription; `L` runs AWS SSO / `gcloud auth login` / `az login` via tea.ExecProcess. Target = source in view, or for `all` the selected machine's provider, else AWS. `m` already cycled only the machine's Methods (test added). Help panel widened to 64.
+- Anything the reviewer should look at: `InventoryService.List` now concurrent (per-index results, provider order kept). Providers gcp/azure always registered; missing CLI shows as degraded status. Doctor: new `Check.Optional` ("warn" mark, no exit change unless `--source gcp|azure`); az GUIDs in parentheses are redacted. Provider badge for azure is "az" (3-col list column); method labels `gcloud-iap`/`az-bastion` shortened in list/detail/editor. Startup calls `gcloud.ActiveProject` when source is all/gcp and no flag/pref (one extra gcloud spawn). Preferences save now writes all four fields so P on one provider no longer clobbers others.
+
+### Review fixes (review-tui-wiring.md)
+
+- Blocker: `InventoryService.Stream` emits a cumulative snapshot per finished provider (statuses in provider order, machines sorted); `List` is its last snapshot. TUI `machinesMsg` carries the stream and re-arms until it closes. Tests: `TestInventoryStreamEmitsFastProvidersBeforeBlockedOne` (blocked fake provider), `TestModelRendersFastProviderWhileSlowOneIsBlocked`.
+- Should-fix: default GCP project resolved in the background (`Runtime.ResolveGCPProject`, `gcpProjectMsg`; never overwrites a picked project); `buildProviders` registers ssh/aws/gcp/azure for every `--source` (AWS config loads lazily on first listing, so startup is not delayed); test registers all providers for each restricted source. `smoke-tui.sh` help assertion now matches "selected machine".
+- azcli nit: ignored per orchestrator exception.
+- Checks: `make check` ok (78.6% vs baseline 78.5, 43 script tests), golangci-lint v2.12.2 0 issues, `make smoke-local` passed, `make smoke-tui` all assertions passed.
+
+### Review fixes round 2
+
+- Blocker: refresh generation now lives in retained state (`NewModel` sets `refreshSeq: 1`; `Init` uses it with no receiver-local increment), so the first source switch/refresh gets seq 2 and the initial stream's delayed snapshots are dropped and not re-armed. Test: `TestInitialStreamIsStaleAfterFirstSourceSwitch` (real `Init`, `cycleSource`, delayed snapshot).
