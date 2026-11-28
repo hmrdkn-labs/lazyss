@@ -88,3 +88,7 @@ only that PID and its children. Do not use port 8787 (taken by another agent); p
 - Should-fix: default GCP project resolved in the background (`Runtime.ResolveGCPProject`, `gcpProjectMsg`; never overwrites a picked project); `buildProviders` registers ssh/aws/gcp/azure for every `--source` (AWS config loads lazily on first listing, so startup is not delayed); test registers all providers for each restricted source. `smoke-tui.sh` help assertion now matches "selected machine".
 - azcli nit: ignored per orchestrator exception.
 - Checks: `make check` ok (78.6% vs baseline 78.5, 43 script tests), golangci-lint v2.12.2 0 issues, `make smoke-local` passed, `make smoke-tui` all assertions passed.
+
+### Review fixes round 2
+
+- Blocker: refresh generation now lives in retained state (`NewModel` sets `refreshSeq: 1`; `Init` uses it with no receiver-local increment), so the first source switch/refresh gets seq 2 and the initial stream's delayed snapshots are dropped and not re-armed. Test: `TestInitialStreamIsStaleAfterFirstSourceSwitch` (real `Init`, `cycleSource`, delayed snapshot).

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	tea "charm.land/bubbletea/v2"
+
 	"github.com/hmrdkn-labs/lazyss/internal/app"
 	"github.com/hmrdkn-labs/lazyss/internal/domain"
 	"github.com/hmrdkn-labs/lazyss/internal/ports"
@@ -294,5 +296,52 @@ func TestModelResolvesGCPProjectInBackground(t *testing.T) {
 	model.(Model).Update(gcpProjectMsg{project: "late"})
 	if runtime.GCPProject != "picked" {
 		t.Fatalf("late default overwrote picked project: %q", runtime.GCPProject)
+	}
+}
+
+type gcpMachineProvider struct{ release chan struct{} }
+
+func (gcpMachineProvider) ProviderName() string { return "gcp" }
+func (g gcpMachineProvider) ListMachines(context.Context, app.InventoryQuery) ([]domain.Machine, domain.ProviderStatus, error) {
+	<-g.release
+	return []domain.Machine{{ID: "gcp:1", Name: "late", Provider: domain.ProviderGCP}}, domain.ProviderStatus{Name: "gcp", Status: domain.ProviderHealthy}, nil
+}
+
+func TestInitialStreamIsStaleAfterFirstSourceSwitch(t *testing.T) {
+	release := make(chan struct{})
+	runtime := &Runtime{
+		Inventory: &app.InventoryService{Providers: []app.InventoryProvider{gcpMachineProvider{release: release}, fastTUIProvider{}}},
+		Query:     app.InventoryQuery{Source: "all"},
+	}
+	var model tea.Model = NewModel(runtime)
+	initial := model.Init()()
+	first, ok := initial.(machinesMsg)
+	if !ok || first.seq != 1 || first.ch == nil {
+		close(release)
+		t.Fatalf("initial message = %#v", initial)
+	}
+	model, pending := model.Update(first)
+	if pending == nil {
+		close(release)
+		t.Fatal("initial stream not armed")
+	}
+	model, switchCmd := model.(Model).cycleSource()
+	if got := runtime.Query.Source; got != "ssh" {
+		close(release)
+		t.Fatalf("source = %q", got)
+	}
+	model, _ = model.Update(switchCmd())
+	close(release)
+	stale := pending().(machinesMsg)
+	if stale.seq != 1 || len(stale.machines) != 2 {
+		t.Fatalf("delayed snapshot = %#v", stale)
+	}
+	model, rearm := model.Update(stale)
+	if rearm != nil {
+		t.Fatal("stale initial snapshot re-armed its stream")
+	}
+	got := model.(Model).machines
+	if len(got) != 1 || got[0].ID != "ssh:1" {
+		t.Fatalf("stale snapshot replaced inventory: %#v", got)
 	}
 }
