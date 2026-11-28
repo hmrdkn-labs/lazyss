@@ -168,7 +168,7 @@ release-preflight: release-readiness
 live-smoke-evidence-template:
 	python3 scripts/live_smoke_evidence.py template \
 		--output live-smoke-evidence.json \
-		--target-version "$${LAZYSS_RELEASE_VERSION:-v0.1.0}" \
+		--target-version "$${LAZYSS_RELEASE_VERSION:-v0.3.0}" \
 		--commit "$$(git rev-parse HEAD)"
 
 .PHONY: clean

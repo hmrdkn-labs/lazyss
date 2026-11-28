@@ -71,3 +71,20 @@ func TestDoctorCloudStatusRedactsSubscriptionID(t *testing.T) {
 		}
 	}
 }
+
+func TestDoctorAzureMissingSSHExtensionFixInstallsExtension(t *testing.T) {
+	found := func(string) (string, error) { return "/bin/az", nil }
+	azure := func(context.Context) domain.ProviderStatus {
+		return domain.ProviderStatus{Status: domain.ProviderDegraded, Message: "az logged in: subscription Prod (11111111-2222-3333-4444-555555555555); az ssh extension missing: run az extension add --name ssh"}
+	}
+	checks := Doctor{LookPath: found, Azure: azure}.Run(context.Background())
+	var a Check
+	for _, c := range checks {
+		if c.Name == "azure" {
+			a = c
+		}
+	}
+	if a.OK || a.Fix != "az extension add --name ssh" {
+		t.Fatalf("azure = %#v", a)
+	}
+}

@@ -68,6 +68,7 @@ func (d Doctor) Run(ctx context.Context) []Check {
 		checks = append(checks, cloudCheck(ctx, lookPath, cloudSpec{
 			name: "azure", exe: "az", source: "azure", status: d.Azure, required: d.RequireAzure,
 			installFix: "install the Azure CLI", loginFix: "run az login",
+			missing: "az ssh extension missing", missingFix: "az extension add --name ssh",
 		}))
 	}
 	return checks
@@ -78,6 +79,7 @@ type cloudSpec struct {
 	status               func(context.Context) domain.ProviderStatus
 	required             bool
 	installFix, loginFix string
+	missing, missingFix  string
 }
 
 // guidPattern matches a parenthesised GUID so subscription and tenant ids never
@@ -100,6 +102,10 @@ func cloudCheck(ctx context.Context, lookPath func(string) (string, error), spec
 	}
 	check.Detail = nonempty(msg, "not ready")
 	check.Fix = spec.loginFix
+	// Azure reports a missing ssh extension in its message; that needs the extension, not login.
+	if spec.missing != "" && strings.Contains(msg, spec.missing) {
+		check.Fix = spec.missingFix
+	}
 	return check
 }
 
