@@ -51,6 +51,11 @@ processes on this Mac. Start any dev server (`npm run dev`, `wrangler dev`, `pyt
 `cmd & echo $! > <pidfile>` and kill only that PID and its children. Do not use port 8787 (taken by another
 agent); pick another free port.
 
+Every Chrome/Chromium launch must pass `--use-mock-keychain --password-store=basic`, or macOS shows
+keychain prompts to the owner. Before running any script, make that true in `site/scripts/audit.mjs`
+(`chromium.launch({ args: [...] })` and Lighthouse's `--chrome-flags`), `site/scripts/shots.mjs` and
+`site/scripts/og.mjs`, as its own commit (`fix(site): ...`).
+
 ## Report (fill in, then reply in ≤ 20 lines)
 
 - Commits:
