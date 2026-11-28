@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/hmrdkn-labs/lazyss/internal/domain"
@@ -182,6 +183,10 @@ type azBastion struct {
 // reason is reported in the status message; the provider stays healthy.
 func (inv Inventory) ListMachines(ctx context.Context, _ ports.InventoryQuery) ([]domain.Machine, domain.ProviderStatus, error) {
 	name := inv.ProviderName()
+	if strings.HasPrefix(inv.subscription, "-") {
+		return nil, domain.ProviderStatus{Name: name, Status: domain.ProviderDegraded,
+			Message: fmt.Sprintf("invalid azure subscription %q: must not start with '-'", inv.subscription)}, errors.New("invalid azure subscription")
+	}
 	var vms []azVM
 	if err := runJSON(ctx, inv.runner, inventoryTimeout, withSub([]string{"vm", "list", "-d", "-o", "json"}, inv.subscription), &vms); err != nil {
 		return nil, domain.ProviderStatus{Name: name, Status: domain.ProviderDegraded, Message: classify(err)}, nil
@@ -189,30 +194,32 @@ func (inv Inventory) ListMachines(ctx context.Context, _ ports.InventoryQuery) (
 
 	var notes []string
 	nicVNets := map[string][]string{}
+	bastions := map[string]azBastion{}
 	var nics []azNIC
+	var bastionList []azBastion
 	nicErr := runJSON(ctx, inv.runner, metadataTimeout, withSub([]string{"network", "nic", "list", "-o", "json"}, inv.subscription), &nics)
 	if nicErr != nil {
 		notes = append(notes, "nic list failed ("+classify(nicErr)+"); bastion detection off")
 	}
-	for _, n := range nics {
-		for _, c := range n.IPConfigurations {
-			if v := vnetOf(c.Subnet.ID); v != "" {
-				nicVNets[strings.ToLower(n.ID)] = append(nicVNets[strings.ToLower(n.ID)], v)
-			}
-		}
-	}
-
-	bastions := map[string]azBastion{}
-	var bastionList []azBastion
 	bastionErr := runJSON(ctx, inv.runner, metadataTimeout, withSub([]string{"network", "bastion", "list", "-o", "json"}, inv.subscription), &bastionList)
 	if bastionErr != nil {
 		notes = append(notes, "bastion list failed ("+classify(bastionErr)+"); bastion detection off")
 	}
-	for _, b := range bastionList {
-		for _, c := range b.IPConfigurations {
-			if v := vnetOf(c.Subnet.ID); v != "" {
-				if _, ok := bastions[v]; !ok {
-					bastions[v] = b
+	if nicErr == nil && bastionErr == nil {
+		for _, n := range nics {
+			for _, c := range n.IPConfigurations {
+				if v := vnetOf(c.Subnet.ID); v != "" {
+					key := strings.ToLower(n.ID)
+					nicVNets[key] = append(nicVNets[key], v)
+				}
+			}
+		}
+		for _, b := range bastionList {
+			for _, c := range b.IPConfigurations {
+				if v := vnetOf(c.Subnet.ID); v != "" {
+					if _, ok := bastions[v]; !ok {
+						bastions[v] = b
+					}
 				}
 			}
 		}
@@ -495,7 +502,9 @@ func (c Checker) Check(ctx context.Context, machine domain.Machine, method domai
 }
 
 // checkSSH proves only that <public IP>:22 accepted a TCP connection within
-// 3 s. It does not prove Entra ID login, RBAC, or that the AADSSHLogin VM
+// 3 s (the dial context is bounded by the checker timeout, capped at 3 s). A
+// failure is labelled "refused" only for ECONNREFUSED; timeouts, cancellation
+// and unreachable networks are "probe failed" and prove nothing about the port. It does not prove Entra ID login, RBAC, or that the AADSSHLogin VM
 // extension is installed. A VM without a public IP is not dialed; the result
 // reports its power state.
 func (c Checker) checkSSH(ctx context.Context, m domain.Machine, now time.Time) domain.HealthObservation {
@@ -517,7 +526,11 @@ func (c Checker) checkSSH(ctx context.Context, m domain.Machine, now time.Time) 
 	err := c.dialer.DialContext(ctx, "tcp", addr)
 	latency := time.Since(now)
 	if err != nil {
-		obs := domain.NewHealthObservation(m.ID, domain.AccessAzSSH, domain.HealthDown, "tcp/22 closed", latency, time.Now())
+		label := "tcp/22 probe failed"
+		if errors.Is(err, syscall.ECONNREFUSED) {
+			label = "tcp/22 refused"
+		}
+		obs := domain.NewHealthObservation(m.ID, domain.AccessAzSSH, domain.HealthDown, label, latency, time.Now())
 		obs.Error = err.Error()
 		return obs
 	}

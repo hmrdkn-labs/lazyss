@@ -3,10 +3,12 @@ package azcli
 import (
 	"context"
 	"errors"
+	"net"
 	"os"
 	"os/exec"
 	"reflect"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -90,6 +92,9 @@ func TestListMachines(t *testing.T) {
 		if r.calls[i].exe != "az" || !reflect.DeepEqual(r.calls[i].args, w) {
 			t.Errorf("call %d = %v", i, r.calls[i])
 		}
+	}
+	if len(r.calls) != 3 {
+		t.Fatalf("calls = %d", len(r.calls))
 	}
 	if len(ms) != 3 {
 		t.Fatalf("machines = %d", len(ms))
@@ -185,6 +190,10 @@ func TestCLIStatus(t *testing.T) {
 	}
 	r := ok()
 	st := CLIStatus(context.Background(), r)
+	wantCLI := []call{{"az", []string{"account", "show", "-o", "json"}}, {"az", []string{"extension", "list", "-o", "json"}}}
+	if !reflect.DeepEqual(r.calls, wantCLI) {
+		t.Errorf("calls = %v", r.calls)
+	}
 	if st.Status != domain.ProviderHealthy || !strings.Contains(st.Message, "Prod ("+sub+")") || !strings.Contains(st.Message, "ssh extension installed") {
 		t.Errorf("st = %+v", st)
 	}
@@ -213,6 +222,9 @@ func TestCLIStatus(t *testing.T) {
 func TestListSubscriptions(t *testing.T) {
 	r := &fakeRunner{out: map[string][]byte{"account list -o json": fixture(t, "account_list.json")}}
 	subs, err := ListSubscriptions(context.Background(), r)
+	if want := []call{{"az", []string{"account", "list", "-o", "json"}}}; !reflect.DeepEqual(r.calls, want) {
+		t.Errorf("calls = %v", r.calls)
+	}
 	if err != nil || len(subs) != 2 || subs[0] != (Subscription{ID: sub, Name: "Prod", IsDefault: true, State: "Enabled"}) || subs[1].State != "Disabled" {
 		t.Errorf("subs=%+v err=%v", subs, err)
 	}
@@ -327,12 +339,16 @@ func TestOSRunnerOutput(t *testing.T) {
 }
 
 type fakeDialer struct {
-	addr string
-	err  error
+	addr     string
+	err      error
+	deadline time.Duration
 }
 
-func (d *fakeDialer) DialContext(_ context.Context, network, address string) error {
+func (d *fakeDialer) DialContext(ctx context.Context, network, address string) error {
 	d.addr = network + " " + address
+	if dl, ok := ctx.Deadline(); ok {
+		d.deadline = time.Until(dl)
+	}
 	return d.err
 }
 
@@ -350,8 +366,21 @@ func TestCheckerSSH(t *testing.T) {
 	}
 	d.err = errors.New("refused")
 	obs = c.Check(context.Background(), m, domain.AccessAzSSH)
-	if obs.Status != domain.HealthDown || obs.Error != "refused" {
+	if obs.Status != domain.HealthDown || obs.Error != "refused" || obs.Label != "tcp/22 probe failed" {
 		t.Errorf("down: %+v", obs)
+	}
+	if d.deadline <= 0 || d.deadline > 3*time.Second {
+		t.Errorf("dial deadline = %v", d.deadline)
+	}
+	for _, e := range []error{context.DeadlineExceeded, context.Canceled, syscall.ENETUNREACH} {
+		d.err = e
+		if obs := c.Check(context.Background(), m, domain.AccessAzSSH); obs.Label != "tcp/22 probe failed" || obs.Status != domain.HealthDown {
+			t.Errorf("%v: %+v", e, obs)
+		}
+	}
+	d.err = &net.OpError{Op: "dial", Err: os.NewSyscallError("connect", syscall.ECONNREFUSED)}
+	if obs := c.Check(context.Background(), m, domain.AccessAzSSH); obs.Label != "tcp/22 refused" {
+		t.Errorf("refused: %+v", obs)
 	}
 	if c.timeout != 3*time.Second {
 		t.Errorf("timeout = %v", c.timeout)
@@ -406,19 +435,31 @@ func TestCheckerBastion(t *testing.T) {
 	}
 }
 
-func TestNetDialerRefused(t *testing.T) {
-	if err := (netDialer{timeout: time.Second}).DialContext(context.Background(), "tcp", "127.0.0.1:1"); err == nil {
-		t.Error("expected refusal")
+func TestListMachinesRejectsDashSubscription(t *testing.T) {
+	r := &fakeRunner{}
+	ms, st, err := NewInventory(r, "--debug").ListMachines(context.Background(), ports.InventoryQuery{})
+	if err == nil || ms != nil || st.Status != domain.ProviderDegraded || !strings.Contains(st.Message, "invalid azure subscription") {
+		t.Errorf("ms=%v st=%+v err=%v", ms, st, err)
+	}
+	if len(r.calls) != 0 {
+		t.Errorf("runner called: %v", r.calls)
 	}
 }
 
-func TestNetDialerSuccess(t *testing.T) {
-	ln, err := newListener()
-	if err != nil {
-		t.Skip(err)
-	}
-	defer ln.Close()
-	if err := (netDialer{timeout: time.Second}).DialContext(context.Background(), "tcp", ln.Addr().String()); err != nil {
-		t.Error(err)
+func TestListMachinesPartialDecodeDisablesBastion(t *testing.T) {
+	badNIC := []byte(`[{"id":"` + "/subscriptions/" + sub + `/resourceGroups/rg-app/providers/Microsoft.Network/networkInterfaces/web-1-nic","ipConfigurations":[{"subnet":{"id":"/subscriptions/` + sub + `/resourceGroups/rg-app/providers/Microsoft.Network/virtualNetworks/vnet-app/subnets/web"}}]},{"id":5}]`)
+	badBastion := []byte(`[{"name":"bastion-app","resourceGroup":"rg-net","ipConfigurations":[{"subnet":{"id":"/subscriptions/` + sub + `/resourceGroups/rg-app/providers/Microsoft.Network/virtualNetworks/vnet-app/subnets/AzureBastionSubnet"}}]},{"name":7}]`)
+	for key, body := range map[string][]byte{"network nic list -o json": badNIC, "network bastion list -o json": badBastion} {
+		r := inventoryRunner(t, "")
+		r.out[key] = body
+		ms, st, err := NewInventory(r, "").ListMachines(context.Background(), ports.InventoryQuery{})
+		if err != nil || st.Status != domain.ProviderHealthy || !strings.Contains(st.Message, "bastion detection off") {
+			t.Fatalf("%s: err=%v st=%+v", key, err, st)
+		}
+		for _, m := range ms {
+			if !reflect.DeepEqual(m.Methods, []domain.AccessMethod{domain.AccessAzSSH}) || m.Metadata != nil {
+				t.Errorf("%s: %s = %+v", key, m.Name, m)
+			}
+		}
 	}
 }
