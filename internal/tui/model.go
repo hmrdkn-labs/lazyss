@@ -130,17 +130,17 @@ type healthStreamMsg struct {
 
 // NewModel creates a TUI model with the detail panel shown and an initial filtered view.
 func NewModel(runtime *Runtime) Model {
-	m := Model{runtime: runtime, details: true}
+	m := Model{runtime: runtime, details: true, refreshSeq: 1}
 	m.recompute()
 	return m
 }
 
-// Init starts initial inventory loading when services are available.
+// Init starts initial inventory loading when services are available. The
+// initial request uses the generation NewModel allocated in retained state.
 func (m Model) Init() tea.Cmd {
 	if m.runtime == nil || m.runtime.Inventory == nil {
 		return nil
 	}
-	m.refreshSeq++
 	return tea.Batch(m.fetchCmd(m.refreshSeq), m.resolveProjectCmd())
 }
 
