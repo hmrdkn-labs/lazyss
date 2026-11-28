@@ -29,6 +29,14 @@ type listColumns struct {
 	lastConnected int
 }
 
+// providerBadge is the list's three-column provider label.
+func providerBadge(p domain.ProviderKind) string {
+	if p == domain.ProviderAzure {
+		return "az"
+	}
+	return string(p)
+}
+
 func allocColumns(width int) listColumns {
 	c := listColumns{width: width}
 	const baseGaps = 5 // separators among the six always-present cells
@@ -76,14 +84,14 @@ func (m Model) row(index int, machine domain.Machine, c listColumns) string {
 	cells := []string{
 		marker,
 		pin,
-		displayPadRight(string(machine.Provider), colProvider),
+		displayPadRight(providerBadge(machine.Provider), colProvider),
 		displayPadRight(nonempty(machine.Name, string(machine.ID)), c.name),
 	}
 	if c.address > 0 {
 		cells = append(cells, displayPadRight(nonempty(machine.Address, machine.NativeID), c.address))
 	}
 	cells = append(cells,
-		displayPadRight(string(machine.DefaultMethod()), colMethod),
+		displayPadRight(methodDisplay(machine.DefaultMethod()), colMethod),
 		displayPadRight(glyph+" "+label, colHealth),
 	)
 	if c.lastConnected > 0 {

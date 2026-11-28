@@ -40,13 +40,36 @@ type InventoryService struct {
 }
 
 // List returns merged inventory while preserving partial provider failures.
+// Providers are queried concurrently; statuses keep provider order and a slow
+// or failing provider only degrades its own status.
 func (s InventoryService) List(ctx context.Context, q InventoryQuery) (InventoryResult, error) {
-	var result InventoryResult
+	type providerResult struct {
+		machines []domain.Machine
+		status   domain.ProviderStatus
+		err      error
+	}
+	var selected []InventoryProvider
 	for _, provider := range s.Providers {
 		if q.Source != "" && q.Source != "all" && provider.ProviderName() != q.Source {
 			continue
 		}
-		machines, status, err := provider.ListMachines(ctx, q)
+		selected = append(selected, provider)
+	}
+	results := make([]providerResult, len(selected))
+	var wg sync.WaitGroup
+	for i, provider := range selected {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r := &results[i]
+			r.machines, r.status, r.err = provider.ListMachines(ctx, q)
+		}()
+	}
+	wg.Wait()
+
+	var result InventoryResult
+	for i, provider := range selected {
+		machines, status, err := results[i].machines, results[i].status, results[i].err
 		if err != nil {
 			if status.Name == "" {
 				status.Name = provider.ProviderName()

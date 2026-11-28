@@ -87,6 +87,14 @@ func normalizeMethodFilter(value string) (string, error) {
 		return string(domain.AccessSSH), nil
 	case "ssm", "aws", "aws-ssm", "aws-ssm-shell":
 		return string(domain.AccessAWSSSMShell), nil
+	case "gcloud", "gcp", "gcloud-ssh":
+		return string(domain.AccessGCloudSSH), nil
+	case "iap", "gcloud-iap", "gcloud-iap-ssh":
+		return string(domain.AccessGCloudIAPSSH), nil
+	case "az", "azure", "az-ssh":
+		return string(domain.AccessAzSSH), nil
+	case "bastion", "az-bastion", "az-bastion-ssh":
+		return string(domain.AccessAzBastionSSH), nil
 	default:
 		return "", fmt.Errorf("unknown method filter %q", value)
 	}

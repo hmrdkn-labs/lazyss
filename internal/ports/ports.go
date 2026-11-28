@@ -135,6 +135,19 @@ type AWSLoginRunner interface {
 	Login(ctx context.Context, profile string) error
 }
 
+// ScopeOption is one selectable cloud scope, such as a GCP project or an Azure
+// subscription. ID is the value passed back to the provider; Name is display only.
+type ScopeOption struct {
+	ID   string
+	Name string
+}
+
+// ScopeLister lists the scopes (GCP projects, Azure subscriptions) a provider
+// can query, without exposing credentials.
+type ScopeLister interface {
+	ListScopes(ctx context.Context) ([]ScopeOption, error)
+}
+
 // Clock provides testable time.
 type Clock interface {
 	Now() time.Time

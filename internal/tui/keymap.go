@@ -34,10 +34,10 @@ var cockpitKeys = []keyEntry{
 	{keys: []string{"enter"}, label: "Enter", desc: "connect", help: "connect to selected machine", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
 		return m, m.connectSelectedCmd()
 	}},
-	{keys: []string{"s"}, label: "s", desc: "source", help: "cycle source all/ssh/ssm", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
+	{keys: []string{"s"}, label: "s", desc: "source", help: "cycle source all/ssh/ssm/gcp/azure", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
 		return m.cycleSource()
 	}},
-	{keys: []string{"m"}, label: "m", desc: "method", help: "cycle access method", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
+	{keys: []string{"m"}, label: "m", desc: "method", help: "cycle selected machine's access method", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
 		m.cycleMethod()
 		return m, nil
 	}},
@@ -86,11 +86,11 @@ var cockpitKeys = []keyEntry{
 		m.historyOffset = 0
 		return m, nil
 	}},
-	{keys: []string{"P"}, label: "P", desc: "profile", help: "choose AWS profile", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
-		return m, m.listProfilesCmd()
+	{keys: []string{"P"}, label: "P", desc: "scope", help: "choose AWS profile / GCP project / Azure subscription for the source in view or selected machine", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
+		return m, m.listScopesCmd()
 	}},
-	{keys: []string{"L"}, label: "L", desc: "login", help: "AWS SSO login", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
-		return m, m.awsLoginCmd()
+	{keys: []string{"L"}, label: "L", desc: "login", help: "login: AWS SSO, gcloud auth login or az login for the source in view or selected machine", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
+		return m, m.loginCmd()
 	}},
 	{keys: []string{"r"}, label: "r", desc: "refresh", help: "reload inventory", action: func(m Model, _ string) (tea.Model, tea.Cmd) {
 		m.refreshSeq++
@@ -143,7 +143,7 @@ func (m Model) renderHelp() string {
 	for _, e := range cockpitKeys {
 		content.WriteString(faintStyle.Render(displayPadRight(e.label, 8)) + e.help + "\n")
 	}
-	b.WriteString(panelActiveStyle.Width(48).Render(content.String()))
+	b.WriteString(panelActiveStyle.Width(64).Render(content.String()))
 	b.WriteString("\nesc close | q quit")
 	return b.String()
 }

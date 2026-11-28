@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -32,6 +33,17 @@ type Runtime struct {
 	AWSProfile    string
 	AWSRegion     string
 	SetAWSProfile func(ctx context.Context, profile string) (*app.InventoryService, error)
+
+	// GCP and Azure scope selection and login. Scope listers and login specs
+	// come from the CLI adapters through ports so the TUI never imports them.
+	GCPProject           string
+	AzureSubscription    string
+	GCPScopes            ports.ScopeLister
+	AzureScopes          ports.ScopeLister
+	GCPLogin             ports.CommandSpec
+	AzureLogin           ports.CommandSpec
+	SetGCPProject        func(ctx context.Context, project string) (*app.InventoryService, error)
+	SetAzureSubscription func(ctx context.Context, subscription string) (*app.InventoryService, error)
 }
 
 // Model is the Bubble Tea state for the machine cockpit.
@@ -49,7 +61,9 @@ type Model struct {
 	mode          mode
 	inputKind     string
 	details       bool
-	profiles      []string
+	profiles      []string // picker labels
+	pickerValues  []string // picker values parallel to profiles; equals profiles for AWS
+	pickerKind    domain.ProviderKind
 	profileCursor int
 	refreshSeq    int
 	statusLine    string
@@ -69,11 +83,14 @@ type machinesMsg struct {
 }
 
 type profilesMsg struct {
+	provider domain.ProviderKind // zero means AWS
 	profiles []string
+	values   []string // optional ids parallel to profiles
 	err      error
 }
 
 type profileSelectedMsg struct {
+	provider  domain.ProviderKind // zero means AWS
 	profile   string
 	inventory *app.InventoryService
 	err       error
@@ -81,6 +98,11 @@ type profileSelectedMsg struct {
 
 type awsLoginMsg struct {
 	err error
+}
+
+type cloudLoginMsg struct {
+	provider domain.ProviderKind
+	err      error
 }
 
 type connectFinishedMsg struct {
@@ -134,6 +156,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleProfileSelectedMsg(msg)
 	case awsLoginMsg:
 		return m.handleAWSLoginMsg(msg)
+	case cloudLoginMsg:
+		return m.handleCloudLoginMsg(msg)
 	case connectFinishedMsg:
 		return m.handleConnectFinishedMsg(msg)
 	case tea.KeyPressMsg:
@@ -181,6 +205,59 @@ func (m Model) handleAWSLoginMsg(msg awsLoginMsg) (tea.Model, tea.Cmd) {
 	m.statusLine = "aws login complete"
 	m.refreshSeq++
 	return m, m.fetchCmd(m.refreshSeq)
+}
+
+func (m Model) handleCloudLoginMsg(msg cloudLoginMsg) (tea.Model, tea.Cmd) {
+	if msg.err != nil {
+		m.statusLine = string(msg.provider) + " login: " + msg.err.Error()
+		return m, nil
+	}
+	m.statusLine = string(msg.provider) + " login complete"
+	m.refreshSeq++
+	return m, m.fetchCmd(m.refreshSeq)
+}
+
+// scopeProvider picks the provider P and L act on: the source in view, or for
+// source all the selected machine's provider, falling back to AWS.
+func (m Model) scopeProvider() domain.ProviderKind {
+	if m.runtime == nil {
+		return domain.ProviderAWS
+	}
+	switch m.runtime.Query.Source {
+	case "gcp":
+		return domain.ProviderGCP
+	case "azure":
+		return domain.ProviderAzure
+	case "", "all":
+		if len(m.visible) > 0 {
+			if p := m.visible[m.cursor].Provider; p == domain.ProviderGCP || p == domain.ProviderAzure {
+				return p
+			}
+		}
+	}
+	return domain.ProviderAWS
+}
+
+// loginCmd runs the interactive login for the provider P/L currently target.
+func (m Model) loginCmd() tea.Cmd {
+	provider := m.scopeProvider()
+	var spec ports.CommandSpec
+	switch provider {
+	case domain.ProviderGCP:
+		spec = m.runtime.GCPLogin
+	case domain.ProviderAzure:
+		spec = m.runtime.AzureLogin
+	default:
+		return m.awsLoginCmd()
+	}
+	if spec.Executable == "" {
+		return func() tea.Msg {
+			return cloudLoginMsg{provider: provider, err: fmt.Errorf("login is not configured")}
+		}
+	}
+	return tea.ExecProcess(exec.Command(spec.Executable, spec.Args...), func(err error) tea.Msg {
+		return cloudLoginMsg{provider: provider, err: err}
+	})
 }
 
 func (m Model) handleConnectFinishedMsg(msg connectFinishedMsg) (tea.Model, tea.Cmd) {

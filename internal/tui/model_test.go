@@ -121,7 +121,7 @@ func TestModelRenderShowsControlsAndAWSOnboarding(t *testing.T) {
 	got := m.render()
 	for _, want := range []string{
 		"AWS: no profile selected",
-		"P profile",
+		"P scope",
 		"L login",
 		"s source",
 		"f filter",
@@ -142,7 +142,7 @@ func TestModelEmptyStartupShowsSetupGuidance(t *testing.T) {
 	for _, want := range []string{
 		"Setup",
 		"SSH + SSM cockpit",
-		"P profile",
+		"P scope",
 		"L login",
 		"s source",
 		"r refresh",
