@@ -44,6 +44,12 @@ Never create tags, releases, secrets, branch protection, or push anything.
 
 `make check` still green (docs only). Conventional commits (`docs: ...`).
 
+## Process safety (applies to every brief)
+
+Never kill processes by name (`pkill -f`, `killall`, e.g. wrangler/workerd): other agents run production
+processes on this Mac. Start any dev server or background process with `cmd & echo $! > <pidfile>` and kill
+only that PID and its children. Do not use port 8787 (taken by another agent); pick another free port.
+
 ## Report (fill in, then reply in ≤ 20 lines)
 
 - Commits:

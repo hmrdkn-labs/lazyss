@@ -68,6 +68,12 @@ coverage ≥ `coverage.baseline`; raise the baseline in the same commit if cover
 `make check`, `make smoke-local`, `make lint` if golangci-lint is installed. Conventional commits.
 Do not push, merge or tag.
 
+## Process safety (applies to every brief)
+
+Never kill processes by name (`pkill -f`, `killall`, e.g. wrangler/workerd): other agents run production
+processes on this Mac. Start any dev server or background process with `cmd & echo $! > <pidfile>` and kill
+only that PID and its children. Do not use port 8787 (taken by another agent); pick another free port.
+
 ## Report (fill in, then reply in ≤ 20 lines)
 
 - Commits:
