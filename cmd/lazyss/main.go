@@ -155,11 +155,6 @@ func runTUI(cfg cliConfig) int {
 		fmt.Fprintln(os.Stderr, "preferences:", err)
 	}
 	effectiveCfg := resolveConfig(cfg, prefs)
-	if effectiveCfg.GCPProject == "" && (effectiveCfg.Source == "gcp" || effectiveCfg.Source == "all") {
-		if project, err := gcloud.ActiveProject(context.Background(), nil); err == nil {
-			effectiveCfg.GCPProject = project
-		}
-	}
 	providers := buildProviders(effectiveCfg)
 	awsCLI := awsconfig.NewCLI(nil)
 	connectors := []ports.Connector{
@@ -191,6 +186,7 @@ func runTUI(cfg cliConfig) int {
 
 		GCPProject:        effectiveCfg.GCPProject,
 		AzureSubscription: effectiveCfg.AzureSub,
+		ResolveGCPProject: resolveGCPProject,
 		GCPScopes:         gcpScopes{},
 		AzureScopes:       azureScopes{},
 		GCPLogin:          gcloud.LoginCommand(),
@@ -217,28 +213,20 @@ func runTUI(cfg cliConfig) int {
 	return 0
 }
 
+// buildProviders registers every provider regardless of the initial source;
+// InventoryQuery.Source filters at query time, so cycling sources works from
+// any start.
 func buildProviders(cfg cliConfig) []ports.InventoryProvider {
-	var providers []ports.InventoryProvider
-	if cfg.Source == "all" || cfg.Source == "ssh" {
-		providers = append(providers, sshconfig.NewInventory(cfg.SSHConfig))
+	return []ports.InventoryProvider{
+		sshconfig.NewInventory(cfg.SSHConfig),
+		lazyAWSProvider{profile: cfg.AWSProfile, region: cfg.AWSRegion},
+		gcloud.NewInventory(nil, cfg.GCPProject),
+		azcli.NewInventory(nil, cfg.AzureSub),
 	}
-	if cfg.Source == "all" || cfg.Source == "aws" {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		inv, err := awsssm.LoadInventory(ctx, cfg.AWSProfile, cfg.AWSRegion)
-		if err != nil {
-			providers = append(providers, failingProvider{name: "aws", err: err})
-		} else {
-			providers = append(providers, inv)
-		}
-	}
-	if cfg.Source == "all" || cfg.Source == "gcp" {
-		providers = append(providers, gcloud.NewInventory(nil, cfg.GCPProject))
-	}
-	if cfg.Source == "all" || cfg.Source == "azure" {
-		providers = append(providers, azcli.NewInventory(nil, cfg.AzureSub))
-	}
-	return providers
+}
+
+func resolveGCPProject(ctx context.Context) (string, error) {
+	return gcloud.ActiveProject(ctx, nil)
 }
 
 // gcpScopes lists GCP projects for the TUI picker through the gcloud CLI.
@@ -404,13 +392,21 @@ func nonempty(value, fallback string) string {
 	return value
 }
 
-type failingProvider struct {
-	name string
-	err  error
+// lazyAWSProvider loads AWS config on first listing so registering it never
+// delays startup; a load failure degrades only the aws status.
+type lazyAWSProvider struct {
+	profile string
+	region  string
 }
 
-func (f failingProvider) ProviderName() string { return f.name }
+func (lazyAWSProvider) ProviderName() string { return "aws" }
 
-func (f failingProvider) ListMachines(context.Context, app.InventoryQuery) ([]domain.Machine, domain.ProviderStatus, error) {
-	return nil, domain.ProviderStatus{Name: f.name, Status: domain.ProviderDegraded, Message: f.err.Error()}, f.err
+func (l lazyAWSProvider) ListMachines(ctx context.Context, q app.InventoryQuery) ([]domain.Machine, domain.ProviderStatus, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	inv, err := awsssm.LoadInventory(ctx, l.profile, l.region)
+	if err != nil {
+		return nil, domain.ProviderStatus{Name: "aws", Status: domain.ProviderDegraded, Message: err.Error()}, err
+	}
+	return inv.ListMachines(ctx, q)
 }

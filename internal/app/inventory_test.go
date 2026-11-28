@@ -134,3 +134,46 @@ func TestInventoryQueriesProvidersConcurrentlyInProviderOrder(t *testing.T) {
 		t.Fatalf("machines = %#v", result.Machines)
 	}
 }
+
+type blockedProvider struct {
+	name    string
+	release chan struct{}
+}
+
+func (b blockedProvider) ProviderName() string { return b.name }
+func (b blockedProvider) ListMachines(ctx context.Context, _ InventoryQuery) ([]domain.Machine, domain.ProviderStatus, error) {
+	select {
+	case <-b.release:
+	case <-ctx.Done():
+	}
+	return []domain.Machine{{ID: "slow:1", Name: "a-slow", Provider: domain.ProviderGCP}}, domain.ProviderStatus{Name: b.name, Status: domain.ProviderHealthy}, nil
+}
+
+func TestInventoryStreamEmitsFastProvidersBeforeBlockedOne(t *testing.T) {
+	release := make(chan struct{})
+	svc := InventoryService{Providers: []InventoryProvider{
+		blockedProvider{name: "gcp", release: release},
+		fakeProvider{name: "ssh", machines: []domain.Machine{{ID: "ssh:1", Name: "z-fast", Provider: domain.ProviderSSH}}},
+	}}
+	ch := svc.Stream(context.Background(), InventoryQuery{})
+	select {
+	case first := <-ch:
+		if len(first.Statuses) != 1 || first.Statuses[0].Name != "ssh" || len(first.Machines) != 1 {
+			t.Fatalf("first snapshot = %#v", first)
+		}
+	case <-time.After(2 * time.Second):
+		close(release)
+		t.Fatal("fast provider was withheld by the blocked one")
+	}
+	close(release)
+	final := <-ch
+	if len(final.Statuses) != 2 || final.Statuses[0].Name != "gcp" || final.Statuses[1].Name != "ssh" {
+		t.Fatalf("final statuses keep provider order: %#v", final.Statuses)
+	}
+	if len(final.Machines) != 2 || final.Machines[0].Name != "a-slow" {
+		t.Fatalf("final machines sorted: %#v", final.Machines)
+	}
+	if _, ok := <-ch; ok {
+		t.Fatal("stream should close after the last snapshot")
+	}
+}
