@@ -17,7 +17,8 @@ All notable LazySS changes are recorded here.
 - `lazyss doctor` gcloud and azure checks; `--source gcp` or `--source azure`
   makes the matching check fatal.
 - Cockpit source cycle covers gcp and azure.
-- ADR 0004: CLI-backed cloud providers, with no cloud SDKs and no token handling.
+- ADR 0004: CLI-backed Google Cloud and Azure providers, with no Google Cloud or
+  Azure SDKs and no token handling.
 
 ### Changed
 

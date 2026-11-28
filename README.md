@@ -36,9 +36,10 @@ On first launch, use the setup hints in the cockpit:
 - `m` cycles the access method for the selected machine.
 - `?` opens the full key help overlay; `esc` closes any overlay.
 
-LazySS stores profile and region labels, the GCP project ID, and the Azure
-subscription ID only. It does not store AWS tokens, SSO cache contents, gcloud or
-az credentials, passwords, private keys, or SSH config edits.
+Provider preferences store only the AWS profile and region labels, the GCP
+project ID, and the Azure subscription ID. LazySS does not store AWS tokens, SSO
+cache contents, gcloud or az credentials, passwords, private keys, or SSH config
+edits.
 
 ## Scope
 
@@ -59,10 +60,10 @@ V1 supports:
   backup-before-write
 
 V1 deliberately does not write ProxyCommand entries, run a monitoring daemon,
-store secrets, delete private keys, or use cloud SDKs. Google Cloud and Azure
-use the `gcloud` and `az` CLIs and reuse the operator's login; see
-[ADR 0004](docs/adr/0004-cli-backed-cloud-providers.md). Other cloud providers
-are not implemented.
+store secrets, or delete private keys. The Google Cloud and Azure adapters use
+no cloud SDKs: they run the `gcloud` and `az` CLIs and reuse the operator's
+login; see [ADR 0004](docs/adr/0004-cli-backed-cloud-providers.md). Other cloud
+providers are not implemented.
 
 ## Usage
 
@@ -93,9 +94,9 @@ Inside the cockpit, `P` and `L` act on the provider in view:
   selected profile.
 
 A choice made with `P` is saved and used on the next start unless a flag
-overrides it. LazySS stores only the AWS profile and region, the GCP project ID,
-and the Azure subscription ID in local state; it never stores AWS credentials,
-SSO cache contents, or gcloud or az tokens.
+overrides it. Provider preferences store only the AWS profile and region, the GCP
+project ID, and the Azure subscription ID in local state; LazySS never stores AWS
+credentials, SSO cache contents, or gcloud or az tokens.
 
 Use `x` to hide or unhide a selected machine locally, and `u` to toggle hidden
 machines in the current cockpit view.
@@ -151,13 +152,20 @@ only what each row says:
 | `az-ssh` | TCP connect to the public IP on port 22, 3 s max; a VM without a public IP is not dialed | `tcp/22 open`: the port accepted a TCP connection from this host | Entra ID login, RBAC, or the AADSSHLogin VM extension. `tcp/22 refused` only for ECONNREFUSED; timeouts and unreachable networks are `tcp/22 probe failed`. |
 | `az-bastion-ssh` | none; uses inventory power state and Bastion match, no `az` call | the VM power state and a Bastion matched in its VNet | Bastion SKU native-client tunnelling support, RBAC, or Entra login |
 
-`lazyss doctor` always adds `gcloud` and `azure` checks after the AWS checks. A
-missing or logged-out CLI prints `[warn]` and does not change the exit code.
-With `--source gcp` or `--source azure`, the matching check is fatal and exits 1.
-The gcloud check reports `logged in as <account>`. The azure check reports the
-active subscription name, with parenthesised GUIDs removed, and whether the `ssh`
+`lazyss doctor` always adds `gcloud` and `azure` checks after the AWS checks.
+AWS checks remain mandatory even for cloud-only doctor invocations. A missing or
+logged-out CLI prints `[warn]` and does not change the exit code. With
+`--source gcp` or `--source azure`, a *failed* matching check becomes fatal and
+exits 1; the source flag alone does not.
+The gcloud check reports `logged in as <account>` only for an ACTIVE entry in
+`gcloud auth list --format=json`. The azure check reports the active
+subscription name, with parenthesised GUIDs removed, and whether the `ssh`
 extension is installed; when it is missing, the detail names
 `az extension add --name ssh`.
+Neither check verifies a token refresh, inventory authorization, SSH
+authorization, or session launch, so an active or cached account is not proof
+that credentials still work. `--gcp-project` and `--azure-subscription` do not
+scope doctor.
 
 ## Architecture
 

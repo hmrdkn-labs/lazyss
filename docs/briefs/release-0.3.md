@@ -97,3 +97,4 @@ only that PID and its children. Do not use port 8787 (taken by another agent); p
 - `db01b0c62d` fix 1: doctor Azure Fix says `az extension add --name ssh` when the ssh extension is missing (was `run az login`); test added in `internal/doctor/doctor_test.go`.
 - `db01b0c62d` fix 2: `scripts/homebrew_formula.py` desc now `Terminal machine cockpit for SSH, AWS SSM, Google Cloud and Azure`; `scripts/release_artifacts.py` required fragment and its test fixture follow it, because `make release-snapshot` runs that verify on the generated formula.
 - `db01b0c62d` fix 3: default target version `v0.1.0` -> `v0.3.0` in `Makefile` (`live-smoke-evidence-template`) and `scripts/release-readiness.sh`; no test asserted those defaults.
+- Scope exception: the orchestrator authorised commit db01b0c (doctor fix text, formula desc, v0.3.0 defaults).
