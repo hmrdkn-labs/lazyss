@@ -27,7 +27,7 @@ ARCHIVE_RE = re.compile(r"^lazyss_.+_(?P<goos>darwin|linux|windows)_(?P<goarch>a
 FORMULA_PATH = pathlib.Path("homebrew") / "Formula" / "lazyss.rb"
 FORMULA_REQUIRED_FRAGMENTS = (
     "class Lazyss < Formula",
-    'desc "Terminal machine cockpit for SSH and AWS SSM"',
+    'desc "Terminal machine cockpit for SSH, AWS SSM, Google Cloud and Azure"',
     'homepage "https://github.com/hmrdkn-labs/lazyss"',
     'license "MIT"',
     'bin.install "lazyss"',

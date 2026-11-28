@@ -2,6 +2,30 @@
 
 All notable LazySS changes are recorded here.
 
+## v0.3.0
+
+### Added
+
+- Google Cloud source (`--source gcp`, `--gcp-project`): Compute Engine
+  instances through the `gcloud` CLI, with `gcloud-ssh` and `gcloud-iap-ssh`
+  methods.
+- Azure source (`--source azure`, `--azure-subscription`): VMs through the `az`
+  CLI, with `az-ssh` and `az-bastion-ssh` methods. Bastion matching covers the
+  same VNet only.
+- `P` chooses the GCP project or Azure subscription, and `L` runs `gcloud auth
+  login` or `az login`, for the provider in view.
+- `lazyss doctor` gcloud and azure checks; `--source gcp` or `--source azure`
+  makes the matching check fatal.
+- Cockpit source cycle covers gcp and azure.
+- ADR 0004: CLI-backed Google Cloud and Azure providers, with no Google Cloud or
+  Azure SDKs and no token handling.
+
+### Changed
+
+- Local state also stores the chosen GCP project ID and Azure subscription ID.
+- GCP and Azure live smoke is optional evidence for v0.3.0, not part of the
+  readiness gate.
+
 ## v0.2.0
 
 ### Added

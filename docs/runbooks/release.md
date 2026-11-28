@@ -1,6 +1,6 @@
 # LazySS Release Runbook
 
-Do not tag `v0.1.0` until every prerequisite below is verified.
+Do not tag `v0.3.0` until every prerequisite below is verified.
 
 ## Prerequisites
 
@@ -10,6 +10,7 @@ Do not tag `v0.1.0` until every prerequisite below is verified.
 - Homebrew readiness has passed for the public tap and publishing secret.
 - Branch protection readiness has passed.
 - Real smoke tests have passed for one SSH host and one AWS SSM-ready instance.
+  Google Cloud and Azure smoke is optional evidence for v0.3.0; see the smoke runbook.
 - No private keys, AWS credentials, GitHub tokens, SSO cache data, or
   environment dumps appear in docs, generated formula files, state files, or
   logs.
@@ -24,7 +25,7 @@ approval:
 `exit 2` means the local config is ready but approval or external state is still
 missing. Do not tag while this command reports blockers.
 
-Run the full read-only release readiness audit before requesting `v0.1.0`
+Run the full read-only release readiness audit before requesting `v0.3.0`
 approval:
 
 ```sh
@@ -86,7 +87,7 @@ and AWS SSM smoke checks pass, then validate it with:
 ```sh
 python3 scripts/live_smoke_evidence.py validate \
   --file live-smoke-evidence.json \
-  --target-version v0.1.0 \
+  --target-version v0.3.0 \
   --commit "$(git rev-parse HEAD)"
 ```
 
@@ -164,8 +165,8 @@ matches the GitHub runner host with `--version`.
 Only after owner approval:
 
 ```sh
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
 Watch release CI:
@@ -176,7 +177,7 @@ gh run watch --repo hmrdkn-labs/lazyss
 
 Confirm:
 
-- GitHub Release `v0.1.0` exists.
+- GitHub Release `v0.3.0` exists.
 - Archives exist for linux/darwin/windows amd64/arm64.
 - Archives contain the expected non-empty `lazyss` or `lazyss.exe` binary, with
   executable mode set for tar archives.
