@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/hmrdkn-labs/lazyss/internal/app"
@@ -108,6 +109,10 @@ func (in instance) externalIP() string {
 func (i Inventory) ListMachines(ctx context.Context, _ ports.InventoryQuery) ([]domain.Machine, domain.ProviderStatus, error) {
 	ctx, cancel := context.WithTimeout(ctx, inventoryTimeout)
 	defer cancel()
+	if strings.HasPrefix(i.project, "-") {
+		err := fmt.Errorf("gcp project %q must not start with '-'", i.project)
+		return nil, degraded(err.Error()), err
+	}
 	args := []string{"compute", "instances", "list", "--format=json"}
 	if i.project != "" {
 		args = append(args, "--project", i.project)
@@ -448,11 +453,17 @@ func (c Checker) checkDirect(ctx context.Context, machine domain.Machine, method
 	if ip == "" {
 		return domain.NewHealthObservation(machine.ID, method, domain.HealthUnknown, "no external IP", 0, now)
 	}
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
 	start := time.Now()
 	err := c.dialer.DialContext(ctx, "tcp", net.JoinHostPort(ip, "22"))
 	latency := time.Since(start)
 	if err != nil {
-		obs := domain.NewHealthObservation(machine.ID, method, domain.HealthDown, "tcp/22 closed", latency, now)
+		label := "tcp/22 probe failed"
+		if errors.Is(err, syscall.ECONNREFUSED) {
+			label = "tcp/22 refused"
+		}
+		obs := domain.NewHealthObservation(machine.ID, method, domain.HealthDown, label, latency, now)
 		obs.Error = err.Error()
 		return obs
 	}

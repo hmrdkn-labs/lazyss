@@ -3,10 +3,12 @@ package gcloud
 import (
 	"context"
 	"errors"
+	"net"
 	"os"
 	"os/exec"
 	"reflect"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -106,6 +108,17 @@ func TestListMachinesProjectFlag(t *testing.T) {
 	}
 	if byName(ms, "web-1").ID != "gcp:other/europe-west1-b/web-1" {
 		t.Fatalf("id = %s", byName(ms, "web-1").ID)
+	}
+}
+
+func TestInventoryRejectsFlagShapedProject(t *testing.T) {
+	r := &fakeRunner{out: fixture(t, "instances.json")}
+	ms, st, err := NewInventory(r, "--evil").ListMachines(context.Background(), ports.InventoryQuery{})
+	if err == nil || st.Status != domain.ProviderDegraded || ms != nil || st.Message == "" {
+		t.Fatalf("ms=%v st=%+v err=%v", ms, st, err)
+	}
+	if len(r.calls) != 0 {
+		t.Fatalf("runner called: %v", r.calls)
 	}
 }
 
@@ -293,12 +306,15 @@ func TestConnectorSupportsAndRun(t *testing.T) {
 }
 
 type fakeDialer struct {
-	err  error
-	addr string
+	err      error
+	addr     string
+	deadline time.Time
+	hasDL    bool
 }
 
-func (f *fakeDialer) DialContext(_ context.Context, _ string, address string) error {
+func (f *fakeDialer) DialContext(ctx context.Context, _ string, address string) error {
 	f.addr = address
+	f.deadline, f.hasDL = ctx.Deadline()
 	return f.err
 }
 
@@ -313,10 +329,23 @@ func TestChecker(t *testing.T) {
 	if obs.Status != domain.HealthUp || obs.Label != "tcp/22 open" || d.addr != "34.1.2.3:22" {
 		t.Fatalf("open = %+v addr=%s", obs, d.addr)
 	}
-	d.err = errors.New("connection refused")
+	if !d.hasDL || time.Until(d.deadline) > time.Second {
+		t.Fatalf("dialer deadline = %v (has=%v), want <= 1s", d.deadline, d.hasDL)
+	}
+	d.err = errors.New("boom")
 	obs = c.Check(ctx, gcpMachine(), domain.AccessGCloudSSH)
-	if obs.Status != domain.HealthDown || obs.Error != "connection refused" {
-		t.Fatalf("refused = %+v", obs)
+	if obs.Status != domain.HealthDown || obs.Error != "boom" || obs.Label != "tcp/22 probe failed" {
+		t.Fatalf("failed = %+v", obs)
+	}
+	for _, e := range []error{context.DeadlineExceeded, context.Canceled, syscall.ENETUNREACH} {
+		d.err = e
+		if obs := c.Check(ctx, gcpMachine(), domain.AccessGCloudSSH); obs.Label != "tcp/22 probe failed" {
+			t.Fatalf("%v label = %q", e, obs.Label)
+		}
+	}
+	d.err = &net.OpError{Op: "dial", Err: os.NewSyscallError("connect", syscall.ECONNREFUSED)}
+	if obs := c.Check(ctx, gcpMachine(), domain.AccessGCloudSSH); obs.Label != "tcp/22 refused" {
+		t.Fatalf("refused label = %q", obs.Label)
 	}
 	noIP := gcpMachine()
 	noIP.Metadata = nil
