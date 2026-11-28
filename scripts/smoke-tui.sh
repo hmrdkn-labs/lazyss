@@ -216,7 +216,7 @@ if launch "$session" 140 38; then
 
 	send "$session" "?"
 	snap "$session" "$icap"
-	assert_contains "$icap" "cycle access method" "help overlay lists m"
+	assert_contains "$icap" "selected machine" "help overlay lists m"
 	assert_contains "$icap" "copy connect command" "help overlay lists c"
 	send "$session" "Escape"
 	snap "$session" "$icap"

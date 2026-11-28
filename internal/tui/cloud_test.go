@@ -233,3 +233,66 @@ func TestCycleMethodWalksOnlyMachineMethods(t *testing.T) {
 		t.Fatalf("labels wrong")
 	}
 }
+
+type blockedTUIProvider struct{ release chan struct{} }
+
+func (blockedTUIProvider) ProviderName() string { return "gcp" }
+func (b blockedTUIProvider) ListMachines(context.Context, app.InventoryQuery) ([]domain.Machine, domain.ProviderStatus, error) {
+	<-b.release
+	return nil, domain.ProviderStatus{Name: "gcp", Status: domain.ProviderHealthy}, nil
+}
+
+type fastTUIProvider struct{}
+
+func (fastTUIProvider) ProviderName() string { return "ssh" }
+func (fastTUIProvider) ListMachines(context.Context, app.InventoryQuery) ([]domain.Machine, domain.ProviderStatus, error) {
+	return []domain.Machine{{ID: "ssh:1", Name: "fast", Provider: domain.ProviderSSH}}, domain.ProviderStatus{Name: "ssh", Status: domain.ProviderHealthy}, nil
+}
+
+func TestModelRendersFastProviderWhileSlowOneIsBlocked(t *testing.T) {
+	release := make(chan struct{})
+	runtime := &Runtime{
+		Inventory: &app.InventoryService{Providers: []app.InventoryProvider{blockedTUIProvider{release: release}, fastTUIProvider{}}},
+		Query:     app.InventoryQuery{Source: "all"},
+	}
+	m := NewModel(runtime)
+	msg := m.fetchCmd(1)()
+	first, ok := msg.(machinesMsg)
+	if !ok || len(first.machines) != 1 || first.ch == nil {
+		close(release)
+		t.Fatalf("first message = %#v", msg)
+	}
+	m.refreshSeq = 1
+	cmd := m.handleMachinesMsg(first)
+	if len(m.visible) != 1 || cmd == nil {
+		close(release)
+		t.Fatalf("fast machine not rendered while slow provider blocked: visible=%d", len(m.visible))
+	}
+	close(release)
+	last := cmd().(machinesMsg)
+	if len(last.statuses) != 2 {
+		t.Fatalf("final statuses = %#v", last.statuses)
+	}
+}
+
+func TestModelResolvesGCPProjectInBackground(t *testing.T) {
+	runtime := &Runtime{
+		Inventory:         &app.InventoryService{},
+		Query:             app.InventoryQuery{Source: "gcp"},
+		ResolveGCPProject: func(context.Context) (string, error) { return "default-proj", nil },
+	}
+	m := NewModel(runtime)
+	cmd := m.resolveProjectCmd()
+	if cmd == nil {
+		t.Fatal("expected background resolver")
+	}
+	model, _ := m.Update(cmd())
+	if runtime.GCPProject != "default-proj" {
+		t.Fatalf("project = %q", runtime.GCPProject)
+	}
+	runtime.GCPProject = "picked"
+	model.(Model).Update(gcpProjectMsg{project: "late"})
+	if runtime.GCPProject != "picked" {
+		t.Fatalf("late default overwrote picked project: %q", runtime.GCPProject)
+	}
+}

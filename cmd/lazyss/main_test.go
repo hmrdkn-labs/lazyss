@@ -108,8 +108,13 @@ func TestBuildProvidersRegistersCloudProvidersWithoutCLIs(t *testing.T) {
 	if !strings.HasSuffix(got, "gcp,azure") {
 		t.Fatalf("providers = %s", got)
 	}
-	only := buildProviders(cliConfig{Source: "azure"})
-	if len(only) != 1 || only[0].ProviderName() != "azure" {
-		t.Fatalf("azure only = %#v", only)
+	for _, source := range []string{"ssh", "aws", "gcp", "azure"} {
+		var names []string
+		for _, p := range buildProviders(cliConfig{Source: source}) {
+			names = append(names, p.ProviderName())
+		}
+		if got := strings.Join(names, ","); got != "ssh,aws,gcp,azure" {
+			t.Fatalf("source %s registers %s; cycling needs every provider", source, got)
+		}
 	}
 }

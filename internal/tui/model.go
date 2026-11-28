@@ -36,7 +36,10 @@ type Runtime struct {
 
 	// GCP and Azure scope selection and login. Scope listers and login specs
 	// come from the CLI adapters through ports so the TUI never imports them.
-	GCPProject           string
+	GCPProject string
+	// ResolveGCPProject looks up the default project in the background when
+	// GCPProject is empty; the cockpit never waits for it.
+	ResolveGCPProject    func(ctx context.Context) (string, error)
 	AzureSubscription    string
 	GCPScopes            ports.ScopeLister
 	AzureScopes          ports.ScopeLister
@@ -80,6 +83,11 @@ type machinesMsg struct {
 	machines []domain.Machine
 	statuses []domain.ProviderStatus
 	err      error
+	// ch is the inventory stream still delivering snapshots; nil when the
+	// message is final.
+	ch <-chan app.InventoryResult
+	// closed marks the end of the stream: it carries no inventory.
+	closed bool
 }
 
 type profilesMsg struct {
@@ -133,7 +141,23 @@ func (m Model) Init() tea.Cmd {
 		return nil
 	}
 	m.refreshSeq++
-	return m.fetchCmd(m.refreshSeq)
+	return tea.Batch(m.fetchCmd(m.refreshSeq), m.resolveProjectCmd())
+}
+
+type gcpProjectMsg struct{ project string }
+
+func (m Model) resolveProjectCmd() tea.Cmd {
+	if m.runtime.GCPProject != "" || m.runtime.ResolveGCPProject == nil {
+		return nil
+	}
+	resolve := m.runtime.ResolveGCPProject
+	return func() tea.Msg {
+		project, err := resolve(context.Background())
+		if err != nil || project == "" {
+			return nil
+		}
+		return gcpProjectMsg{project: project}
+	}
 }
 
 // Update applies one Bubble Tea message.
@@ -142,8 +166,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+	case gcpProjectMsg:
+		if m.runtime.GCPProject == "" {
+			m.runtime.GCPProject = msg.project
+		}
 	case machinesMsg:
-		m.handleMachinesMsg(msg)
+		cmd := m.handleMachinesMsg(msg)
+		return m, cmd
 	case healthMsg:
 		m.applyHealth(domain.HealthObservation(msg))
 	case healthStreamMsg:
@@ -179,15 +208,28 @@ func (m Model) fetchCmd(seq int) tea.Cmd {
 			return machinesMsg{seq: seq, err: fmt.Errorf("inventory is not configured")}
 		}
 	}
+	ch := m.runtime.Inventory.Stream(context.Background(), m.runtime.Query)
+	return waitInventory(seq, ch)
+}
+
+// waitInventory blocks for the next inventory snapshot. Each snapshot carries
+// the stream so the model can keep reading until the last provider finishes.
+func waitInventory(seq int, ch <-chan app.InventoryResult) tea.Cmd {
 	return func() tea.Msg {
-		result, err := m.runtime.Inventory.List(context.Background(), m.runtime.Query)
-		return machinesMsg{seq: seq, machines: result.Machines, statuses: result.Statuses, err: err}
+		r, ok := <-ch
+		if !ok {
+			return machinesMsg{seq: seq, closed: true}
+		}
+		return machinesMsg{seq: seq, machines: r.Machines, statuses: r.Statuses, ch: ch}
 	}
 }
 
-func (m *Model) handleMachinesMsg(msg machinesMsg) {
+func (m *Model) handleMachinesMsg(msg machinesMsg) tea.Cmd {
 	if msg.seq != 0 && msg.seq < m.refreshSeq {
-		return
+		return nil
+	}
+	if msg.closed {
+		return nil
 	}
 	m.machines = append([]domain.Machine(nil), msg.machines...)
 	m.statuses = append([]domain.ProviderStatus(nil), msg.statuses...)
@@ -195,6 +237,10 @@ func (m *Model) handleMachinesMsg(msg machinesMsg) {
 		m.statusLine = msg.err.Error()
 	}
 	m.recompute()
+	if msg.ch != nil {
+		return waitInventory(msg.seq, msg.ch)
+	}
+	return nil
 }
 
 func (m Model) handleAWSLoginMsg(msg awsLoginMsg) (tea.Model, tea.Cmd) {
