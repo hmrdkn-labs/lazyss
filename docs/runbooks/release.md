@@ -10,6 +10,7 @@ Do not tag `v0.1.0` until every prerequisite below is verified.
 - Homebrew readiness has passed for the public tap and publishing secret.
 - Branch protection readiness has passed.
 - Real smoke tests have passed for one SSH host and one AWS SSM-ready instance.
+  Google Cloud and Azure smoke is optional evidence for v0.3.0; see the smoke runbook.
 - No private keys, AWS credentials, GitHub tokens, SSO cache data, or
   environment dumps appear in docs, generated formula files, state files, or
   logs.
