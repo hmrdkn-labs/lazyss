@@ -109,7 +109,12 @@ Do not push, do not merge, do not tag.
 
 ## Report (fill in, then reply in ≤ 20 lines)
 
-- Commits:
-- `make check` result (last lines):
-- Package coverage / total coverage:
+- Commits: `feat(azcli): add Azure CLI inventory, connector and checker` (see `git log feat/azure-adapter`)
+- `make check` result (last lines): all steps pass; `ok coverage 76.4% meets baseline 57.7%`, 43 script tests OK, build OK. `make lint`: golangci-lint not installed locally, skipped.
+- Package coverage / total coverage: 98.7% / 76.4%
 - Anything the reviewer should look at:
+  - Connector/Checker use `ports.ConnectOptions`/`ports.SessionResult` directly (not `app.*` aliases), so azcli does not import `internal/app`. `NewConnector(runner)` and `NewChecker(dialer, timeout)` take no unused args.
+  - Checker treats a machine as having a public IP when `Machine.Address` is not private/loopback/link-local (no extra metadata key).
+  - Timeouts: 30 s for `vm list`, 10 s for nic/bastion/account/extension calls.
+  - `CLIStatus` is degraded when the `ssh` extension is missing or the check fails.
+  - VNet matching is case-insensitive; the first Bastion per VNet wins.
