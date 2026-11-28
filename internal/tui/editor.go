@@ -164,6 +164,21 @@ func methodLabel(method domain.AccessMethod) string {
 	if method == "" {
 		return "auto"
 	}
+	return methodDisplay(method)
+}
+
+// methodDisplay is the short operator-facing label for an access method.
+func methodDisplay(method domain.AccessMethod) string {
+	switch method {
+	case domain.AccessGCloudSSH:
+		return "gcloud-ssh"
+	case domain.AccessGCloudIAPSSH:
+		return "gcloud-iap"
+	case domain.AccessAzSSH:
+		return "az-ssh"
+	case domain.AccessAzBastionSSH:
+		return "az-bastion"
+	}
 	return string(method)
 }
 

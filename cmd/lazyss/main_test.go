@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/hmrdkn-labs/lazyss/internal/domain"
@@ -61,7 +62,7 @@ func TestParseArgsAcceptsVersionCommand(t *testing.T) {
 
 func TestResolveAWSConfigUsesCLIOverrideBeforePreferences(t *testing.T) {
 	prefs := domain.OperatorPreferences{AWSProfile: "persisted", AWSRegion: "ap-southeast-1"}
-	cfg := resolveAWSConfig(cliConfig{AWSProfile: "flagged", AWSRegion: "us-east-1"}, prefs)
+	cfg := resolveConfig(cliConfig{AWSProfile: "flagged", AWSRegion: "us-east-1"}, prefs)
 	if cfg.AWSProfile != "flagged" || cfg.AWSRegion != "us-east-1" {
 		t.Fatalf("cfg = %#v", cfg)
 	}
@@ -69,8 +70,46 @@ func TestResolveAWSConfigUsesCLIOverrideBeforePreferences(t *testing.T) {
 
 func TestResolveAWSConfigUsesPersistedPreferencesWhenFlagsMissing(t *testing.T) {
 	prefs := domain.OperatorPreferences{AWSProfile: "hmrdkn-dev1", AWSRegion: "ap-southeast-1"}
-	cfg := resolveAWSConfig(cliConfig{}, prefs)
+	cfg := resolveConfig(cliConfig{}, prefs)
 	if cfg.AWSProfile != "hmrdkn-dev1" || cfg.AWSRegion != "ap-southeast-1" {
 		t.Fatalf("cfg = %#v", cfg)
+	}
+}
+
+func TestParseArgsAcceptsCloudSourcesAndFlags(t *testing.T) {
+	for _, source := range []string{"gcp", "azure"} {
+		cfg, _, err := parseArgs([]string{"--source", source, "--gcp-project", "proj-a", "--azure-subscription", "sub-1"})
+		if err != nil {
+			t.Fatalf("%s: %v", source, err)
+		}
+		if cfg.Source != source || cfg.GCPProject != "proj-a" || cfg.AzureSub != "sub-1" {
+			t.Fatalf("cfg = %#v", cfg)
+		}
+	}
+	if _, _, err := parseArgs([]string{"--source", "digitalocean"}); err == nil {
+		t.Fatalf("invalid source should fail")
+	}
+}
+
+func TestResolveConfigUsesCloudPreferencesBelowFlags(t *testing.T) {
+	prefs := domain.OperatorPreferences{GCPProject: "pref-proj", AzureSubscription: "pref-sub"}
+	cfg := resolveConfig(cliConfig{GCPProject: "flag-proj"}, prefs)
+	if cfg.GCPProject != "flag-proj" || cfg.AzureSub != "pref-sub" {
+		t.Fatalf("cfg = %#v", cfg)
+	}
+}
+
+func TestBuildProvidersRegistersCloudProvidersWithoutCLIs(t *testing.T) {
+	var names []string
+	for _, p := range buildProviders(cliConfig{Source: "all", SSHConfig: "/nonexistent", AWSRegion: "us-east-1"}) {
+		names = append(names, p.ProviderName())
+	}
+	got := strings.Join(names, ",")
+	if !strings.HasSuffix(got, "gcp,azure") {
+		t.Fatalf("providers = %s", got)
+	}
+	only := buildProviders(cliConfig{Source: "azure"})
+	if len(only) != 1 || only[0].ProviderName() != "azure" {
+		t.Fatalf("azure only = %#v", only)
 	}
 }

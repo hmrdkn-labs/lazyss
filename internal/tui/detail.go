@@ -22,7 +22,7 @@ func (m Model) detailPanel(width, height int) string {
 		m.detailLine("Provider", string(machine.Provider), width),
 		m.detailLine("Native", machine.NativeID, width),
 		m.detailLine("Address", machine.Address, width),
-		m.detailLine("Method", string(machine.DefaultMethod()), width),
+		m.detailLine("Method", methodDisplay(machine.DefaultMethod()), width),
 		m.detailLine("Health", nonempty(machine.Health.Label, "not checked"), width),
 		m.detailLine("Last checked", rel(machine.LastCheckedAt), width),
 		m.detailLine("Last connected", rel(machine.LastConnectedAt), width),

@@ -15,9 +15,10 @@ func (m Model) renderCockpit() string {
 	width, height := m.layoutSize()
 	title := m.titleBar()
 	meta := m.awsLine()
+	cloud := m.cloudLines()
 	warnings := m.providerWarnings()
 	status := m.statusText()
-	bodyHeight := height - 8 - len(warnings) // -8 reserves title, footer, and the always-present status row
+	bodyHeight := height - 8 - len(warnings) - len(cloud) // -8 reserves title, footer, and the always-present status row
 	if bodyHeight < 8 {
 		bodyHeight = 8
 	}
@@ -41,6 +42,9 @@ func (m Model) renderCockpit() string {
 	b.WriteString(title + "\n")
 	if meta != "" {
 		b.WriteString(meta + "\n")
+	}
+	for _, line := range cloud {
+		b.WriteString(line + "\n")
 	}
 	if m.mode == modeInput {
 		fmt.Fprintf(&b, "%s: %s\n", m.inputKind, m.inputValue())
@@ -88,6 +92,31 @@ func (m Model) awsLine() string {
 		b.WriteString(" - P change, L login")
 	}
 	return b.String()
+}
+
+// cloudLines shows the active GCP project and Azure subscription while those
+// sources are in view.
+func (m Model) cloudLines() []string {
+	if m.runtime == nil {
+		return nil
+	}
+	source := m.runtime.Query.Source
+	inAll := source == "" || source == "all"
+	var out []string
+	if source == "gcp" || (inAll && m.runtime.GCPProject != "") {
+		out = append(out, "GCP: "+scopeSummary("project", m.runtime.GCPProject)+" - P change, L login")
+	}
+	if source == "azure" || (inAll && m.runtime.AzureSubscription != "") {
+		out = append(out, "Azure: "+scopeSummary("subscription", m.runtime.AzureSubscription)+" - P change, L login")
+	}
+	return out
+}
+
+func scopeSummary(kind, id string) string {
+	if strings.TrimSpace(id) == "" {
+		return "default " + kind
+	}
+	return kind + " " + id
 }
 
 func (m Model) providerWarnings() []string {
@@ -148,6 +177,10 @@ func (m Model) cycleSource() (tea.Model, tea.Cmd) {
 		m.runtime.Query.Source = "ssh"
 	case "ssh":
 		m.runtime.Query.Source = "aws"
+	case "aws":
+		m.runtime.Query.Source = "gcp"
+	case "gcp":
+		m.runtime.Query.Source = "azure"
 	default:
 		m.runtime.Query.Source = "all"
 	}
@@ -176,6 +209,9 @@ func (m Model) providerWarning(status domain.ProviderStatus) string {
 		}
 		return truncateRunes(fmt.Sprintf("source aws%s degraded: auth failed; P profile / L login", label), maxProviderWarningRunes)
 	}
+	if line, ok := cloudProviderWarning(status.Name, message); ok {
+		return line
+	}
 	line := fmt.Sprintf("source %s degraded: %s", status.Name, message)
 	if len([]rune(line)) > maxProviderWarningRunes {
 		if idx := strings.LastIndex(message, " ("); idx > 0 {
@@ -183,6 +219,31 @@ func (m Model) providerWarning(status domain.ProviderStatus) string {
 		}
 	}
 	return truncateRunes(line, maxProviderWarningRunes)
+}
+
+// cloudProviderWarning maps the gcloud/az adapter messages to short, actionable
+// header warnings.
+func cloudProviderWarning(name, message string) (string, bool) {
+	if name != "gcp" && name != "azure" {
+		return "", false
+	}
+	lower := strings.ToLower(message)
+	var detail string
+	switch {
+	case strings.Contains(lower, "not found on path"):
+		cli := "gcloud"
+		if name == "azure" {
+			cli = "az"
+		}
+		detail = cli + " CLI not installed; see lazyss doctor"
+	case strings.Contains(lower, "not logged in"):
+		detail = "not logged in; L login"
+	case name == "gcp" && strings.Contains(lower, "no gcloud project"):
+		detail = "no project set; P choose"
+	default:
+		return "", false
+	}
+	return truncateRunes(fmt.Sprintf("source %s degraded: %s", name, detail), maxProviderWarningRunes), true
 }
 
 func awsProfileLabel(profile string) string {

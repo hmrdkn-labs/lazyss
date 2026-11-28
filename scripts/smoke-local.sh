@@ -49,6 +49,23 @@ if grep -Eiq 'AWS_SECRET_ACCESS_KEY|AWS_SESSION_TOKEN|BEGIN (OPENSSH|RSA|EC|DSA)
 fi
 note "doctor completed with exit $doctor_rc"
 
+for src in gcp azure; do
+	"$BIN" --source "$src" --gcp-project smoke-project --azure-subscription smoke-sub --version >/dev/null ||
+		fail "--source $src did not parse"
+done
+if "$BIN" --source nope --version >/dev/null 2>&1; then
+	fail "invalid --source was accepted"
+fi
+
+mkdir "$tmpdir/emptybin"
+cloud_doctor="$tmpdir/cloud-doctor.out"
+set +e
+PATH="$tmpdir/emptybin" AWS_EC2_METADATA_DISABLED=true "$BIN" doctor --aws-region "$REGION" >"$cloud_doctor" 2>&1
+set -e
+grep -q "gcloud - not installed; optional, needed for --source gcp" "$cloud_doctor" || fail "doctor gcloud section missing"
+grep -q "azure - not installed; optional, needed for --source azure" "$cloud_doctor" || fail "doctor azure section missing"
+note "cloud sources parse and doctor reports missing CLIs"
+
 ssh_config="$tmpdir/ssh_config"
 cat >"$ssh_config" <<'EOF'
 Host lazyss-smoke
