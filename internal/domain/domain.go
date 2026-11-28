@@ -18,8 +18,10 @@ type ProviderKind string
 
 // Provider constants identify supported inventory providers.
 const (
-	ProviderSSH ProviderKind = "ssh"
-	ProviderAWS ProviderKind = "aws"
+	ProviderSSH   ProviderKind = "ssh"
+	ProviderAWS   ProviderKind = "aws"
+	ProviderGCP   ProviderKind = "gcp"
+	ProviderAzure ProviderKind = "azure"
 )
 
 // AccessMethod identifies a supported connection path.
@@ -27,9 +29,13 @@ type AccessMethod string
 
 // Access method constants identify supported connection launch modes.
 const (
-	AccessSSH         AccessMethod = "ssh"
-	AccessAWSSSMShell AccessMethod = "aws-ssm-shell"
-	AccessSSHOverSSM  AccessMethod = "ssh-over-ssm"
+	AccessSSH          AccessMethod = "ssh"
+	AccessAWSSSMShell  AccessMethod = "aws-ssm-shell"
+	AccessSSHOverSSM   AccessMethod = "ssh-over-ssm"
+	AccessGCloudSSH    AccessMethod = "gcloud-ssh"
+	AccessGCloudIAPSSH AccessMethod = "gcloud-iap-ssh"
+	AccessAzSSH        AccessMethod = "az-ssh"
+	AccessAzBastionSSH AccessMethod = "az-bastion-ssh"
 )
 
 // HealthStatus summarizes a method-specific health observation.

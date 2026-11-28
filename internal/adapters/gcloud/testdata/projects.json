@@ -1,0 +1,4 @@
+[
+  {"projectId": "acme-prod", "name": "Acme Production", "projectNumber": "1"},
+  {"projectId": "acme-dev", "name": "Acme Dev", "projectNumber": "2"}
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "name": "web-1",
+    "zone": "https://www.googleapis.com/compute/v1/projects/acme-prod/zones/europe-west1-b",
+    "status": "RUNNING",
+    "selfLink": "https://www.googleapis.com/compute/v1/projects/acme-prod/zones/europe-west1-b/instances/web-1",
+    "labels": {"env": "prod", "team": "web"},
+    "networkInterfaces": [
+      {
+        "networkIP": "10.0.0.5",
+        "accessConfigs": [{"name": "External NAT", "natIP": "34.1.2.3"}]
+      }
+    ]
+  },
+  {
+    "name": "db-1",
+    "zone": "https://www.googleapis.com/compute/v1/projects/acme-prod/zones/europe-west1-c",
+    "status": "RUNNING",
+    "selfLink": "https://www.googleapis.com/compute/v1/projects/acme-prod/zones/europe-west1-c/instances/db-1",
+    "networkInterfaces": [{"networkIP": "10.0.1.9"}]
+  },
+  {
+    "name": "old-batch",
+    "zone": "https://www.googleapis.com/compute/v1/projects/acme-prod/zones/us-central1-a",
+    "status": "TERMINATED",
+    "selfLink": "https://www.googleapis.com/compute/v1/projects/acme-prod/zones/us-central1-a/instances/old-batch",
+    "labels": {"env": "dev"},
+    "networkInterfaces": [{"networkIP": "10.2.0.7", "accessConfigs": [{"name": "External NAT"}]}]
+  }
+]

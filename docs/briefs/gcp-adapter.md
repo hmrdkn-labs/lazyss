@@ -98,7 +98,7 @@ Do not push, do not merge, do not tag.
 
 ## Report (fill in, then reply in ≤ 20 lines)
 
-- Commits:
-- `make check` result (last lines):
-- Package coverage / total coverage:
-- Anything the reviewer should look at:
+- Commits: `feat(gcloud): add gcloud CLI adapter for GCP inventory, connect, health` (single commit on `feat/gcp-adapter`; includes domain const blocks verbatim).
+- `make check` result (last lines): `ok coverage 76.0% meets baseline 57.7%`; script tests 43 OK; `go build` OK. golangci-lint not installed, `make lint` not run.
+- Package coverage / total coverage: 98.9% / 76.0%
+- Anything the reviewer should look at: external/internal IPs are kept in `Machine.Metadata` (`external_ip`, `internal_ip`) so the Checker can tell a real external IP from the fallback `Address`. IAP check uses `Machine.State`. `Inventory.ListMachines` returns both a degraded status and the error on failure (same as awsssm). `Connector.BuildCommand` also rejects empty name/zone/project. Wiring is left to the tui-wiring brief.
