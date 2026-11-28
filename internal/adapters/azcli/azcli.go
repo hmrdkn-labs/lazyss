@@ -287,10 +287,10 @@ func matchBastion(vm azVM, nicVNets map[string][]string, bastions map[string]azB
 // powerHealth derives the initial health from the power state alone. It does
 // not claim login or connectivity works.
 func powerHealth(state string) domain.HealthObservation {
-	switch {
-	case state == "":
+	switch state {
+	case "":
 		return domain.HealthObservation{Status: domain.HealthUnknown, Label: "azure power state unknown"}
-	case state == "VM running":
+	case "VM running":
 		return domain.HealthObservation{Status: domain.HealthUp, Label: "azure VM running"}
 	default:
 		return domain.HealthObservation{Status: domain.HealthDown, Label: "azure " + state}
